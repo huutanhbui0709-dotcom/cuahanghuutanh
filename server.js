@@ -11,7 +11,6 @@ const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
-const session = require('express-session');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
@@ -247,21 +246,6 @@ app.set('trust proxy', 1); // cần thiết khi chạy sau proxy của Railway/R
 
 app.use(express.json({ limit: '2mb' }));
 
-app.use(
-  session({
-    name: 'shop.sid',
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: 'auto', // tự bật secure khi chạy qua HTTPS (kể cả sau proxy nhờ trust proxy)
-      maxAge: 1000 * 60 * 60 * 8, // 8 giờ
-    },
-  })
-);
-
 // Giới hạn số lần thử đăng nhập admin để chống dò mật khẩu
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -271,8 +255,25 @@ const loginLimiter = rateLimit({
   message: { ok: false, message: 'Bạn thử đăng nhập quá nhiều lần. Vui lòng thử lại sau ít phút.' },
 });
 
+function parseCookies(request) {
+  const list = {};
+  const rc = request.headers.cookie;
+  if (!rc) return list;
+  rc.split(';').forEach(function(cookie) {
+    const parts = cookie.split('=');
+    const name = parts.shift().trim();
+    if (name) {
+      list[name] = decodeURI(parts.join('='));
+    }
+  });
+  return list;
+}
+
 function requireAdmin(req, res, next) {
-  if (req.session && req.session.isAdmin) return next();
+  const cookies = parseCookies(req);
+  const token = cookies.admin_token;
+  const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+  if (token === expectedToken) return next();
   return res.status(401).json({ ok: false, message: 'Chưa đăng nhập quản trị.' });
 }
 
@@ -408,18 +409,29 @@ app.post('/api/orders', async (req, res) => {
 app.post('/api/admin/login', loginLimiter, (req, res) => {
   const { password } = req.body || {};
   if (password && timingSafeEqualStr(password, ADMIN_PASSWORD)) {
-    req.session.isAdmin = true;
+    const token = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+    const isSecure = IS_VERCEL || process.env.NODE_ENV === 'production' || req.secure || req.headers['x-forwarded-proto'] === 'https';
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: !!isSecure,
+      maxAge: 1000 * 60 * 60 * 8, // 8 giờ
+    });
     return res.json({ ok: true });
   }
   return res.status(401).json({ ok: false, message: 'Sai mật khẩu.' });
 });
 
 app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  res.clearCookie('admin_token');
+  res.json({ ok: true });
 });
 
 app.get('/api/admin/me', (req, res) => {
-  res.json({ authenticated: !!(req.session && req.session.isAdmin) });
+  const cookies = parseCookies(req);
+  const token = cookies.admin_token;
+  const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+  res.json({ authenticated: token === expectedToken });
 });
 
 // =====================================================================

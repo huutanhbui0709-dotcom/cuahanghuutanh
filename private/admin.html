@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quản trị - Cửa Hàng Vật Tư Kỹ Thuật</title>
+  <title>Quản trị - Cửa Hàng Hữu Tánh</title>
   <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png" />
@@ -89,7 +89,8 @@
           <div class="admin-card">
             <div class="admin-card-title" style="display: flex; justify-content: space-between; align-items: center;">
               <span><i class="fa-solid fa-clipboard-list"></i> Đơn hàng mới nhất</span>
-              <select class="filter-select" id="dashboardOrderStatusFilter" onchange="renderDashboard()" style="padding: 5px 10px; font-size: 0.85rem; font-weight: normal; max-width: 150px;">
+              <select class="filter-select" id="dashboardOrderStatusFilter" onchange="renderDashboard()"
+                style="padding: 5px 10px; font-size: 0.85rem; font-weight: normal; max-width: 150px;">
                 <option value="">Tất cả trạng thái</option>
                 <option value="Chờ xác nhận">Chờ xác nhận</option>
                 <option value="Đã xác nhận">Đã xác nhận</option>
@@ -124,7 +125,8 @@
                     style="width: 220px; padding: 7px 12px 7px 32px;" placeholder="Tìm sản phẩm..."
                     oninput="adminPage = 1; renderAdminTable()" />
                 </div>
-                <select class="filter-select" id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()" style="padding: 7px 12px; font-size: 0.85rem;">
+                <select class="filter-select" id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()"
+                  style="padding: 7px 12px; font-size: 0.85rem;">
                   <option value="">Tất cả loại</option>
                 </select>
                 <button class="btn btn-primary btn-sm" onclick="openProductModal()">
@@ -158,13 +160,14 @@
               onchange="handleFileUpload(event)" />
             <div id="uploadResult" style="margin-top: 16px"></div>
           </div>
-          
+
           <div class="admin-card">
             <div class="admin-card-title">
               <i class="fa-solid fa-folder-open"></i> Import Thư mục ảnh sản phẩm
             </div>
             <div class="upload-zone" id="folderUploadZone" onclick="document.getElementById('folderInput').click()"
-              ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event)">
+              ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)"
+              ondrop="handleFolderDrop(event)">
               <div class="upload-zone-icon"><i class="fa-solid fa-images"></i></div>
               <div class="upload-zone-text" id="folderUploadText">
                 Kéo thả thư mục chứa ảnh sản phẩm vào đây hoặc nhấn để chọn thư mục
@@ -275,7 +278,8 @@
                   <input type="date" id="orderDateTo" class="form-control"
                     style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="renderOrdersTable()" />
                 </div>
-                <select class="filter-select" id="orderStatusFilter" onchange="renderOrdersTable()" style="padding: 7px 12px; font-size: 0.85rem;">
+                <select class="filter-select" id="orderStatusFilter" onchange="renderOrdersTable()"
+                  style="padding: 7px 12px; font-size: 0.85rem;">
                   <option value="">Tất cả trạng thái</option>
                   <option value="Chờ xác nhận">Chờ xác nhận</option>
                   <option value="Đã xác nhận">Đã xác nhận</option>
