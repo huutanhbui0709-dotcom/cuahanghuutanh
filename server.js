@@ -10,6 +10,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
+const cookieParser = require('cookie');
 const express = require('express');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
@@ -266,17 +267,13 @@ const loginLimiter = rateLimit({
 });
 
 function parseCookies(request) {
-  const list = {};
-  const rc = request.headers.cookie;
-  if (!rc) return list;
-  rc.split(';').forEach(function(cookie) {
-    const parts = cookie.split('=');
-    const name = parts.shift().trim();
-    if (name) {
-      list[name] = decodeURI(parts.join('='));
-    }
-  });
-  return list;
+  const cookieHeader = request.headers.cookie || '';
+  try {
+    return cookieParser.parse(cookieHeader);
+  } catch (err) {
+    console.warn('Lỗi parse cookie:', err.message);
+    return {};
+  }
 }
 
 function requireAdmin(req, res, next) {
@@ -442,7 +439,14 @@ app.get('/api/admin/me', (req, res) => {
   const cookies = parseCookies(req);
   const token = cookies.admin_token;
   const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
-  res.json({ authenticated: token === expectedToken });
+  const authenticated = token === expectedToken;
+  
+  if (IS_VERCEL && !authenticated) {
+    console.warn('⚠️  Session check failed - cookie missing or invalid');
+    console.warn('  Headers cookie:', req.headers.cookie ? '(present)' : '(missing)');
+  }
+  
+  res.json({ authenticated });
 });
 
 // =====================================================================

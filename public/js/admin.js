@@ -42,14 +42,18 @@ async function adminFetch(url, options) {
 // ==============================
 async function checkAuth() {
   try {
-    const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
+    const res = await fetch('/api/admin/me', { 
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
     const data = await res.json();
-    if (data.authenticated) {
+    if (data && data.authenticated) {
       showDashboard();
     } else {
       showLogin();
     }
   } catch (err) {
+    console.error('Lỗi check auth:', err);
     showLogin();
   }
 }
@@ -86,6 +90,8 @@ async function handleLogin(e) {
     const data = await res.json();
     if (res.ok && data.ok) {
       document.getElementById('loginPassword').value = '';
+      // Đợi một chút để cookie được set, rồi mới load data
+      await new Promise(resolve => setTimeout(resolve, 300));
       showDashboard();
     } else {
       errEl.textContent = '<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Sai mật khẩu.');
@@ -118,21 +124,43 @@ async function loadAllData() {
 }
 
 async function loadProducts() {
-  try {
-    const res = await fetch('/api/products');
-    products = await res.json();
-  } catch (err) {
-    showToast('<i class="fa-solid fa-xmark"></i> Không tải được sản phẩm', 'error');
+  let retries = 2;
+  while (retries > 0) {
+    try {
+      const res = await fetch('/api/products', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      products = await res.json();
+      return;
+    } catch (err) {
+      retries--;
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } else {
+        console.error('Lỗi load sản phẩm:', err);
+        showToast('<i class="fa-solid fa-xmark"></i> Không tải được sản phẩm', 'error');
+      }
+    }
   }
 }
 
 async function loadOrders() {
-  try {
-    const res = await adminFetch('/api/admin/orders');
-    if (res.status === 401) return;
-    orders = await res.json();
-  } catch (err) {
-    showToast('<i class="fa-solid fa-xmark"></i> Không tải được đơn hàng', 'error');
+  let retries = 2;
+  while (retries > 0) {
+    try {
+      const res = await adminFetch('/api/admin/orders', { credentials: 'same-origin' });
+      if (res.status === 401) return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      orders = await res.json();
+      return;
+    } catch (err) {
+      retries--;
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } else {
+        console.error('Lỗi load đơn hàng:', err);
+        showToast('<i class="fa-solid fa-xmark"></i> Không tải được đơn hàng', 'error');
+      }
+    }
   }
 }
 
