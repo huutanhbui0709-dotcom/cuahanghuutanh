@@ -27,6 +27,8 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // Gọi fetch tới các API cần đăng nhập; nếu phiên đăng nhập hết hạn (401)
 // thì tự động quay về màn hình đăng nhập thay vì để lỗi mơ hồ.
 async function adminFetch(url, options) {
+  options = options || {};
+  if (!options.credentials) options.credentials = 'same-origin';
   const res = await fetch(url, options);
   if (res.status === 401) {
     showToast('<i class="fa-solid fa-triangle-exclamation"></i> Phiên đăng nhập đã hết, vui lòng đăng nhập lại', 'error');
@@ -40,7 +42,7 @@ async function adminFetch(url, options) {
 // ==============================
 async function checkAuth() {
   try {
-    const res = await fetch('/api/admin/me');
+    const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
     const data = await res.json();
     if (data.authenticated) {
       showDashboard();
@@ -77,6 +79,7 @@ async function handleLogin(e) {
   try {
     const res = await fetch('/api/admin/login', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
     });
@@ -99,7 +102,7 @@ async function handleLogin(e) {
 }
 
 async function adminLogout() {
-  try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (err) {}
+  try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }); } catch (err) {}
   showLogin();
 }
 

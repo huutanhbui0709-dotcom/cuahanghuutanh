@@ -416,6 +416,7 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
       httpOnly: true,
       sameSite: 'lax',
       secure: !!isSecure,
+      path: '/',
       maxAge: 1000 * 60 * 60 * 8, // 8 giờ
     });
     return res.json({ ok: true });
