@@ -1,0 +1,162 @@
+[
+  {
+    "id": "DH35157955",
+    "createdAt": "09:12:37 19/6/2026",
+    "customer": "Nguyen Van A",
+    "phone": "0901234567",
+    "address": "123 Main Street",
+    "note": "",
+    "items": [
+      {
+        "ma": "BANCHAISAT23",
+        "ten": "Bàn chải đánh rỉ (chổi đánh rỉ) cầm tay, dây thép, độ dài 23cm COROLLA",
+        "gia": 4609,
+        "donvi": "Cái",
+        "qty": 1
+      }
+    ],
+    "total": 4609,
+    "status": "Đã xác nhận"
+  },
+  {
+    "id": "DH80597612",
+    "createdAt": "18:03:17 18/6/2026",
+    "customer": "Phương",
+    "phone": "022629562596",
+    "address": "ABCDEF",
+    "note": "",
+    "items": [
+      {
+        "ma": "BBDE24031CNV",
+        "ten": "Cầu dao tép chống giật 2P 40A",
+        "gia": 397682,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "BBDE26331CNV",
+        "ten": "Cầu dao tép chống giật 2P 63A",
+        "gia": 563727,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "COMONG114",
+        "ten": "Co mỏng 114",
+        "gia": 29600,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "CODAY49",
+        "ten": "Co dày 49",
+        "gia": 10570,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "CUASAT300MM",
+        "ten": "Cưa sắt cầm tay COROLLA, Kt 12 inch (300mm)",
+        "gia": 36130,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "COPVCUdn114-PN6",
+        "ten": "Co PVC-U dn114-PN6",
+        "gia": 40871,
+        "donvi": "Cái",
+        "qty": 1
+      }
+    ],
+    "total": 1078580,
+    "status": "Đã xác nhận"
+  },
+  {
+    "id": "DH80298694",
+    "createdAt": "17:58:18 18/6/2026",
+    "customer": "1q",
+    "phone": "1",
+    "address": "1",
+    "note": "",
+    "items": [
+      {
+        "ma": "BBDE24031CNV",
+        "ten": "Cầu dao tép chống giật 2P 40A",
+        "gia": 397682,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "BBDE26331CNV",
+        "ten": "Cầu dao tép chống giật 2P 63A",
+        "gia": 563727,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "BITTRON60ST",
+        "ten": "Bít tròn 60 ST",
+        "gia": 3000,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "BS1114TV",
+        "ten": "Bộ ngắt mạch an toàn HB 40A",
+        "gia": 50891,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "CADIVIDOI1,5",
+        "ten": "Dây điện đôi Cadivi (1,5)",
+        "gia": 13160,
+        "donvi": "Mét",
+        "qty": 1
+      },
+      {
+        "ma": "CODAY49",
+        "ten": "Co dày 49",
+        "gia": 10570,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "COMONG114",
+        "ten": "Co mỏng 114",
+        "gia": 29600,
+        "donvi": "Cái",
+        "qty": 1
+      }
+    ],
+    "total": 1068630,
+    "status": "Đã huỷ"
+  },
+  {
+    "id": "DH75561354",
+    "createdAt": "16:39:21 18/6/2026",
+    "customer": "Tánh",
+    "phone": "09872014889",
+    "address": "ABC",
+    "note": "",
+    "items": [
+      {
+        "ma": "BBDE24031CNV",
+        "ten": "Cầu dao tép chống giật 2P 40A",
+        "gia": 397682,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "BBDE26331CNV",
+        "ten": "Cầu dao tép chống giật 2P 63A",
+        "gia": 563727,
+        "donvi": "Cái",
+        "qty": 1
+      }
+    ],
+    "total": 961409,
+    "status": "Đã xác nhận"
+  }
+]

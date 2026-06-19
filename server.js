@@ -1,0 +1,644 @@
+// =====================================================================
+// CỬA HÀNG VẬT TƯ KỸ THUẬT - SERVER
+// Express + lưu dữ liệu bằng file JSON (không cần database).
+// Trang quản trị có URL riêng, yêu cầu đăng nhập bằng mật khẩu.
+// =====================================================================
+
+require('dotenv').config();
+
+const fs = require('fs');
+const fsp = fs.promises;
+const path = require('path');
+const crypto = require('crypto');
+const express = require('express');
+const session = require('express-session');
+const rateLimitModule = require('express-rate-limit');
+const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
+const multer = require('multer');
+
+// Cấu hình Multer để upload ảnh
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'public', 'img'));
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const code = (req.params.ma || req.body.ma || 'temp-' + Date.now()).trim();
+    const cleanCode = code.replace(/[\\/:*?"<>|]/g, '_');
+    cb(null, cleanCode + ext);
+  }
+});
+const upload = multer({ storage: storage });
+
+// Cấu hình Multer để upload ảnh slide
+const slideStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'public', 'img', 'Slide_img'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'slide-' + uniqueSuffix + ext);
+  }
+});
+const uploadSlide = multer({ storage: slideStorage });
+
+// Cấu hình Multer để import ảnh từ folder (tên file = mã sản phẩm)
+const folderImgStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'public', 'img'));
+  },
+  filename: function (req, file, cb) {
+    // Giữ nguyên tên gốc (đã được chuẩn hóa từ client)
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext);
+    const cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
+    cb(null, cleanBase + ext);
+  }
+});
+const uploadFolderImages = multer({
+  storage: folderImgStorage,
+  fileFilter: function (req, file, cb) {
+    if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB mỗi ảnh
+});
+
+// Dọn dẹp các ảnh trùng mã sản phẩm nhưng khác đuôi mở rộng
+async function cleanOldImagesOfCode(code, exceptFilename) {
+  const dir = path.join(__dirname, 'public', 'img');
+  try {
+    const files = await fsp.readdir(dir);
+    const cleanCode = code.replace(/[\\/:*?"<>|]/g, '_');
+    for (const file of files) {
+      const ext = path.extname(file);
+      const nameWithoutExt = path.basename(file, ext);
+      if (nameWithoutExt === cleanCode && file !== exceptFilename) {
+        const fullPath = path.join(dir, file);
+        try {
+          await fsp.unlink(fullPath);
+          console.log(`🗑️ Đã dọn dẹp ảnh cũ trùng mã khác định dạng: ${fullPath}`);
+        } catch (err) {}
+      }
+    }
+  } catch (err) {
+    console.warn('Lỗi dọn dẹp ảnh cũ:', err.message);
+  }
+}
+
+// ---------------------------------------------------------------------
+// CẤU HÌNH
+// ---------------------------------------------------------------------
+const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'change-this-secret-please';
+const ADMIN_PATH = normalizePath(process.env.ADMIN_PATH || '/admin');
+
+// Thư mục chứa file dữ liệu (gốc của repo theo mặc định). Khi deploy lên
+// Railway/Render, có thể gắn Persistent Volume/Disk và trỏ DATA_DIR tới
+// điểm gắn đó để dữ liệu không bị mất sau mỗi lần redeploy.
+const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : BUNDLED_DATA_DIR;
+
+const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
+
+if (ADMIN_PASSWORD === 'admin123') {
+  console.warn('⚠️  CẢNH BÁO: Bạn đang dùng mật khẩu admin mặc định. Hãy đặt biến môi trường ADMIN_PASSWORD trước khi deploy thật!');
+}
+if (SESSION_SECRET === 'change-this-secret-please') {
+  console.warn('⚠️  CẢNH BÁO: Bạn đang dùng SESSION_SECRET mặc định. Hãy đặt một chuỗi bí mật riêng (xem .env.example).');
+}
+
+function normalizePath(p) {
+  if (!p.startsWith('/')) p = '/' + p;
+  return p.replace(/\/+$/, '') || '/admin';
+}
+
+// ---------------------------------------------------------------------
+// LỚP LƯU TRỮ FILE JSON (đọc 1 lần khi khởi động, giữ trong RAM,
+// mỗi lần thay đổi sẽ ghi đè lại file - các lệnh ghi được xếp hàng
+// tuần tự để tránh ghi đè chồng lên nhau khi có nhiều request cùng lúc)
+// ---------------------------------------------------------------------
+function ensureDirSync(dir) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+function readJSONSync(file, fallback) {
+  try {
+    const raw = fs.readFileSync(file, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    return fallback;
+  }
+}
+
+function makeQueuedWriter(filePath) {
+  let queue = Promise.resolve();
+  return function write(data) {
+    queue = queue
+      .catch(() => {}) // không để lỗi trước đó chặn lần ghi sau
+      .then(() => fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8'));
+    return queue;
+  };
+}
+
+ensureDirSync(DATA_DIR);
+ensureDirSync(path.join(__dirname, 'public', 'img', 'Slide_img'));
+
+// Nếu chưa có products.json trong DATA_DIR, dùng dữ liệu mẫu đi kèm repo
+// (trường hợp DATA_DIR được trỏ tới 1 ổ đĩa mới gắn lần đầu).
+if (!fs.existsSync(PRODUCTS_FILE)) {
+  const seed = fs.existsSync(BUNDLED_PRODUCTS_SEED)
+    ? fs.readFileSync(BUNDLED_PRODUCTS_SEED, 'utf8')
+    : '[]';
+  fs.writeFileSync(PRODUCTS_FILE, seed, 'utf8');
+  console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
+}
+if (!fs.existsSync(ORDERS_FILE)) {
+  fs.writeFileSync(ORDERS_FILE, '[]', 'utf8');
+  console.log('📋 Đã tạo orders.json mới (rỗng) tại:', ORDERS_FILE);
+}
+if (!fs.existsSync(SETTINGS_FILE)) {
+  const defaultSettings = {
+    address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
+    phone: "0945 592 209",
+    email: "diennuochuutanh@gmail.com",
+    mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
+  };
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf8');
+  console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
+}
+
+let products = readJSONSync(PRODUCTS_FILE, []);
+let orders = readJSONSync(ORDERS_FILE, []);
+let settings = readJSONSync(SETTINGS_FILE, {
+  address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
+  phone: "0945 592 209",
+  email: "diennuochuutanh@gmail.com",
+  mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
+});
+
+const saveProducts = makeQueuedWriter(PRODUCTS_FILE);
+const saveOrders = makeQueuedWriter(ORDERS_FILE);
+const saveSettings = makeQueuedWriter(SETTINGS_FILE);
+
+// ---------------------------------------------------------------------
+// APP
+// ---------------------------------------------------------------------
+const app = express();
+app.set('trust proxy', 1); // cần thiết khi chạy sau proxy của Railway/Render
+
+app.use(express.json({ limit: '2mb' }));
+
+app.use(
+  session({
+    name: 'shop.sid',
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: 'auto', // tự bật secure khi chạy qua HTTPS (kể cả sau proxy nhờ trust proxy)
+      maxAge: 1000 * 60 * 60 * 8, // 8 giờ
+    },
+  })
+);
+
+// Giới hạn số lần thử đăng nhập admin để chống dò mật khẩu
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Bạn thử đăng nhập quá nhiều lần. Vui lòng thử lại sau ít phút.' },
+});
+
+function requireAdmin(req, res, next) {
+  if (req.session && req.session.isAdmin) return next();
+  return res.status(401).json({ ok: false, message: 'Chưa đăng nhập quản trị.' });
+}
+
+function timingSafeEqualStr(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    // so sánh với buffer giả cùng độ dài để tránh lộ thông tin qua thời gian xử lý
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// ---------------------------------------------------------------------
+// PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
+// ---------------------------------------------------------------------
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Trang quản trị KHÔNG nằm trong /public nên không thể truy cập trực tiếp
+// qua đường dẫn file - chỉ phục vụ qua đúng ADMIN_PATH cấu hình ở .env
+app.get(ADMIN_PATH, (req, res) => {
+  res.sendFile(path.join(__dirname, 'private', 'admin.html'));
+});
+
+app.get('/healthz', (req, res) => res.json({ ok: true }));
+
+// =====================================================================
+// API CÔNG KHAI (khách hàng)
+// =====================================================================
+
+app.get('/api/products', (req, res) => {
+  res.json(products);
+});
+
+app.get('/api/settings', (req, res) => {
+  res.json(settings);
+});
+
+app.get('/api/slides', async (req, res) => {
+  const dir = path.join(__dirname, 'public', 'img', 'Slide_img');
+  try {
+    const files = await fsp.readdir(dir);
+    // Lọc chỉ lấy các file định dạng ảnh
+    const images = files
+      .filter(f => /\.(png|jpe?g|gif|webp|bmp)$/i.test(f))
+      .map(f => '/img/Slide_img/' + f);
+    res.json(images);
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Không thể đọc danh sách slide.' });
+  }
+});
+
+app.post('/api/orders', async (req, res) => {
+  const { customer, phone, address, note, items } = req.body || {};
+
+  const cName = String(customer || '').trim();
+  const cPhone = String(phone || '').trim();
+  const cAddress = String(address || '').trim();
+  const cNote = String(note || '').trim();
+
+  if (!cName) return res.status(400).json({ ok: false, message: 'Vui lòng nhập họ tên.' });
+  if (!cPhone) return res.status(400).json({ ok: false, message: 'Vui lòng nhập số điện thoại.' });
+  if (!cAddress) return res.status(400).json({ ok: false, message: 'Vui lòng nhập địa chỉ giao hàng.' });
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ ok: false, message: 'Giỏ hàng trống.' });
+  }
+
+  // Tự tra lại giá & tên sản phẩm từ dữ liệu trên server (không tin dữ liệu giá gửi từ client)
+  const orderItems = [];
+  for (const raw of items) {
+    const ma = String((raw && raw.ma) || '').trim();
+    const qtyNum = parseInt(raw && raw.qty, 10);
+    const qty = Number.isFinite(qtyNum) ? qtyNum : 0;
+    const product = products.find((p) => p.ma === ma);
+    if (!product || qty <= 0) continue;
+    orderItems.push({
+      ma: product.ma,
+      ten: product.ten,
+      gia: product.gia || 0,
+      donvi: product.donvi || '',
+      qty,
+    });
+  }
+
+  if (orderItems.length === 0) {
+    return res.status(400).json({ ok: false, message: 'Không có sản phẩm hợp lệ trong giỏ hàng.' });
+  }
+
+  const total = orderItems.reduce((s, x) => s + x.gia * x.qty, 0);
+  const order = {
+    id: 'DH' + Date.now().toString().slice(-8),
+    createdAt: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+    customer: cName,
+    phone: cPhone,
+    address: cAddress,
+    note: cNote,
+    items: orderItems,
+    total,
+    status: 'Chờ xác nhận',
+  };
+
+  orders.unshift(order);
+  try {
+    await saveOrders(orders);
+  } catch (err) {
+    console.error('Lỗi lưu đơn hàng:', err);
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu đơn hàng, vui lòng thử lại.' });
+  }
+
+  res.json({ ok: true, order });
+});
+
+// =====================================================================
+// ĐĂNG NHẬP / ĐĂNG XUẤT ADMIN
+// =====================================================================
+
+app.post('/api/admin/login', loginLimiter, (req, res) => {
+  const { password } = req.body || {};
+  if (password && timingSafeEqualStr(password, ADMIN_PASSWORD)) {
+    req.session.isAdmin = true;
+    return res.json({ ok: true });
+  }
+  return res.status(401).json({ ok: false, message: 'Sai mật khẩu.' });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get('/api/admin/me', (req, res) => {
+  res.json({ authenticated: !!(req.session && req.session.isAdmin) });
+});
+
+// =====================================================================
+// API QUẢN TRỊ (yêu cầu đăng nhập)
+// =====================================================================
+
+app.get('/api/admin/orders', requireAdmin, (req, res) => {
+  res.json(orders);
+});
+
+const ALLOWED_STATUS = ['Chờ xác nhận', 'Đã xác nhận', 'Đã huỷ'];
+
+app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
+  const { status } = req.body || {};
+  if (!ALLOWED_STATUS.includes(status)) {
+    return res.status(400).json({ ok: false, message: 'Trạng thái không hợp lệ.' });
+  }
+  const order = orders.find((o) => o.id === req.params.id);
+  if (!order) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
+
+  order.status = status;
+  try {
+    await saveOrders(orders);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true, order });
+});
+app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
+  const idx = orders.findIndex((o) => o.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
+  if (orders[idx].status !== 'Đã huỷ') {
+    return res.status(400).json({ ok: false, message: 'Chỉ có thể xoá đơn hàng đã huỷ.' });
+  }
+  orders.splice(idx, 1);
+  try {
+    await saveOrders(orders);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req, res) => {
+  const { ma, ten, gia, donvi, loai, trangthai } = req.body || {};
+  const cleanMa = String(ma || '').trim();
+  const cleanTen = String(ten || '').trim();
+
+  if (!cleanMa) return res.status(400).json({ ok: false, message: 'Vui lòng nhập mã sản phẩm.' });
+  if (!cleanTen) return res.status(400).json({ ok: false, message: 'Vui lòng nhập tên sản phẩm.' });
+  if (products.some((p) => p.ma === cleanMa)) {
+    return res.status(409).json({ ok: false, message: 'Mã sản phẩm đã tồn tại.' });
+  }
+
+  const product = {
+    stt: products.length + 1,
+    ma: cleanMa,
+    ten: cleanTen,
+    gia: parseInt(gia, 10) || 0,
+    donvi: String(donvi || '').trim(),
+    loai: String(loai || 'Hàng hóa thường').trim(),
+    trangthai: String(trangthai || 'Đang theo dõi').trim(),
+  };
+
+  if (req.file) {
+    product.image = '/img/' + req.file.filename;
+    await cleanOldImagesOfCode(cleanMa, req.file.filename);
+  }
+
+  products.push(product);
+
+  try {
+    await saveProducts(products);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true, product });
+});
+
+app.put('/api/admin/products/:ma', requireAdmin, upload.single('image'), async (req, res) => {
+  const product = products.find((p) => p.ma === req.params.ma);
+  if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
+
+  const { ten, gia, donvi, loai, trangthai } = req.body || {};
+  if (ten !== undefined) product.ten = String(ten).trim();
+  if (gia !== undefined) product.gia = parseInt(gia, 10) || 0;
+  if (donvi !== undefined) product.donvi = String(donvi).trim();
+  if (loai !== undefined) product.loai = String(loai).trim();
+  if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
+
+  if (req.file) {
+    const newImagePath = '/img/' + req.file.filename;
+    if (product.image && product.image !== newImagePath) {
+      const oldImgRelative = product.image.startsWith('/') ? product.image.slice(1) : product.image;
+      const oldImgFullPath = path.join(__dirname, 'public', oldImgRelative);
+      try {
+        await fsp.access(oldImgFullPath);
+        await fsp.unlink(oldImgFullPath);
+        console.log(`🗑️ Đã xoá ảnh cũ: ${oldImgFullPath}`);
+      } catch (err) {}
+    }
+    await cleanOldImagesOfCode(product.ma, req.file.filename);
+    product.image = newImagePath;
+  }
+
+  try {
+    await saveProducts(products);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true, product });
+});
+
+app.delete('/api/admin/products/:ma', requireAdmin, async (req, res) => {
+  const idx = products.findIndex((p) => p.ma === req.params.ma);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
+
+  const product = products[idx];
+  if (product.image) {
+    const imgRelative = product.image.startsWith('/') ? product.image.slice(1) : product.image;
+    const imgFullPath = path.join(__dirname, 'public', imgRelative);
+    try {
+      await fsp.access(imgFullPath);
+      await fsp.unlink(imgFullPath);
+      console.log(`🗑️ Đã xoá ảnh khi xoá sản phẩm: ${imgFullPath}`);
+    } catch (err) {}
+  }
+
+  products.splice(idx, 1);
+  try {
+    await saveProducts(products);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
+  const rows = Array.isArray(req.body) ? req.body : [];
+  let added = 0;
+  let updated = 0;
+  let errors = 0;
+
+  for (const row of rows) {
+    const ma = String((row && row.ma) || '').trim();
+    const ten = String((row && row.ten) || '').trim();
+    if (!ma || !ten) {
+      errors++;
+      continue;
+    }
+
+    const existing = products.find((p) => String(p.ma).trim() === ma);
+    if (existing) {
+      // Cập nhật thông tin sản phẩm đã tồn tại
+      existing.ten = ten;
+      existing.gia = parseInt(row.gia, 10) || 0;
+      existing.donvi = String(row.donvi || '').trim();
+      existing.loai = String(row.loai || existing.loai || 'Hàng hóa thường').trim();
+      existing.trangthai = String(row.trangthai || existing.trangthai || 'Đang theo dõi').trim();
+      updated++;
+    } else {
+      // Thêm sản phẩm mới
+      products.push({
+        stt: products.length + 1,
+        ma,
+        ten,
+        gia: parseInt(row.gia, 10) || 0,
+        donvi: String(row.donvi || '').trim(),
+        loai: String(row.loai || 'Hàng hóa thường').trim(),
+        trangthai: String(row.trangthai || 'Đang theo dõi').trim(),
+      });
+      added++;
+    }
+  }
+
+  try {
+    await saveProducts(products);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true, added, updated, errors });
+});
+
+app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.array('images', 50), async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ ok: false, message: 'Không nhận được file ảnh nào.' });
+  }
+
+  let updatedCount = 0;
+  let skippedCount = 0;
+
+  for (const file of req.files) {
+    const ext = path.extname(file.originalname);
+    const code = path.basename(file.originalname, ext).trim();
+    
+    // Tìm sản phẩm tương ứng (không phân biệt hoa thường)
+    const product = products.find(p => String(p.ma).trim().toLowerCase() === code.toLowerCase());
+    
+    if (product) {
+      const newImagePath = '/img/' + file.filename;
+      // Dọn dẹp ảnh cũ trùng mã khác định dạng
+      await cleanOldImagesOfCode(product.ma, file.filename);
+      
+      product.image = newImagePath;
+      updatedCount++;
+    } else {
+      // Xoá ảnh nếu không khớp mã sản phẩm
+      const fullPath = path.join(__dirname, 'public', 'img', file.filename);
+      try { await fsp.unlink(fullPath); } catch (err) {}
+      skippedCount++;
+    }
+  }
+
+  if (updatedCount > 0) {
+    try {
+      await saveProducts(products);
+    } catch (err) {
+      return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu sản phẩm.' });
+    }
+  }
+
+  res.json({ ok: true, updated: updatedCount, skipped: skippedCount });
+});
+
+app.put('/api/admin/settings', requireAdmin, async (req, res) => {
+  const { address, phone, email, mapUrl } = req.body || {};
+  
+  if (address !== undefined) settings.address = String(address).trim();
+  if (phone !== undefined) settings.phone = String(phone).trim();
+  if (email !== undefined) settings.email = String(email).trim();
+  
+  if (mapUrl !== undefined) {
+    let cleanMapUrl = String(mapUrl).trim();
+    if (cleanMapUrl.includes('<iframe')) {
+      const match = cleanMapUrl.match(/src=["']([^"']+)["']/);
+      if (match && match[1]) {
+        cleanMapUrl = match[1];
+      }
+    } else if (cleanMapUrl && !cleanMapUrl.includes('output=embed') && !cleanMapUrl.includes('google.com/maps/embed')) {
+      // Tự động chuyển đổi địa chỉ hoặc link thường thành link nhúng Google Maps
+      cleanMapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(cleanMapUrl)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+    settings.mapUrl = cleanMapUrl;
+  }
+
+  try {
+    await saveSettings(settings);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu cấu hình.' });
+  }
+  res.json({ ok: true, settings });
+});
+
+app.post('/api/admin/slides', requireAdmin, uploadSlide.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ ok: false, message: 'Vui lòng chọn ảnh để tải lên.' });
+  }
+  res.json({ ok: true, url: '/img/Slide_img/' + req.file.filename });
+});
+
+app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
+  const { url } = req.body || {};
+  if (!url) return res.status(400).json({ ok: false, message: 'Đường dẫn ảnh không hợp lệ.' });
+  
+  if (!url.startsWith('/img/Slide_img/')) {
+    return res.status(400).json({ ok: false, message: 'Đường dẫn ảnh không hợp lệ.' });
+  }
+
+  const filename = path.basename(url);
+  const fullPath = path.join(__dirname, 'public', 'img', 'Slide_img', filename);
+  try {
+    await fsp.access(fullPath);
+    await fsp.unlink(fullPath);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(404).json({ ok: false, message: 'Không tìm thấy ảnh slide hoặc lỗi khi xoá.' });
+  }
+});
+
+// ---------------------------------------------------------------------
+app.listen(PORT, () => {
+  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`🔐 Trang quản trị: http://localhost:${PORT}${ADMIN_PATH}`);
+  console.log(`💾 Dữ liệu lưu tại: ${DATA_DIR}`);
+});

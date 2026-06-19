@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản trị - Cửa Hàng Vật Tư Kỹ Thuật</title>
+  <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-brand" style="display: flex; align-items: center; gap: 8px;">
+      <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
+        style="height: 40px; width: 40px; object-fit: contain;" />
+      <span>CỬA HÀNG HỮU TÁNH</span>
+      <span style="
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 500;
+            font-size: 0.8rem;
+            margin-left: 6px;
+          ">/ Quản trị</span>
+    </div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn btn-outline btn-sm hidden" id="logoutBtn" onclick="adminLogout()">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= LOGIN ================= -->
+  <div class="login-wrap" id="loginView">
+    <div class="login-card">
+      <h2><i class="fa-solid fa-lock"></i> Đăng nhập quản trị</h2>
+      <p>Nhập mật khẩu để truy cập trang quản trị cửa hàng.</p>
+      <form id="loginForm" onsubmit="return handleLogin(event);">
+        <div class="form-group" style="margin-bottom: 14px">
+          <label>Mật khẩu</label>
+          <input class="form-control" type="password" id="loginPassword" placeholder="••••••••" autofocus required />
+        </div>
+        <button class="btn btn-primary" type="submit" style="width: 100%; padding: 11px" id="loginBtn">
+          Đăng nhập
+        </button>
+        <div class="login-error" id="loginError"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN DASHBOARD ================= -->
+  <div class="hidden" id="adminView">
+    <div class="admin-layout">
+      <div class="admin-sidebar">
+        <div class="admin-sidebar-item active" onclick="adminTab('dashboard', this)">
+          <i class="fa-solid fa-chart-simple"></i> Tổng quan
+        </div>
+        <div class="admin-sidebar-item" onclick="adminTab('products', this)">
+          <i class="fa-solid fa-box"></i> Sản phẩm
+        </div>
+        <div class="admin-sidebar-item" onclick="adminTab('import', this)">
+          <i class="fa-solid fa-file-import"></i> Import Excel
+        </div>
+        <div class="admin-sidebar-item" onclick="adminTab('orders', this)">
+          <i class="fa-solid fa-clipboard-list"></i> Đơn hàng
+        </div>
+        <div class="admin-sidebar-item" onclick="adminTab('slides', this)">
+          <i class="fa-regular fa-image"></i> Quản lý Slide
+        </div>
+        <div class="admin-sidebar-item" onclick="adminTab('settings', this)">
+          <i class="fa-solid fa-gear"></i> Cài đặt Footer
+        </div>
+      </div>
+      <div class="admin-content">
+        <!-- DASHBOARD -->
+        <div class="admin-tab active" id="tab-dashboard">
+          <div class="stats-row" id="statsRow"></div>
+          <div class="admin-card">
+            <div class="admin-card-title" style="display: flex; justify-content: space-between; align-items: center;">
+              <span><i class="fa-solid fa-clipboard-list"></i> Đơn hàng mới nhất</span>
+              <select class="filter-select" id="dashboardOrderStatusFilter" onchange="renderDashboard()" style="padding: 5px 10px; font-size: 0.85rem; font-weight: normal; max-width: 150px;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Chờ xác nhận">Chờ xác nhận</option>
+                <option value="Đã xác nhận">Đã xác nhận</option>
+                <option value="Đã huỷ">Đã huỷ</option>
+              </select>
+            </div>
+            <div class="table-wrap" id="recentOrdersTable"></div>
+          </div>
+        </div>
+
+        <!-- PRODUCTS -->
+        <div class="admin-tab" id="tab-products">
+          <div class="admin-card">
+            <div style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 16px;
+                  flex-wrap: wrap;
+                  gap: 10px;
+                ">
+              <div class="admin-card-title" style="margin: 0">
+                <i class="fa-solid fa-box"></i> Danh sách sản phẩm (<span id="adminProductCount">0</span> kết quả)
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <div style="position: relative;">
+                  <span
+                    style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </span>
+                  <input type="text" id="adminSearch" class="form-control"
+                    style="width: 220px; padding: 7px 12px 7px 32px;" placeholder="Tìm sản phẩm..."
+                    oninput="adminPage = 1; renderAdminTable()" />
+                </div>
+                <select class="filter-select" id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()" style="padding: 7px 12px; font-size: 0.85rem;">
+                  <option value="">Tất cả loại</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="openProductModal()">
+                  <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap" id="adminTable"></div>
+            <div class="pagination" id="adminPagination"></div>
+          </div>
+        </div>
+
+        <!-- IMPORT -->
+        <div class="admin-tab" id="tab-import">
+          <div class="admin-card">
+            <div class="admin-card-title">
+              <i class="fa-solid fa-file-import"></i> Import sản phẩm từ file Excel
+            </div>
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+              <div class="upload-zone-icon"><i class="fa-solid fa-chart-simple"></i></div>
+              <div class="upload-zone-text">
+                Kéo thả file Excel vào đây hoặc nhấn để chọn file
+              </div>
+              <div class="upload-zone-hint">
+                Hỗ trợ .xlsx — Cột bắt buộc: <strong>Mã hàng hóa</strong>,
+                <strong>Tên hàng hóa</strong>
+              </div>
+            </div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none"
+              onchange="handleFileUpload(event)" />
+            <div id="uploadResult" style="margin-top: 16px"></div>
+          </div>
+          
+          <div class="admin-card">
+            <div class="admin-card-title">
+              <i class="fa-solid fa-folder-open"></i> Import Thư mục ảnh sản phẩm
+            </div>
+            <div class="upload-zone" id="folderUploadZone" onclick="document.getElementById('folderInput').click()"
+              ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event)">
+              <div class="upload-zone-icon"><i class="fa-solid fa-images"></i></div>
+              <div class="upload-zone-text" id="folderUploadText">
+                Kéo thả thư mục chứa ảnh sản phẩm vào đây hoặc nhấn để chọn thư mục
+              </div>
+              <div class="upload-zone-hint">
+                Các file ảnh phải được đặt tên theo <strong>Mã hàng hóa</strong> (Ví dụ: SP001.jpg, SP002.png)
+              </div>
+            </div>
+            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none"
+              onchange="handleFolderUpload(event)" />
+            <div id="folderUploadResult" style="margin-top: 16px"></div>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-title"><i class="fa-solid fa-circle-info"></i> Hướng dẫn định dạng Excel</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Cột</th>
+                  <th>Tên cột</th>
+                  <th>Bắt buộc</th>
+                  <th>Ví dụ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>A</td>
+                  <td>STT</td>
+                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                  <td>1, 2, 3...</td>
+                </tr>
+                <tr>
+                  <td>B</td>
+                  <td>Mã hàng hóa</td>
+                  <td><span class="badge badge-red">Bắt buộc</span></td>
+                  <td>SP000001</td>
+                </tr>
+                <tr>
+                  <td>C</td>
+                  <td>Tên hàng hóa</td>
+                  <td><span class="badge badge-red">Bắt buộc</span></td>
+                  <td>Ống nước PVC 21</td>
+                </tr>
+                <tr>
+                  <td>D</td>
+                  <td>Giá bán</td>
+                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                  <td>50000</td>
+                </tr>
+                <tr>
+                  <td>E</td>
+                  <td>Đơn vị tính</td>
+                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                  <td>Cái, Mét, Bộ...</td>
+                </tr>
+                <tr>
+                  <td>F</td>
+                  <td>Loại hàng hóa</td>
+                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                  <td>Hàng hóa thường</td>
+                </tr>
+                <tr>
+                  <td>G</td>
+                  <td>Trạng thái</td>
+                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                  <td>Đang theo dõi</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 12px; font-size: 0.8rem; color: var(--muted)">
+              <i class="fa-solid fa-lightbulb"></i> Hệ thống tự động kiểm tra mã SP, nếu mã đã tồn tại sẽ bỏ qua
+              (không thêm trùng).
+            </p>
+          </div>
+        </div>
+
+        <!-- ORDERS -->
+        <div class="admin-tab" id="tab-orders">
+          <div class="admin-card">
+            <div style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 16px;
+                  flex-wrap: wrap;
+                  gap: 10px;
+                ">
+              <div class="admin-card-title" style="margin: 0">
+                <i class="fa-solid fa-clipboard-list"></i> Quản lý đơn hàng
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <div style="position: relative;">
+                  <span
+                    style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </span>
+                  <input type="text" id="orderSearch" class="form-control"
+                    style="width: 200px; padding: 7px 12px 7px 32px;" placeholder="Tìm mã đơn, tên, SĐT..."
+                    oninput="renderOrdersTable()" />
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 0.8rem; color: var(--muted); white-space: nowrap;">Từ:</span>
+                  <input type="date" id="orderDateFrom" class="form-control"
+                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="renderOrdersTable()" />
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 0.8rem; color: var(--muted); white-space: nowrap;">Đến:</span>
+                  <input type="date" id="orderDateTo" class="form-control"
+                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="renderOrdersTable()" />
+                </div>
+                <select class="filter-select" id="orderStatusFilter" onchange="renderOrdersTable()" style="padding: 7px 12px; font-size: 0.85rem;">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Chờ xác nhận">Chờ xác nhận</option>
+                  <option value="Đã xác nhận">Đã xác nhận</option>
+                  <option value="Đã huỷ">Đã huỷ</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="resetOrderFilters()" title="Xóa bộ lọc"
+                  style="color: var(--text); border-color: var(--border); padding: 8px 12px; height: 35px;">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap" id="ordersTable"></div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="admin-tab" id="tab-settings">
+          <div class="admin-card">
+            <div class="admin-card-title"><i class="fa-solid fa-gear"></i> Cấu hình thông tin Footer</div>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Thay đổi thông tin liên hệ và bản đồ hiển
+              thị ở Footer trang chủ.</p>
+
+            <div class="form-group">
+              <label><i class="fa-solid fa-location-dot"></i> Địa chỉ cửa hàng</label>
+              <input class="form-control" id="sf_address"
+                placeholder="Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ" />
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-phone"></i> Số điện thoại</label>
+              <input class="form-control" id="sf_phone" placeholder="0945 592 209" />
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-envelope"></i> Email liên hệ</label>
+              <input class="form-control" id="sf_email" placeholder="diennuochuutanh@gmail.com" />
+            </div>
+            <div class="form-group">
+              <label><i class="fa-solid fa-map"></i> Link bản đồ (Iframe src hoặc URL chia sẻ)</label>
+              <input class="form-control" id="sf_mapUrl" placeholder="https://maps.google.com/maps?q=..." />
+              <span style="font-size: .75rem; color: var(--muted); margin-top: 4px; display: block;">
+                Mẹo: Bạn có thể nhập địa chỉ trực tiếp, liên kết chia sẻ hoặc mã nhúng iframe của Google Maps.
+              </span>
+            </div>
+            <button class="btn btn-primary" style="padding: 10px 20px; margin-top: 8px;" onclick="saveSettingsForm()">
+              <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+            </button>
+          </div>
+        </div>
+
+        <!-- SLIDES -->
+        <div class="admin-tab" id="tab-slides">
+          <div class="admin-card">
+            <div class="admin-card-title"><i class="fa-regular fa-image"></i> Quản lý Slide ảnh trang chủ</div>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">
+              Thêm hoặc xóa các hình ảnh hiển thị ở banner trang chủ (Slideshow).
+            </p>
+
+            <!-- Thêm ảnh slide mới -->
+            <div
+              style="margin-bottom: 24px; padding: 16px; border: 1.5px dashed var(--border); border-radius: 8px; background: var(--bg);">
+              <h4 style="font-size: .9rem; margin-bottom: 10px;"><i class="fa-solid fa-upload"></i> Tải lên ảnh slide
+                mới</h4>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="slideFileInput" accept="image/*" style="display:none;"
+                  onchange="uploadNewSlide(event)" />
+                <button class="btn btn-primary" onclick="document.getElementById('slideFileInput').click()">
+                  + Tải ảnh mới
+                </button>
+                <span id="slideUploadStatus" style="font-size: .85rem; color: var(--muted);">Chưa chọn file nào</span>
+              </div>
+            </div>
+
+            <!-- Danh sách ảnh slide hiện tại -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"
+              id="slidesList">
+              <!-- Sẽ render động qua js -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= PRODUCT ADD/EDIT MODAL ======= -->
+  <div class="modal-overlay center" id="productModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="productModalTitle">+ Thêm sản phẩm</h3>
+        <button class="modal-close" onclick="closeModal('productModal')">
+          ✕
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pf_originalMa" />
+        <div class="form-group">
+          <label>Mã sản phẩm *</label>
+          <input class="form-control" id="pf_ma" placeholder="SP000001" />
+        </div>
+        <div class="form-group">
+          <label>Tên sản phẩm *</label>
+          <input class="form-control" id="pf_ten" placeholder="Ống nước PVC 21" />
+        </div>
+        <div class="form-group">
+          <label>Ảnh sản phẩm</label>
+          <input class="form-control" type="file" id="pf_image" accept="image/*"
+            onchange="previewProductImage(event)" />
+          <div id="pf_image_preview" style="margin-top: 8px; max-width: 100px; display: none;">
+            <img id="pf_image_img" src="" style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Giá bán</label>
+          <input class="form-control" id="pf_gia" type="number" min="0" placeholder="50000" />
+        </div>
+        <div class="form-group">
+          <label>Đơn vị tính</label>
+          <input class="form-control" id="pf_donvi" placeholder="Cái, Mét, Bộ..." />
+        </div>
+        <div class="form-group">
+          <label>Loại hàng hóa</label>
+          <select class="form-control" id="pf_loai">
+            <option value="Hàng hóa thường">Hàng hóa thường</option>
+            <option value="Hàng hóa dịch vụ">Hàng hóa dịch vụ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <input class="form-control" id="pf_trangthai" placeholder="Đang theo dõi" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" style="width: 100%; padding: 12px" onclick="saveProductForm()">
+          <i class="fa-solid fa-floppy-disk"></i> Lưu sản phẩm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= ORDER DETAIL MODAL ======= -->
+  <div class="modal-overlay center" id="orderDetailModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-clipboard-list"></i> Chi tiết đơn hàng</h3>
+        <button class="modal-close" onclick="closeModal('orderDetailModal')">
+          ✕
+        </button>
+      </div>
+      <div class="modal-body" id="orderDetailBody"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+
+</html>

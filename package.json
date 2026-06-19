@@ -1,0 +1,20 @@
+{
+  "name": "cua-hang-vat-tu-ky-thuat",
+  "version": "1.0.0",
+  "description": "Cua hang vat tu ky thuat - Express server, luu du lieu bang file JSON, co trang quan tri rieng dang nhap bang mat khau.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "multer": "^2.2.0"
+  }
+}

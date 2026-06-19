@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cửa Hàng Hữu Tánh</title>
+  <link rel="icon" type="image/x-icon" href="img/favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="img/favicon/site.webmanifest">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          screens: {
+            'xs': '480px',
+            'xxs': '360px',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Đè CSS cũ bằng Tailwind tương thích với JS */
+    #cartCount {
+      display: none;
+    }
+
+    #cartCount.visible {
+      display: flex !important;
+    }
+
+    /* ===== CATEGORY SIDEBAR ===== */
+    #categorySidebar {
+      width: 220px;
+      flex-shrink: 0;
+    }
+
+    .cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #475569;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cat-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .cat-btn.active {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #1e293b;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+      font-weight: 700;
+    }
+
+    .cat-btn .cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .cat-btn.active .cat-dot {
+      opacity: 1;
+      background: #1e293b;
+    }
+
+    .cat-count-badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 99px;
+      background: rgba(0, 0, 0, 0.08);
+      flex-shrink: 0;
+    }
+
+    .cat-btn.active .cat-count-badge {
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    /* Mobile horizontal pill row */
+    #categoryMobileRow {
+      display: none;
+    }
+
+    .cat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .cat-pill:hover {
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .cat-pill.active {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      border-color: transparent;
+      color: #1e293b;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    /* Show sidebar vs pill row based on viewport */
+    .main-layout {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      margin-bottom: 48px;
+    }
+
+    #categorySidebar {
+      width: 260px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 96px;
+    }
+
+    @media (max-width: 900px) {
+      .main-layout {
+        flex-direction: column-reverse;
+      }
+
+      #categorySidebar {
+        width: 100%;
+        position: static;
+      }
+
+      #categoryDesktopContainer {
+        display: none !important;
+      }
+
+      #categoryMobileRow {
+        display: flex !important;
+      }
+    }
+
+    @media (min-width: 901px) {
+      #categoryMobileRow {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- NAV -->
+  <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3 xxs:gap-4">
+      <div class="flex items-center gap-2 xxs:gap-3 min-w-0">
+        <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
+          class="h-9 w-9 xxs:h-10 xxs:w-10 sm:h-12 sm:w-12 object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
+        <span class="font-extrabold text-base xxs:text-lg sm:text-2xl text-amber-400 tracking-wide truncate">CỬA HÀNG
+          HỮU TÁNH</span>
+      </div>
+      <div class="flex-shrink-0">
+        <button
+          class="relative bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20"
+          onclick="openCart()" id="cartBtn">
+          <span><i class="fa-solid fa-cart-shopping"></i></span>
+          <span class="max-sm:hidden">Giỏ hàng</span>
+          <span
+            class="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-extrabold text-[10px] sm:text-xs w-5 h-5 rounded-full flex items-center justify-center"
+            id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================= SHOP VIEW ================= -->
+  <div id="view-shop" class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex-1 py-6">
+
+    <!-- Hero Slider -->
+    <div class="relative h-[200px] sm:h-[360px] overflow-hidden text-white rounded-2xl shadow-lg mb-8">
+      <!-- Slide Images -->
+      <div class="absolute inset-0 z-1 hero-slides" id="heroSlides">
+        <div class="absolute inset-0 bg-slate-800 active hero-slide"></div>
+      </div>
+
+      <!-- Dark overlay -->
+      <div class="absolute inset-0 bg-slate-950/50 z-10 pointer-events-none"></div>
+
+      <!-- Hero content -->
+      <div class="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-6 pointer-events-none">
+        <h1 class="text-2xl sm:text-5xl font-black mb-3 drop-shadow-md text-amber-400"><i class="fa-solid fa-store"></i>
+          Cửa Hàng Hữu Tánh</h1>
+        <p class="text-slate-200 text-xs sm:text-lg font-medium drop-shadow-sm">Chọn sản phẩm, đặt hàng nhanh chóng và
+          tiện lợi</p>
+      </div>
+
+      <!-- Controls -->
+      <button
+        class="absolute left-3 top-1/2 -translate-y-1/2 z-30 bg-black/40 hover:bg-black/60 text-white w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-sm sm:text-xl active:scale-90 transition duration-150"
+        onclick="moveSlide(-1)">&#10094;</button>
+      <button
+        class="absolute right-3 top-1/2 -translate-y-1/2 z-30 bg-black/40 hover:bg-black/60 text-white w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-sm sm:text-xl active:scale-90 transition duration-150"
+        onclick="moveSlide(1)">&#10095;</button>
+
+      <!-- Dots indicator -->
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2 slide-dots" id="slideDots"></div>
+    </div>
+
+    <!-- Main Content: Grid + Right Sidebar -->
+    <div class="main-layout" id="shopMainLayout">
+
+      <!-- Product Grid -->
+      <div class="flex-1 min-w-0 w-full">
+        <!-- Mobile Category Pills (shows below 900px) -->
+        <div id="categoryMobileRow"
+          class="gap-2 overflow-x-auto pb-3 pt-2 mb-4 -mx-4 sm:-mx-6 px-4 sm:px-6 sticky top-16 sm:top-20 z-40 bg-slate-100/95 backdrop-blur-md border-b border-slate-200/50"
+          style="scrollbar-width:none;-webkit-overflow-scrolling:touch; display: flex;">
+          <!-- Populated dynamically by shop.js -->
+        </div>
+
+        <div class="grid grid-cols-1 xxs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5" id="productGrid"></div>
+        <div class="flex justify-center items-center gap-2 flex-wrap mt-8" id="pagination"></div>
+      </div>
+
+      <!-- Right Sidebar (Controls + Categories) -->
+      <aside id="categorySidebar" class="flex flex-col gap-4">
+
+        <!-- Shop Controls -->
+        <div id="shopControls"
+          class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-2.5 md:gap-3">
+          <div class="relative w-full">
+            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-base"><i
+                class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm tên, mã..." oninput="filterProducts()"
+              class="w-full pl-8 pr-3 py-2 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm font-semibold rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 focus:bg-white transition duration-150 shadow-inner" />
+          </div>
+          <div class="flex flex-row md:flex-col items-center md:items-stretch gap-2 md:gap-3">
+            <select
+              class="flex-1 min-w-0 bg-slate-50 text-slate-800 font-semibold px-2.5 md:px-3 py-2 rounded-lg md:rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 focus:bg-white cursor-pointer transition duration-150 text-[13px] md:text-sm truncate"
+              id="sortSelect" onchange="filterProducts()">
+              <option value="">Sắp xếp: Mặc định</option>
+              <option value="name_asc">Tên A→Z</option>
+              <option value="price_asc">Giá thấp → cao</option>
+              <option value="price_desc">Giá cao → thấp</option>
+            </select>
+            <div class="flex-shrink-0 md:text-center">
+              <span
+                class="bg-amber-100 text-amber-800 font-bold px-3 py-2 md:py-1.5 rounded-lg text-[13px] md:text-sm whitespace-nowrap inline-block md:block md:w-full"
+                id="countBadge"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Category List -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+          id="categoryDesktopContainer">
+          <!-- Header -->
+          <div class="px-4 py-3.5 border-b border-slate-100 flex items-center gap-2">
+            <span class="text-base"><i class="fa-solid fa-tag"></i></span>
+            <span class="text-sm font-extrabold text-slate-700 tracking-wide uppercase">Loại sản phẩm</span>
+          </div>
+          <!-- Category list -->
+          <div class="p-2 max-h-[calc(100vh-340px)] min-h-[200px] overflow-y-auto" id="categoryList"
+            style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;">
+            <!-- Populated dynamically by shop.js -->
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ======= CART MODAL (Drawer) ======= -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal !bg-white shadow-2xl flex flex-col h-full w-full max-w-[480px]">
+      <!-- Modal Header -->
+      <div
+        class="px-4 py-4 xs:px-6 xs:py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <h3 class="text-lg xs:text-xl font-bold text-slate-800 flex items-center gap-2"><i
+            class="fa-solid fa-cart-shopping"></i> Giỏ hàng của bạn</h3>
+        <button
+          class="w-8 h-8 xs:w-9 xs:h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"
+          onclick="closeCart()">✕</button>
+      </div>
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto px-4 py-3 xs:px-6 xs:py-4" id="cartBody"></div>
+      <!-- Modal Footer -->
+      <div class="border-t border-slate-100 p-4 xs:p-6 bg-white" id="cartFooter"></div>
+    </div>
+  </div>
+
+  <!-- ======= ORDER MODAL (Drawer) ======= -->
+  <div class="modal-overlay" id="orderModal">
+    <div class="modal !bg-white shadow-2xl flex flex-col h-full w-full max-w-[480px]">
+      <!-- Modal Header -->
+      <div class="px-4 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-circle-info"
+            style="color: rgb(99, 230, 190);"></i> Thông tin đặt hàng</h3>
+        <button
+          class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"
+          onclick="closeOrderModal()">✕</button>
+      </div>
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto px-4 py-3">
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 xs:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">👤 Họ tên *</label>
+              <input type="text" id="orderName" placeholder="Nguyễn Văn A"
+                class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-solid fa-phone"></i> Số điện thoại
+                *</label>
+              <input type="tel" id="orderPhone" placeholder="0901234567"
+                class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-solid fa-location-dot"></i> Địa chỉ
+              giao hàng *</label>
+            <input type="text" id="orderAddress" placeholder="123 Nguyễn Trãi, Q.1, TP.HCM"
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">💬 Ghi chú</label>
+            <input type="text" id="orderNote" placeholder="Ghi chú thêm (nếu có)..."
+              class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
+          </div>
+        </div>
+
+        <!-- Product list confirmation -->
+        <div class="mt-4 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div
+            class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 text-[11px] font-extrabold text-slate-600 tracking-wider">
+            SẢN PHẨM ĐẶT HÀNG
+          </div>
+          <div class="divide-y divide-slate-100 bg-white" id="confirmItems"></div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div
+        class="border-t border-slate-100 p-4 bg-white flex flex-col xxs:flex-row xxs:items-center justify-between gap-3 xxs:gap-4">
+        <div
+          class="flex flex-row xxs:flex-col justify-between xxs:justify-start items-center xxs:items-start w-full xxs:w-auto">
+          <span class="text-xs font-bold text-slate-500">Tổng thanh toán:</span>
+          <span class="text-lg font-extrabold text-blue-600 leading-none mt-1" id="confirmTotal"></span>
+        </div>
+        <button
+          class="w-full xxs:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2"
+          id="submitOrderBtn" onclick="submitOrder()">
+          <span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i>
+            Xác nhận đặt hàng</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= FOOTER ======= -->
+  <footer class="bg-slate-900 text-white mt-16 border-t-4 border-amber-400 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="flex flex-col justify-center">
+        <div class="flex items-center gap-3 mb-6">
+          <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
+            class="h-12 w-12 object-contain rounded-full border border-slate-700 bg-white p-0.5" />
+          <h3 class="text-lg md:text-xl font-extrabold text-amber-400">Cửa Hàng Điện Nước Hữu Tánh</h3>
+        </div>
+        <div class="space-y-3.5 text-sm md:text-base text-slate-300">
+          <p id="footer-address" class="flex items-start gap-2.5">
+            <span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-location-dot"></i></span>
+            <span>Địa chỉ: Đang tải...</span>
+          </p>
+          <p id="footer-phone" class="flex items-start gap-2.5">
+            <span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-phone"></i></span>
+            <span>Số điện thoại: Đang tải...</span>
+          </p>
+          <p id="footer-email" class="flex items-start gap-2.5">
+            <span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-envelope"></i></span>
+            <span>Email: Đang tải...</span>
+          </p>
+        </div>
+      </div>
+      <div class="rounded-xl overflow-hidden shadow-lg border border-slate-800 h-[250px] bg-slate-950"
+        id="footer-map-container">
+        <!-- Google Map iframe sẽ được render động ở đây -->
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto mt-10 pt-6 border-t border-slate-800 text-center text-xs md:text-sm text-slate-500">
+      &copy; 2026 Cửa Hàng Điện Nước Hữu Tánh. Bản quyền được bảo lưu.
+    </div>
+  </footer>
+
+  <script src="js/shop.js"></script>
+</body>
+
+</html>
