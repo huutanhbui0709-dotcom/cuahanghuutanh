@@ -2,7 +2,7 @@
 // STATE
 // ==============================
 if (window.location.protocol === 'file:') {
-  window.location.href = 'http://localhost:3000/admin';
+  window.location.href = 'https://cuahanghuutanh.vercel.app/admin';
 }
 
 let products = [];
@@ -99,7 +99,7 @@ async function handleLogin(e) {
 }
 
 async function adminLogout() {
-  try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (err) {}
+  try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (err) { }
   showLogin();
 }
 
@@ -217,13 +217,13 @@ async function loadAdminSlides() {
 async function uploadNewSlide(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const statusEl = document.getElementById('slideUploadStatus');
   statusEl.textContent = 'Đang tải lên...';
-  
+
   const formData = new FormData();
   formData.append('image', file);
-  
+
   try {
     const res = await adminFetch('/api/admin/slides', {
       method: 'POST',
@@ -286,7 +286,7 @@ function renderDashboard() {
   const dashboardStatusFilter = document.getElementById('dashboardOrderStatusFilter')?.value || '';
   const filteredOrders = dashboardStatusFilter ? orders.filter(o => o.status === dashboardStatusFilter) : orders;
   const recent = filteredOrders.slice(0, 5);
-  
+
   if (recent.length === 0) {
     document.getElementById('recentOrdersTable').innerHTML = '<p style="color:var(--muted);font-size:.875rem;padding:16px 0">Chưa có đơn hàng nào.</p>';
     return;
@@ -313,13 +313,13 @@ function populateProductTypeFilter() {
   const select = document.getElementById('adminTypeFilter');
   if (!select) return;
   const currentVal = select.value;
-  
+
   const types = [...new Set(products.map(p => p.loai).filter(Boolean))].sort();
-  
+
   let html = '<option value="">Tất cả loại</option>';
   html += types.map(t => `<option value="${t}">${t}</option>`).join('');
   select.innerHTML = html;
-  
+
   if (types.includes(currentVal)) {
     select.value = currentVal;
   } else {
@@ -330,32 +330,32 @@ function populateProductTypeFilter() {
 function renderPagination(total, current, id, onPage) {
   const el = document.getElementById(id);
   if (total <= 1) { el.innerHTML = ''; return; }
-  let html = `<button class="page-btn" onclick="(${onPage.toString()})(${current-1})" ${current<=1?'disabled':''}>‹</button>`;
+  let html = `<button class="page-btn" onclick="(${onPage.toString()})(${current - 1})" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
   for (let i = 1; i <= total; i++) {
     if (total > 7 && Math.abs(i - current) > 2 && i !== 1 && i !== total) {
-      if (i === 2 || i === total-1) html += `<span style="padding:0 4px;color:var(--muted)">…</span>`;
+      if (i === 2 || i === total - 1) html += `<span style="padding:0 4px;color:var(--muted)">…</span>`;
       continue;
     }
-    html += `<button class="page-btn ${i===current?'active':''}" onclick="(${onPage.toString()})(${i})">${i}</button>`;
+    html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="(${onPage.toString()})(${i})">${i}</button>`;
   }
-  html += `<button class="page-btn" onclick="(${onPage.toString()})(${current+1})" ${current>=total?'disabled':''}>›</button>`;
+  html += `<button class="page-btn" onclick="(${onPage.toString()})(${current + 1})" ${current >= total ? 'disabled' : ''}>›</button>`;
   el.innerHTML = html;
 }
 
 function renderAdminTable() {
   const q = (document.getElementById('adminSearch')?.value || '').toLowerCase();
   const typeFilter = document.getElementById('adminTypeFilter')?.value || '';
-  
+
   let list = products.filter(p => {
     if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
     if (typeFilter && p.loai !== typeFilter) return false;
     return true;
   });
-  
+
   const total = list.length;
   const pages = Math.ceil(total / ITEMS_PER_PAGE);
   if (adminPage > pages) adminPage = Math.max(1, pages);
-  const paged = list.slice((adminPage-1)*ITEMS_PER_PAGE, adminPage*ITEMS_PER_PAGE);
+  const paged = list.slice((adminPage - 1) * ITEMS_PER_PAGE, adminPage * ITEMS_PER_PAGE);
 
   document.getElementById('adminProductCount').textContent = total;
   document.getElementById('adminTable').innerHTML = `
@@ -363,7 +363,7 @@ function renderAdminTable() {
       <thead><tr><th>#</th><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá bán</th><th>ĐVT</th><th>Loại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>${paged.map((p, i) => `
         <tr>
-          <td>${(adminPage-1)*ITEMS_PER_PAGE + i + 1}</td>
+          <td>${(adminPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
           <td>${p.image ? `<img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" />` : '<i class="fa-solid fa-box"></i>'}</td>
           <td><code style="font-size:.78rem;background:var(--bg);padding:2px 6px;border-radius:4px">${p.ma}</code></td>
           <td style="max-width:300px">${p.ten}</td>
@@ -373,8 +373,8 @@ function renderAdminTable() {
           <td><span class="badge badge-yellow">${p.trangthai || '-'}</span></td>
           <td>
             <div class="row-actions">
-              <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g,"\\'")}')"><i class="fa-solid fa-pencil"></i></button>
-              <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.ma.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-pencil"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
             </div>
           </td>
         </tr>`).join('')}
@@ -421,10 +421,10 @@ function previewProductImage(event) {
   const file = event.target.files[0];
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
-  
+
   if (file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       previewImg.src = e.target.result;
       previewWrap.style.display = 'block';
     }
@@ -524,11 +524,11 @@ function parseCreatedAt(createdAtStr) {
     }
   }
   if (!datePart) return null;
-  
+
   const separator = datePart.includes('/') ? '/' : '-';
   const dateSplit = datePart.split(separator);
   if (dateSplit.length !== 3) return null;
-  
+
   let day, month, year;
   if (dateSplit[0].length === 4) {
     year = parseInt(dateSplit[0], 10);
@@ -539,7 +539,7 @@ function parseCreatedAt(createdAtStr) {
     month = parseInt(dateSplit[1], 10) - 1;
     year = parseInt(dateSplit[2], 10);
   }
-  
+
   return new Date(year, month, day);
 }
 
@@ -558,12 +558,12 @@ function resetOrderFilters() {
 function renderOrdersTable() {
   const filter = document.getElementById('orderStatusFilter')?.value || '';
   const searchQuery = (document.getElementById('orderSearch')?.value || '').toLowerCase().trim();
-  
+
   const fromVal = document.getElementById('orderDateFrom')?.value;
   const toVal = document.getElementById('orderDateTo')?.value;
   let fromDate = null;
   let toDate = null;
-  
+
   if (fromVal) {
     const [y, m, d] = fromVal.split('-').map(Number);
     fromDate = new Date(y, m - 1, d);
@@ -576,15 +576,15 @@ function renderOrdersTable() {
   let list = orders.filter(o => {
     // 1. Filter by status
     if (filter && o.status !== filter) return false;
-    
+
     // 2. Filter by search query
     if (searchQuery) {
       const match = (o.id || '').toLowerCase().includes(searchQuery) ||
-                    (o.customer || '').toLowerCase().includes(searchQuery) ||
-                    (o.phone || '').toLowerCase().includes(searchQuery);
+        (o.customer || '').toLowerCase().includes(searchQuery) ||
+        (o.phone || '').toLowerCase().includes(searchQuery);
       if (!match) return false;
     }
-    
+
     // 3. Filter by date range
     if (fromDate || toDate) {
       const orderDate = parseCreatedAt(o.createdAt);
@@ -592,7 +592,7 @@ function renderOrdersTable() {
       if (fromDate && orderDate < fromDate) return false;
       if (toDate && orderDate > toDate) return false;
     }
-    
+
     return true;
   });
 
@@ -731,7 +731,7 @@ function handleFileUpload(e) {
 
 function processExcelFile(file) {
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -768,7 +768,7 @@ function processExcelFile(file) {
         if (!ma || !ten) continue;
         rows.push({
           ma, ten,
-          gia: colMap.gia >= 0 ? (parseInt(String(row[colMap.gia]).replace(/\D/g,'')) || 0) : 0,
+          gia: colMap.gia >= 0 ? (parseInt(String(row[colMap.gia]).replace(/\D/g, '')) || 0) : 0,
           donvi: colMap.donvi >= 0 ? String(row[colMap.donvi] || '').trim() : '',
           loai: colMap.loai >= 0 ? String(row[colMap.loai] || '').trim() : 'Hàng hóa thường',
           trangthai: colMap.trangthai >= 0 ? String(row[colMap.trangthai] || '').trim() : 'Đang theo dõi',
@@ -793,7 +793,7 @@ function processExcelFile(file) {
 
       showUploadResult('success', `<i class="fa-solid fa-circle-check"></i> Import hoàn tất! <strong>Thêm mới: ${data.added}</strong> | Cập nhật: ${data.updated} | Lỗi dữ liệu: ${data.errors}`);
       showToast(`Import thành công: +${data.added} mới, ${data.updated} cập nhật`, 'success');
-    } catch(err) {
+    } catch (err) {
       showUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi đọc file: ${err.message}`);
     }
   };
@@ -968,7 +968,7 @@ function showFolderUploadResult(type, msg) {
   const el = document.getElementById('folderUploadResult');
   const bgMap = { success: '#d1fae5', error: '#fee2e2', info: '#dbeafe' };
   const colorMap = { success: '#065f46', error: '#991b1b', info: '#1e40af' };
-  el.innerHTML = `<div class="upload-result" style="background:${bgMap[type]||'#f1f5f9'};color:${colorMap[type]||'#1e293b'};padding:14px 16px;border-radius:8px;font-size:.875rem;line-height:1.6">${msg}</div>`;
+  el.innerHTML = `<div class="upload-result" style="background:${bgMap[type] || '#f1f5f9'};color:${colorMap[type] || '#1e293b'};padding:14px 16px;border-radius:8px;font-size:.875rem;line-height:1.6">${msg}</div>`;
 }
 
 // ==============================
@@ -989,7 +989,7 @@ function showToast(msg, type = '') {
 checkAuth();
 
 ['productModal', 'orderDetailModal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) {
+  document.getElementById(id).addEventListener('click', function (e) {
     if (e.target === this) this.classList.remove('open');
   });
 });
