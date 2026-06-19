@@ -14,6 +14,7 @@ const express = require('express');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
+const { uploadImageFile, deleteImageFile, USE_BLOB } = require('./lib/storage');
 
 const IS_VERCEL = !!process.env.VERCEL;
 
@@ -54,49 +55,33 @@ if (IS_VERCEL) {
   }
 }
 
-// Cấu hình Multer để upload ảnh
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, IMG_DIR);
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const code = (req.params.ma || req.body.ma || 'temp-' + Date.now()).trim();
-    const cleanCode = code.replace(/[\\/:*?"<>|]/g, '_');
-    cb(null, cleanCode + ext);
-  }
-});
-const upload = multer({ storage: storage });
+// Cấu hình Multer dùng memory storage (lưu vào RAM trước, rồi upload lên Blob)
+const memoryStorage = multer.memoryStorage();
 
-// Cấu hình Multer để upload ảnh slide
-const slideStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, SLIDE_IMG_DIR);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'slide-' + uniqueSuffix + ext);
-  }
-});
-const uploadSlide = multer({ storage: slideStorage });
+// Middleware tạo filename từ ma sản phẩm
+function createProductFilename(req, file, cb) {
+  const ext = path.extname(file.originalname);
+  const code = (req.params.ma || req.body.ma || 'temp-' + Date.now()).trim();
+  const cleanCode = code.replace(/[\\/:*?"<>|]/g, '_');
+  cb(null, { filename: cleanCode + ext, originalName: file.originalname });
+}
 
-// Cấu hình Multer để import ảnh từ folder (tên file = mã sản phẩm)
-const folderImgStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, IMG_DIR);
-  },
-  filename: function (req, file, cb) {
-    // Giữ nguyên tên gốc (đã được chuẩn hóa từ client) và xử lý cả slash/backslash
-    const originalName = file.originalname.replace(/\\/g, '/');
-    const ext = path.extname(originalName);
-    const base = path.basename(originalName, ext);
-    const cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
-    cb(null, cleanBase + ext);
-  }
-});
-const uploadFolderImages = multer({
-  storage: folderImgStorage,
+function createSlideFilename(req, file, cb) {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const ext = path.extname(file.originalname);
+  cb(null, { filename: 'slide-' + uniqueSuffix + ext, originalName: file.originalname });
+}
+
+function createFolderImageFilename(req, file, cb) {
+  const originalName = file.originalname.replace(/\\/g, '/');
+  const ext = path.extname(originalName);
+  const base = path.basename(originalName, ext);
+  const cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
+  cb(null, { filename: cleanBase + ext, originalName: originalName });
+}
+
+const upload = multer({ 
+  storage: memoryStorage,
   fileFilter: function (req, file, cb) {
     if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
       cb(null, true);
@@ -104,7 +89,31 @@ const uploadFolderImages = multer({
       cb(null, false);
     }
   },
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB mỗi ảnh
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+const uploadSlide = multer({ 
+  storage: memoryStorage,
+  fileFilter: function (req, file, cb) {
+    if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+const uploadFolderImages = multer({
+  storage: memoryStorage,
+  fileFilter: function (req, file, cb) {
+    if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 // Dọn dẹp các ảnh trùng mã sản phẩm nhưng khác đuôi mở rộng
@@ -499,8 +508,15 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
   };
 
   if (req.file) {
-    product.image = '/img/' + req.file.filename;
-    await cleanOldImagesOfCode(cleanMa, req.file.filename);
+    const ext = path.extname(req.file.originalname);
+    const filename = cleanMa + ext;
+    try {
+      product.image = await uploadImageFile({ ...req.file, filename }, 'products');
+      console.log(`✅ Đã upload ảnh sản phẩm: ${filename}`);
+    } catch (err) {
+      console.error('Lỗi upload ảnh:', err);
+      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh.' });
+    }
   }
 
   products.push(product);
@@ -525,18 +541,21 @@ app.put('/api/admin/products/:ma', requireAdmin, upload.single('image'), async (
   if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
 
   if (req.file) {
-    const newImagePath = '/img/' + req.file.filename;
-    if (product.image && product.image !== newImagePath) {
-      const oldImgRelative = product.image.startsWith('/') ? product.image.slice(1) : product.image;
-      const oldImgFullPath = path.join(__dirname, 'public', oldImgRelative);
-      try {
-        await fsp.access(oldImgFullPath);
-        await fsp.unlink(oldImgFullPath);
-        console.log(`🗑️ Đã xoá ảnh cũ: ${oldImgFullPath}`);
-      } catch (err) {}
+    const ext = path.extname(req.file.originalname);
+    const filename = product.ma + ext;
+    try {
+      const newImagePath = await uploadImageFile({ ...req.file, filename }, 'products');
+      // Xóa ảnh cũ nếu khác
+      if (product.image && product.image !== newImagePath) {
+        const oldFilename = path.basename(product.image);
+        await deleteImageFile(oldFilename, 'products');
+      }
+      product.image = newImagePath;
+      console.log(`✅ Đã cập nhật ảnh sản phẩm: ${filename}`);
+    } catch (err) {
+      console.error('Lỗi upload ảnh:', err);
+      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh.' });
     }
-    await cleanOldImagesOfCode(product.ma, req.file.filename);
-    product.image = newImagePath;
   }
 
   try {
@@ -553,13 +572,8 @@ app.delete('/api/admin/products/:ma', requireAdmin, async (req, res) => {
 
   const product = products[idx];
   if (product.image) {
-    const imgRelative = product.image.startsWith('/') ? product.image.slice(1) : product.image;
-    const imgFullPath = path.join(__dirname, 'public', imgRelative);
-    try {
-      await fsp.access(imgFullPath);
-      await fsp.unlink(imgFullPath);
-      console.log(`🗑️ Đã xoá ảnh khi xoá sản phẩm: ${imgFullPath}`);
-    } catch (err) {}
+    const filename = path.basename(product.image);
+    await deleteImageFile(filename, 'products');
   }
 
   products.splice(idx, 1);
@@ -634,16 +648,23 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
     const product = products.find(p => String(p.ma).trim().toLowerCase() === code.toLowerCase());
     
     if (product) {
-      const newImagePath = '/img/' + file.filename;
-      // Dọn dẹp ảnh cũ trùng mã khác định dạng
-      await cleanOldImagesOfCode(product.ma, file.filename);
-      
-      product.image = newImagePath;
-      updatedCount++;
+      const filename = code + ext;
+      try {
+        const newImagePath = await uploadImageFile({ ...file, filename }, 'products');
+        // Xóa ảnh cũ nếu khác
+        if (product.image) {
+          const oldFilename = path.basename(product.image);
+          if (oldFilename !== filename) {
+            await deleteImageFile(oldFilename, 'products');
+          }
+        }
+        product.image = newImagePath;
+        updatedCount++;
+      } catch (err) {
+        console.error(`Lỗi upload ảnh ${filename}:`, err);
+        skippedCount++;
+      }
     } else {
-      // Xoá ảnh nếu không khớp mã sản phẩm
-      const fullPath = path.join(__dirname, 'public', 'img', file.filename);
-      try { await fsp.unlink(fullPath); } catch (err) {}
       skippedCount++;
     }
   }
@@ -688,29 +709,36 @@ app.put('/api/admin/settings', requireAdmin, async (req, res) => {
   res.json({ ok: true, settings });
 });
 
-app.post('/api/admin/slides', requireAdmin, uploadSlide.single('image'), (req, res) => {
+app.post('/api/admin/slides', requireAdmin, uploadSlide.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ ok: false, message: 'Vui lòng chọn ảnh để tải lên.' });
   }
-  res.json({ ok: true, url: '/img/Slide_img/' + req.file.filename });
+  
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const ext = path.extname(req.file.originalname);
+  const filename = 'slide-' + uniqueSuffix + ext;
+  
+  try {
+    const url = await uploadImageFile({ ...req.file, filename }, 'slides');
+    console.log(`✅ Đã upload ảnh slide: ${filename}`);
+    res.json({ ok: true, url });
+  } catch (err) {
+    console.error('Lỗi upload slide:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi upload ảnh slide.' });
+  }
 });
 
 app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
   const { url } = req.body || {};
   if (!url) return res.status(400).json({ ok: false, message: 'Đường dẫn ảnh không hợp lệ.' });
   
-  if (!url.startsWith('/img/Slide_img/')) {
-    return res.status(400).json({ ok: false, message: 'Đường dẫn ảnh không hợp lệ.' });
-  }
-
   const filename = path.basename(url);
-  const fullPath = path.join(__dirname, 'public', 'img', 'Slide_img', filename);
   try {
-    await fsp.access(fullPath);
-    await fsp.unlink(fullPath);
+    await deleteImageFile(filename, 'slides');
     res.json({ ok: true });
   } catch (err) {
-    res.status(404).json({ ok: false, message: 'Không tìm thấy ảnh slide hoặc lỗi khi xoá.' });
+    console.error('Lỗi xoá slide:', err);
+    res.status(500).json({ ok: false, message: 'Không tìm thấy ảnh slide hoặc lỗi khi xoá.' });
   }
 });
 
