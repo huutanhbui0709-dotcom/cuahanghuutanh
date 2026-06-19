@@ -297,8 +297,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Trang quản trị KHÔNG nằm trong /public nên không thể truy cập trực tiếp
 // qua đường dẫn file - chỉ phục vụ qua đúng ADMIN_PATH cấu hình ở .env
+const ADMIN_HTML_PATH = path.join(__dirname, 'private', 'admin.html');
+let adminHtmlCache = null;
+
 app.get(ADMIN_PATH, (req, res) => {
-  res.sendFile(path.join(__dirname, 'private', 'admin.html'));
+  try {
+    if (!adminHtmlCache) {
+      adminHtmlCache = fs.readFileSync(ADMIN_HTML_PATH, 'utf8');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(adminHtmlCache);
+  } catch (err) {
+    console.error('Lỗi đọc file admin.html:', err);
+    res.status(500).send('Lỗi tải trang quản trị.');
+  }
 });
 
 app.get('/healthz', (req, res) => res.json({ ok: true }));
