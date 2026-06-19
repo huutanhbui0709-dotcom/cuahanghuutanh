@@ -87,9 +87,10 @@ const folderImgStorage = multer.diskStorage({
     cb(null, IMG_DIR);
   },
   filename: function (req, file, cb) {
-    // Giữ nguyên tên gốc (đã được chuẩn hóa từ client)
-    const ext = path.extname(file.originalname);
-    const base = path.basename(file.originalname, ext);
+    // Giữ nguyên tên gốc (đã được chuẩn hóa từ client) và xử lý cả slash/backslash
+    const originalName = file.originalname.replace(/\\/g, '/');
+    const ext = path.extname(originalName);
+    const base = path.basename(originalName, ext);
     const cleanBase = base.replace(/[\\/:*?"<>|]/g, '_');
     cb(null, cleanBase + ext);
   }
@@ -624,8 +625,9 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
   let skippedCount = 0;
 
   for (const file of req.files) {
-    const ext = path.extname(file.originalname);
-    const code = path.basename(file.originalname, ext).trim();
+    const originalName = file.originalname.replace(/\\/g, '/');
+    const ext = path.extname(originalName);
+    const code = path.basename(originalName, ext).trim();
     
     // Tìm sản phẩm tương ứng (không phân biệt hoa thường)
     const product = products.find(p => String(p.ma).trim().toLowerCase() === code.toLowerCase());
