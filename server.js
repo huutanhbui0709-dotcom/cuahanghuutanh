@@ -16,10 +16,49 @@ const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
 
+const IS_VERCEL = !!process.env.VERCEL;
+
+const IMG_DIR = IS_VERCEL 
+  ? path.join('/tmp', 'public', 'img') 
+  : path.join(__dirname, 'public', 'img');
+
+const SLIDE_IMG_DIR = IS_VERCEL 
+  ? path.join('/tmp', 'public', 'img', 'Slide_img') 
+  : path.join(__dirname, 'public', 'img', 'Slide_img');
+
+// Sao chép tài nguyên tĩnh ban đầu sang /tmp nếu chạy trên Vercel
+if (IS_VERCEL) {
+  try {
+    const srcImgDir = path.join(__dirname, 'public', 'img');
+    const destImgDir = path.join('/tmp', 'public', 'img');
+    
+    fs.mkdirSync(destImgDir, { recursive: true });
+    fs.mkdirSync(path.join(destImgDir, 'Slide_img'), { recursive: true });
+    
+    const copyRecursiveSync = (src, dest) => {
+      const exists = fs.existsSync(src);
+      const stats = exists && fs.statSync(src);
+      const isDirectory = exists && stats.isDirectory();
+      if (isDirectory) {
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+        fs.readdirSync(src).forEach((childItemName) => {
+          copyRecursiveSync(path.join(src, childItemName), path.join(dest, childItemName));
+        });
+      } else {
+        if (!fs.existsSync(dest)) fs.copyFileSync(src, dest);
+      }
+    };
+    copyRecursiveSync(srcImgDir, destImgDir);
+    console.log('✅ Đã sao chép ảnh mẫu sang /tmp thành công');
+  } catch (err) {
+    console.error('❌ Lỗi sao chép ảnh mẫu sang /tmp:', err);
+  }
+}
+
 // Cấu hình Multer để upload ảnh
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'public', 'img'));
+    cb(null, IMG_DIR);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
@@ -33,7 +72,7 @@ const upload = multer({ storage: storage });
 // Cấu hình Multer để upload ảnh slide
 const slideStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'public', 'img', 'Slide_img'));
+    cb(null, SLIDE_IMG_DIR);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -46,7 +85,7 @@ const uploadSlide = multer({ storage: slideStorage });
 // Cấu hình Multer để import ảnh từ folder (tên file = mã sản phẩm)
 const folderImgStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'public', 'img'));
+    cb(null, IMG_DIR);
   },
   filename: function (req, file, cb) {
     // Giữ nguyên tên gốc (đã được chuẩn hóa từ client)
@@ -70,7 +109,7 @@ const uploadFolderImages = multer({
 
 // Dọn dẹp các ảnh trùng mã sản phẩm nhưng khác đuôi mở rộng
 async function cleanOldImagesOfCode(code, exceptFilename) {
-  const dir = path.join(__dirname, 'public', 'img');
+  const dir = IMG_DIR;
   try {
     const files = await fsp.readdir(dir);
     const cleanCode = code.replace(/[\\/:*?"<>|]/g, '_');
@@ -102,9 +141,9 @@ const ADMIN_PATH = normalizePath(process.env.ADMIN_PATH || '/admin');
 // Railway/Render, có thể gắn Persistent Volume/Disk và trỏ DATA_DIR tới
 // điểm gắn đó để dữ liệu không bị mất sau mỗi lần redeploy.
 const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
-const DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
-  : BUNDLED_DATA_DIR;
+const DATA_DIR = IS_VERCEL
+  ? '/tmp'
+  : (process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : BUNDLED_DATA_DIR);
 
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
@@ -152,7 +191,7 @@ function makeQueuedWriter(filePath) {
 }
 
 ensureDirSync(DATA_DIR);
-ensureDirSync(path.join(__dirname, 'public', 'img', 'Slide_img'));
+ensureDirSync(SLIDE_IMG_DIR);
 
 // Nếu chưa có products.json trong DATA_DIR, dùng dữ liệu mẫu đi kèm repo
 // (trường hợp DATA_DIR được trỏ tới 1 ổ đĩa mới gắn lần đầu).
@@ -164,17 +203,26 @@ if (!fs.existsSync(PRODUCTS_FILE)) {
   console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
 }
 if (!fs.existsSync(ORDERS_FILE)) {
-  fs.writeFileSync(ORDERS_FILE, '[]', 'utf8');
-  console.log('📋 Đã tạo orders.json mới (rỗng) tại:', ORDERS_FILE);
+  const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
+  const seed = fs.existsSync(seedOrders)
+    ? fs.readFileSync(seedOrders, 'utf8')
+    : '[]';
+  fs.writeFileSync(ORDERS_FILE, seed, 'utf8');
+  console.log('📋 Đã tạo orders.json mới từ dữ liệu mẫu tại:', ORDERS_FILE);
 }
 if (!fs.existsSync(SETTINGS_FILE)) {
-  const defaultSettings = {
-    address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
-    phone: "0945 592 209",
-    email: "diennuochuutanh@gmail.com",
-    mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
-  };
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf8');
+  const seedSettings = path.join(BUNDLED_DATA_DIR, 'settings.json');
+  if (fs.existsSync(seedSettings)) {
+    fs.writeFileSync(SETTINGS_FILE, fs.readFileSync(seedSettings, 'utf8'), 'utf8');
+  } else {
+    const defaultSettings = {
+      address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
+      phone: "0945 592 209",
+      email: "diennuochuutanh@gmail.com",
+      mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
+    };
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf8');
+  }
   console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
 }
 
@@ -242,6 +290,9 @@ function timingSafeEqualStr(a, b) {
 // ---------------------------------------------------------------------
 // PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
 // ---------------------------------------------------------------------
+if (IS_VERCEL) {
+  app.use(express.static('/tmp/public'));
+}
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Trang quản trị KHÔNG nằm trong /public nên không thể truy cập trực tiếp
@@ -265,7 +316,7 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.get('/api/slides', async (req, res) => {
-  const dir = path.join(__dirname, 'public', 'img', 'Slide_img');
+  const dir = SLIDE_IMG_DIR;
   try {
     const files = await fsp.readdir(dir);
     // Lọc chỉ lấy các file định dạng ảnh
@@ -637,8 +688,12 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
-  console.log(`🔐 Trang quản trị: http://localhost:${PORT}${ADMIN_PATH}`);
-  console.log(`💾 Dữ liệu lưu tại: ${DATA_DIR}`);
-});
+if (!IS_VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    console.log(`🔐 Trang quản trị: http://localhost:${PORT}${ADMIN_PATH}`);
+    console.log(`💾 Dữ liệu lưu tại: ${DATA_DIR}`);
+  });
+}
+
+module.exports = app;
