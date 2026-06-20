@@ -205,7 +205,7 @@ function renderShop() {
             </div>
           </div>
         </div>
-        <div class="border border-slate-200 rounded-xl flex items-center justify-center h-[42px] mb-2 px-2 bg-slate-50/50 flex-1">
+        <div class="border border-slate-200 rounded-xl flex items-center justify-center h-[42px] mb-2 px-2 bg-slate-50/50 w-full mt-auto">
           <div class="text-[11px] font-bold text-slate-800 leading-tight line-clamp-2 text-center" title="${p.ten}">${p.ten}</div>
         </div>
       </div>
