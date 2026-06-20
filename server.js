@@ -26,42 +26,18 @@ const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./li
 
 const IS_VERCEL = !!process.env.VERCEL;
 
-const IMG_DIR = IS_VERCEL 
-  ? path.join('/tmp', 'public', 'img') 
-  : path.join(__dirname, 'public', 'img');
+const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : BUNDLED_DATA_DIR;
 
-const SLIDE_IMG_DIR = IS_VERCEL 
-  ? path.join('/tmp', 'public', 'img', 'Slide_img') 
-  : path.join(__dirname, 'public', 'img', 'Slide_img');
+const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
 
-// Sao chép tài nguyên tĩnh ban đầu sang /tmp nếu chạy trên Vercel
-if (IS_VERCEL) {
-  try {
-    const srcImgDir = path.join(__dirname, 'public', 'img');
-    const destImgDir = path.join('/tmp', 'public', 'img');
-    
-    fs.mkdirSync(destImgDir, { recursive: true });
-    fs.mkdirSync(path.join(destImgDir, 'Slide_img'), { recursive: true });
-    
-    const copyRecursiveSync = (src, dest) => {
-      const exists = fs.existsSync(src);
-      const stats = exists && fs.statSync(src);
-      const isDirectory = exists && stats.isDirectory();
-      if (isDirectory) {
-        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-        fs.readdirSync(src).forEach((childItemName) => {
-          copyRecursiveSync(path.join(src, childItemName), path.join(dest, childItemName));
-        });
-      } else {
-        if (!fs.existsSync(dest)) fs.copyFileSync(src, dest);
-      }
-    };
-    copyRecursiveSync(srcImgDir, destImgDir);
-    console.log('✅ Đã sao chép ảnh mẫu sang /tmp thành công');
-  } catch (err) {
-    console.error('❌ Lỗi sao chép ảnh mẫu sang /tmp:', err);
-  }
-}
+const IMG_DIR = path.join(DATA_DIR, 'public_img');
+const SLIDE_IMG_DIR = path.join(IMG_DIR, 'Slide_img');
 
 // Cấu hình Multer dùng memory storage (lưu vào RAM trước, rồi upload lên Blob)
 const memoryStorage = multer.memoryStorage();
@@ -154,18 +130,6 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-this-secret-please';
 const ADMIN_PATH = normalizePath(process.env.ADMIN_PATH || '/admin');
 
-// Thư mục chứa file dữ liệu (gốc của repo theo mặc định). Khi deploy lên
-// Railway/Render, có thể gắn Persistent Volume/Disk và trỏ DATA_DIR tới
-// điểm gắn đó để dữ liệu không bị mất sau mỗi lần redeploy.
-const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
-const DATA_DIR = IS_VERCEL
-  ? '/tmp'
-  : (process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : BUNDLED_DATA_DIR);
-
-const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
-const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
 
 if (ADMIN_PASSWORD === 'admin123') {
   console.warn('⚠️  CẢNH BÁO: Bạn đang dùng mật khẩu admin mặc định. Hãy đặt biến môi trường ADMIN_PASSWORD trước khi deploy thật!');
@@ -389,6 +353,9 @@ function timingSafeEqualStr(a, b) {
 // ---------------------------------------------------------------------
 // PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
 // ---------------------------------------------------------------------
+// Phục vụ hình ảnh được tải lên từ thư mục bền vững (persistent directory)
+app.use('/img', express.static(IMG_DIR));
+
 if (IS_VERCEL) {
   app.use(express.static('/tmp/public'));
 }
@@ -428,12 +395,24 @@ app.get('/api/settings', (req, res) => {
 
 app.get('/api/slides', async (req, res) => {
   const dir = SLIDE_IMG_DIR;
+  const bundledDir = path.join(__dirname, 'public', 'img', 'Slide_img');
   try {
-    const files = await fsp.readdir(dir);
+    let files = [];
+    if (fs.existsSync(dir)) {
+      files = await fsp.readdir(dir);
+    }
     // Lọc chỉ lấy các file định dạng ảnh
-    const images = files
-      .filter(f => /\.(png|jpe?g|gif|webp|bmp)$/i.test(f))
+    let images = files
+      .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
       .map(f => '/img/Slide_img/' + f);
+      
+    // Nếu trong thư mục ghi đè không có slide nào, lấy từ thư mục mẫu của repo
+    if (images.length === 0 && fs.existsSync(bundledDir)) {
+      const bundledFiles = await fsp.readdir(bundledDir);
+      images = bundledFiles
+        .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
+        .map(f => '/img/Slide_img/' + f);
+    }
     res.json(images);
   } catch (err) {
     res.status(500).json({ ok: false, message: 'Không thể đọc danh sách slide.' });
