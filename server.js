@@ -592,7 +592,8 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
 
   if (req.file) {
     const ext = path.extname(req.file.originalname);
-    const filename = cleanMa + ext;
+    const safeCode = cleanMa.replace(/[\\\/:*?"<>|]/g, '_');
+    const filename = safeCode + ext;
     try {
       product.image = await uploadImageFile({ ...req.file, filename }, 'products');
       console.log(`✅ Đã upload ảnh sản phẩm: ${filename}`);
@@ -612,8 +613,9 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
   res.json({ ok: true, product });
 });
 
-app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async (req, res) => {
-  const maParam = req.params.ma || req.query.ma;
+// Route chuyên dụng để sửa sản phẩm - đọc mã SP từ query param tránh vấn đề dấu / trong URL
+app.put('/api/admin/products/update', requireAdmin, upload.single('image'), async (req, res) => {
+  const maParam = req.query.ma;
   const product = products.find((p) => p.ma === maParam);
   if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
@@ -626,7 +628,8 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
 
   if (req.file) {
     const ext = path.extname(req.file.originalname);
-    const filename = product.ma + ext;
+    const safeCode = product.ma.replace(/[\\\/:\ *?"<>|]/g, '_');
+    const filename = safeCode + ext;
     try {
       const newImagePath = await uploadImageFile({ ...req.file, filename }, 'products');
       // Xóa ảnh cũ nếu khác
@@ -650,6 +653,65 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
   res.json({ ok: true, product });
 });
 
+// Giữ nguyên route cũ để tương thích ngược
+app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async (req, res) => {
+  const maParam = req.params.ma || req.query.ma;
+  const product = products.find((p) => p.ma === maParam);
+  if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
+
+  const { ten, gia, donvi, loai, trangthai } = req.body || {};
+  if (ten !== undefined) product.ten = String(ten).trim();
+  if (gia !== undefined) product.gia = parseInt(gia, 10) || 0;
+  if (donvi !== undefined) product.donvi = String(donvi).trim();
+  if (loai !== undefined) product.loai = String(loai).trim();
+  if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
+
+  if (req.file) {
+    const ext = path.extname(req.file.originalname);
+    const safeCode = product.ma.replace(/[\\\/:\ *?"<>|]/g, '_');
+    const filename = safeCode + ext;
+    try {
+      const newImagePath = await uploadImageFile({ ...req.file, filename }, 'products');
+      if (product.image && product.image !== newImagePath) {
+        const oldFilename = path.basename(product.image);
+        await deleteImageFile(oldFilename, 'products');
+      }
+      product.image = newImagePath;
+    } catch (err) {
+      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh: ' + err.message });
+    }
+  }
+
+  try {
+    await saveProducts(products);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true, product });
+});
+
+// Route chuyên dụng để xóa sản phẩm - đọc mã SP từ query param tránh vấn đề dấu / trong URL
+app.delete('/api/admin/products/remove', requireAdmin, async (req, res) => {
+  const maParam = req.query.ma;
+  const idx = products.findIndex((p) => p.ma === maParam);
+  if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
+
+  const product = products[idx];
+  if (product.image) {
+    const filename = path.basename(product.image);
+    await deleteImageFile(filename, 'products');
+  }
+
+  products.splice(idx, 1);
+  try {
+    await saveProducts(products);
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true });
+});
+
+// Giữ nguyên route cũ để tương thích ngược
 app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
   const maParam = req.params.ma || req.query.ma;
   const idx = products.findIndex((p) => p.ma === maParam);
@@ -671,6 +733,7 @@ app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
+
   const rows = Array.isArray(req.body) ? req.body : [];
   let added = 0;
   let updated = 0;
