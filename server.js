@@ -359,6 +359,46 @@ function timingSafeEqualStr(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+// =====================================================================
+// REALTIME UPDATES (Server-Sent Events)
+// =====================================================================
+let sseClients = [];
+
+app.get('/api/updates/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  sseClients.push(res);
+
+  req.on('close', () => {
+    sseClients = sseClients.filter(client => client !== res);
+  });
+});
+
+// Gửi ping định kỳ mỗi 25 giây để duy trì kết nối (tránh bị ngắt bởi proxy hoặc Azure do idle timeout)
+setInterval(() => {
+  sseClients.forEach(client => {
+    try {
+      client.write(': ping\n\n');
+    } catch (err) {
+      // connection is dead
+    }
+  });
+}, 25000);
+
+function broadcastUpdate(type, data = {}) {
+  const payload = JSON.stringify({ type, data });
+  sseClients.forEach(client => {
+    try {
+      client.write(`data: ${payload}\n\n`);
+    } catch (err) {
+      // connection is dead
+    }
+  });
+}
+
 // ---------------------------------------------------------------------
 // PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
 // ---------------------------------------------------------------------
@@ -480,6 +520,7 @@ app.post('/api/orders', async (req, res) => {
   orders.unshift(order);
   try {
     await saveOrders(orders);
+    broadcastUpdate('orders_updated');
   } catch (err) {
     console.error('Lỗi lưu đơn hàng:', err);
     return res.status(500).json({ ok: false, message: 'Lỗi lưu đơn hàng, vui lòng thử lại.' });
@@ -549,6 +590,7 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   order.status = status;
   try {
     await saveOrders(orders);
+    broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -563,6 +605,7 @@ app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   orders.splice(idx, 1);
   try {
     await saveOrders(orders);
+    broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -608,6 +651,7 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
 
   try {
     await saveProducts(products);
+    broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -649,6 +693,7 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
 
   try {
     await saveProducts(products);
+    broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -687,6 +732,7 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
 
   try {
     await saveProducts(products);
+    broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -708,6 +754,7 @@ app.delete('/api/admin/products/remove', requireAdmin, async (req, res) => {
   products.splice(idx, 1);
   try {
     await saveProducts(products);
+    broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -729,6 +776,7 @@ app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
   products.splice(idx, 1);
   try {
     await saveProducts(products);
+    broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -778,6 +826,7 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
 
   try {
     await saveProducts(products);
+    broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -826,6 +875,7 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
   if (updatedCount > 0) {
     try {
       await saveProducts(products);
+      broadcastUpdate('products_updated');
     } catch (err) {
       return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu sản phẩm.' });
     }
@@ -857,6 +907,7 @@ app.put('/api/admin/settings', requireAdmin, async (req, res) => {
 
   try {
     await saveSettings(settings);
+    broadcastUpdate('settings_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu cấu hình.' });
   }

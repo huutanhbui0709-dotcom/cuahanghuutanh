@@ -1035,3 +1035,51 @@ checkAuth();
     if (e.target === this) this.classList.remove('open');
   });
 });
+
+// ==============================
+// REALTIME UPDATES LISTENERS
+// ==============================
+function initRealtimeUpdates() {
+  let source = null;
+
+  function connect() {
+    if (source) {
+      source.close();
+    }
+
+    source = new EventSource('/api/updates/stream');
+
+    source.onmessage = async function (event) {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'products_updated') {
+          console.log('⚡ Nhận cập nhật sản phẩm realtime...');
+          await loadProducts();
+          populateProductTypeFilter();
+          renderAdminTable();
+          renderDashboard();
+        } else if (msg.type === 'orders_updated') {
+          console.log('⚡ Nhận cập nhật đơn hàng realtime...');
+          await loadOrders();
+          renderAdminTable();
+          renderDashboard();
+        } else if (msg.type === 'settings_updated') {
+          console.log('⚡ Nhận cập nhật cấu hình realtime...');
+          await loadSettingsForm();
+        }
+      } catch (e) {
+        console.error('Lỗi giải mã thông điệp realtime:', e);
+      }
+    };
+
+    source.onerror = function () {
+      console.warn('Mất kết nối realtime, đang kết nối lại sau 5 giây...');
+      source.close();
+      setTimeout(connect, 5000);
+    };
+  }
+
+  connect();
+}
+
+initRealtimeUpdates();
