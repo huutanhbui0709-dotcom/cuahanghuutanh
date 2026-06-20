@@ -196,6 +196,36 @@ function makeQueuedWriter(filePath, blobPath) {
 ensureDirSync(DATA_DIR);
 ensureDirSync(SLIDE_IMG_DIR);
 
+// Khi server khởi động lần đầu trên Azure (hoặc sau mỗi lần deploy), copy
+// tất cả ảnh từ thư mục public/img/ vào IMG_DIR (persistent directory).
+// Chỉ copy những file CHƯA CÓ trong IMG_DIR để không ghi đè ảnh đã được
+// cập nhật qua admin interface.
+function seedImagesFromPublic() {
+  const bundledImgDir = path.join(__dirname, 'public', 'img');
+  if (!fs.existsSync(bundledImgDir)) return;
+  try {
+    const files = fs.readdirSync(bundledImgDir);
+    let copied = 0;
+    for (const file of files) {
+      const srcPath = path.join(bundledImgDir, file);
+      const destPath = path.join(IMG_DIR, file);
+      // Bỏ qua thư mục con (Slide_img) và file đã tồn tại trong persistent dir
+      if (fs.statSync(srcPath).isDirectory()) continue;
+      if (!fs.existsSync(destPath)) {
+        fs.copyFileSync(srcPath, destPath);
+        copied++;
+      }
+    }
+    if (copied > 0) {
+      console.log(`📸 Đã seed ${copied} ảnh từ public/img/ vào thư mục bền vững: ${IMG_DIR}`);
+    }
+  } catch (err) {
+    console.warn('⚠️ Lỗi seed ảnh từ public/img/:', err.message);
+  }
+}
+
+seedImagesFromPublic();
+
 // Nếu chưa có products.json trong DATA_DIR, dùng dữ liệu mẫu đi kèm repo
 // (trường hợp DATA_DIR được trỏ tới 1 ổ đĩa mới gắn lần đầu).
 if (!fs.existsSync(PRODUCTS_FILE)) {
@@ -411,8 +441,13 @@ function broadcastUpdate(type, data = {}) {
 // ---------------------------------------------------------------------
 // PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
 // ---------------------------------------------------------------------
-// Phục vụ hình ảnh được tải lên từ thư mục bền vững (persistent directory)
-app.use('/img', express.static(IMG_DIR));
+// Phục vụ hình ảnh được tải lên từ thư mục bền vững (persistent directory).
+// fallthrough: false → nếu file không tồn tại trong IMG_DIR thì trả 404 ngay,
+// KHÔNG để request rơi xuống express.static('public') và lấy ảnh cũ từ Git.
+app.use('/img', express.static(IMG_DIR, { fallthrough: false }), (err, req, res, next) => {
+  // Error handler cho static (404 khi file không tồn tại)
+  res.status(404).send('Image not found');
+});
 
 if (IS_VERCEL) {
   app.use(express.static('/tmp/public'));
