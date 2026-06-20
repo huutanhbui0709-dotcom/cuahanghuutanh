@@ -35,6 +35,7 @@
   /* ===== VIEWS ===== */
   .view { display: none; }
   .view.active { display: block; }
+  .hidden { display: none !important; }
 
   /* ===== CUSTOMER SHOP ===== */
   .shop-hero {
