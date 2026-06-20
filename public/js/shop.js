@@ -188,7 +188,7 @@ function renderShop() {
   grid.innerHTML = paged.map(p => `
 
     <!-- ========== MOBILE CARD (ẩn trên sm+) ========== -->
-    <div class="sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col self-start hover:shadow-md transition duration-200 group relative w-full">
+    <div class="sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md transition duration-200 group relative w-full">
       <!-- Clickable details area -->
       <div class="cursor-pointer active:bg-slate-50 transition duration-150 p-2 pb-0 flex-1 flex flex-col relative" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
         <span class="absolute top-2 right-2 text-[9px] text-indigo-700 bg-indigo-50/90 border border-indigo-150 px-1.5 py-0.5 rounded font-black truncate max-w-[90px] z-10">
