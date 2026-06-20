@@ -612,8 +612,9 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
   res.json({ ok: true, product });
 });
 
-app.put('/api/admin/products/:ma', requireAdmin, upload.single('image'), async (req, res) => {
-  const product = products.find((p) => p.ma === req.params.ma);
+app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async (req, res) => {
+  const maParam = req.params.ma || req.query.ma;
+  const product = products.find((p) => p.ma === maParam);
   if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
   const { ten, gia, donvi, loai, trangthai } = req.body || {};
@@ -649,8 +650,9 @@ app.put('/api/admin/products/:ma', requireAdmin, upload.single('image'), async (
   res.json({ ok: true, product });
 });
 
-app.delete('/api/admin/products/:ma', requireAdmin, async (req, res) => {
-  const idx = products.findIndex((p) => p.ma === req.params.ma);
+app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
+  const maParam = req.params.ma || req.query.ma;
+  const idx = products.findIndex((p) => p.ma === maParam);
   if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
   const product = products[idx];

@@ -494,7 +494,7 @@ async function saveProductForm() {
 
     let res;
     if (isEdit) {
-      res = await adminFetch('/api/admin/products/' + encodeURIComponent(originalMa), {
+      res = await adminFetch('/api/admin/products?ma=' + encodeURIComponent(originalMa), {
         method: 'PUT',
         body: formData,
       });
@@ -524,7 +524,7 @@ async function saveProductForm() {
 async function deleteProduct(ma) {
   if (!confirm('Xoá sản phẩm "' + ma + '"? Hành động này không thể hoàn tác.')) return;
   try {
-    const res = await adminFetch('/api/admin/products/' + encodeURIComponent(ma), { method: 'DELETE' });
+    const res = await adminFetch('/api/admin/products?ma=' + encodeURIComponent(ma), { method: 'DELETE' });
     if (res.status === 401) return;
     const data = await res.json();
     if (!res.ok || !data.ok) {
