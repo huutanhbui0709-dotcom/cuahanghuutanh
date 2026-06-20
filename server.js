@@ -6,6 +6,13 @@
 
 require('dotenv').config();
 
+// Tự động dọn dẹp dấu nháy kép/đơn và khoảng trắng thừa của biến môi trường (phổ biến khi cấu hình Azure Portal)
+for (const key in process.env) {
+  if (typeof process.env[key] === 'string') {
+    process.env[key] = process.env[key].replace(/^["']|["']$/g, '').trim();
+  }
+}
+
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
@@ -603,7 +610,7 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
       console.log(`✅ Đã upload ảnh sản phẩm: ${filename}`);
     } catch (err) {
       console.error('Lỗi upload ảnh:', err);
-      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh.' });
+      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh: ' + err.message });
     }
   }
 
@@ -642,7 +649,7 @@ app.put('/api/admin/products/:ma', requireAdmin, upload.single('image'), async (
       console.log(`✅ Đã cập nhật ảnh sản phẩm: ${filename}`);
     } catch (err) {
       console.error('Lỗi upload ảnh:', err);
-      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh.' });
+      return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh: ' + err.message });
     }
   }
 
@@ -812,7 +819,7 @@ app.post('/api/admin/slides', requireAdmin, uploadSlide.single('image'), async (
     res.json({ ok: true, url });
   } catch (err) {
     console.error('Lỗi upload slide:', err);
-    res.status(500).json({ ok: false, message: 'Lỗi upload ảnh slide.' });
+    res.status(500).json({ ok: false, message: 'Lỗi upload ảnh slide: ' + err.message });
   }
 });
 
