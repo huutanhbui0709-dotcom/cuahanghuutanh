@@ -1,5 +1,101 @@
 [
   {
+    "id": "DH56699452",
+    "createdAt": "18:58:19 20/6/2026",
+    "customer": "1",
+    "phone": "1",
+    "address": "1",
+    "note": "1",
+    "items": [
+      {
+        "ma": "DAMAIINOX-100*6",
+        "ten": "Đá mài kim loại, mài inox COROLLA 100*6mm (Xanh)",
+        "gia": 5000,
+        "donvi": "Viên",
+        "qty": 2
+      },
+      {
+        "ma": "DAOROCGIAY18",
+        "ten": "Dao rọc giấy COROLLA 18mm (Vỏ nhôm)",
+        "gia": 20000,
+        "donvi": "Cái",
+        "qty": 2
+      },
+      {
+        "ma": "DATCAT16MMVANG",
+        "ten": "Đá cắt kim loại COROLLA 107*1.2*16mm, Màu: Vàng",
+        "gia": 3798,
+        "donvi": "Viên",
+        "qty": 1
+      },
+      {
+        "ma": "CUASAT300MM",
+        "ten": "Cưa sắt cầm tay COROLLA, Kt 12 inch (300mm)",
+        "gia": 36130,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "DACAT1251XANH",
+        "ten": "Đá cắt kim loại COROLLA 1251.222.23mm (Xanh)",
+        "gia": 4273,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "BBDE24031CNV",
+        "ten": "Cầu dao tép chống giật 2P 40A",
+        "gia": 397682,
+        "donvi": "Cái",
+        "qty": 4
+      },
+      {
+        "ma": "BBDE26331CNV",
+        "ten": "Cầu dao tép chống giật 2P 63A",
+        "gia": 563727,
+        "donvi": "Cái",
+        "qty": 3
+      },
+      {
+        "ma": "BS1114TV",
+        "ten": "Bộ ngắt mạch an toàn HB 40A",
+        "gia": 50891,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "COPVCUdn114-PN6",
+        "ten": "Co PVC-U dn114-PN6",
+        "gia": 40871,
+        "donvi": "Cái",
+        "qty": 2
+      },
+      {
+        "ma": "DUOIDENDN12",
+        "ten": "Đuôi đèn bóng nhót ĐN12 (120c/H)",
+        "gia": 2870,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "KS87003Y",
+        "ten": "Đầu xịt cò xi vàng kem KS87003Y",
+        "gia": 22685,
+        "donvi": "Cái",
+        "qty": 1
+      },
+      {
+        "ma": "COPVC90ST",
+        "ten": "Co pvc 90 ST",
+        "gia": 10320,
+        "donvi": "Cái",
+        "qty": 1
+      }
+    ],
+    "total": 3544618,
+    "status": "Chờ xác nhận"
+  },
+  {
     "id": "DH35157955",
     "createdAt": "09:12:37 19/6/2026",
     "customer": "Nguyen Van A",

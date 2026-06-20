@@ -442,11 +442,22 @@ function broadcastUpdate(type, data = {}) {
 // PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
 // ---------------------------------------------------------------------
 // Phục vụ hình ảnh được tải lên từ thư mục bền vững (persistent directory).
-// fallthrough: false → nếu file không tồn tại trong IMG_DIR thì trả 404 ngay,
-// KHÔNG để request rơi xuống express.static('public') và lấy ảnh cũ từ Git.
-app.use('/img', express.static(IMG_DIR, { fallthrough: false }), (err, req, res, next) => {
-  // Error handler cho static (404 khi file không tồn tại)
-  res.status(404).send('Image not found');
+// - Nếu là ảnh sản phẩm trực tiếp (nằm ngay trong /img/, ví dụ: /img/DIENCUONVSC-1.5.jpg):
+//   chặn fallthrough (fallthrough: false) để tránh trả về ảnh cũ từ Git (public/img/) khi ảnh bị sửa/xoá.
+// - Nếu là các thư mục con khác (như /img/favicon/ hoặc /img/Slide_img/):
+//   cho phép fallthrough (fallthrough: true) để tự động rơi xuống thư mục public/img/ nếu chưa được tải lên.
+app.use('/img', (req, res, next) => {
+  const pathParts = req.path.split('/').filter(Boolean);
+  if (pathParts.length >= 2) {
+    // Có thư mục con (ví dụ: 'favicon', 'Slide_img'), cho phép fallthrough
+    express.static(IMG_DIR, { fallthrough: true })(req, res, next);
+  } else {
+    // Ảnh sản phẩm trực tiếp, không cho phép fallthrough
+    express.static(IMG_DIR, { fallthrough: false })(req, res, (err) => {
+      if (err) return next(err);
+      res.status(404).send('Product image not found');
+    });
+  }
 });
 
 if (IS_VERCEL) {
