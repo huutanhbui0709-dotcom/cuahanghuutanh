@@ -34,7 +34,13 @@ function formatPriceMobile(p) {
   if (!p || p === 0) return 'Liên hệ';
   if (p >= 1000000) {
     const tr = p / 1000000;
-    return (tr % 1 === 0 ? tr.toFixed(0) : tr.toFixed(tr >= 10 ? 1 : 2).replace(/0+$/, '')) + 'Tr';
+    return (tr % 1 === 0 ? tr.toFixed(0) : tr.toFixed(tr >= 10 ? 1 : 2).replace(/0+$/, '').replace(/\.$/, '')) + 'Tr';
+  }
+  if (p >= 100000) {
+    const k = p / 1000;
+    const res = (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1).replace(/0+$/, '').replace(/\.$/, ''));
+    if (res === '1000') return '1Tr';
+    return res + 'K';
   }
   return p.toLocaleString('vi-VN') + '₫';
 }
