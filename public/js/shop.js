@@ -183,26 +183,31 @@ function renderShop() {
   grid.innerHTML = paged.map(p => `
 
     <!-- ========== MOBILE CARD (ẩn trên sm+) ========== -->
-    <div class="sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col self-start hover:shadow-md transition duration-200 group relative">
-      <span class="absolute top-2 right-2 text-[9px] text-indigo-700 bg-indigo-50/90 border border-indigo-150 px-1.5 py-0.5 rounded font-black truncate max-w-[90px] z-10">
-        ${p.loai || 'Hàng hóa'}
-      </span>
-      <div class="flex flex-row items-stretch p-2 gap-2">
-        <div class="bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center w-20 h-20 overflow-hidden flex-shrink-0">
-          ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : `<span class="text-3xl select-none filter drop-shadow-sm opacity-60">${getIcon(p.ten)}</span>`}
-        </div>
-        <div class="flex flex-col items-start justify-end flex-1 min-w-0">
-          <div class="flex flex-col">
-            <span class="text-base font-black text-blue-600 leading-none">${formatPriceMobile(p.gia)}</span>
-            <span class="text-[10px] text-slate-400 font-medium mt-1">/${p.donvi || 'Cái'}</span>
+    <div class="sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col self-start hover:shadow-md transition duration-200 group relative w-full">
+      <!-- Clickable details area -->
+      <div class="cursor-pointer active:bg-slate-50 transition duration-150 p-2 pb-0 flex-1 flex flex-col relative" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
+        <span class="absolute top-2 right-2 text-[9px] text-indigo-700 bg-indigo-50/90 border border-indigo-150 px-1.5 py-0.5 rounded font-black truncate max-w-[90px] z-10">
+          ${p.loai || 'Hàng hóa'}
+        </span>
+        <div class="flex flex-row items-stretch gap-2 mb-2">
+          <div class="bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center w-20 h-20 overflow-hidden flex-shrink-0">
+            ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : `<span class="text-3xl select-none filter drop-shadow-sm opacity-60">${getIcon(p.ten)}</span>`}
+          </div>
+          <div class="flex flex-col items-start justify-end flex-1 min-w-0">
+            <div class="flex flex-col">
+              <span class="text-base font-black text-blue-600 leading-none">${formatPriceMobile(p.gia)}</span>
+              <span class="text-[10px] text-slate-400 font-medium mt-1">/${p.donvi || 'Cái'}</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="px-2.5 pb-2 flex flex-col flex-1">
-        <div class="border border-slate-200 rounded-xl flex items-center justify-center h-[42px] mb-2 px-2 bg-slate-50/50">
+        <div class="border border-slate-200 rounded-xl flex items-center justify-center h-[42px] mb-2 px-2 bg-slate-50/50 flex-1">
           <div class="text-[11px] font-bold text-slate-800 leading-tight line-clamp-2 text-center" title="${p.ten}">${p.ten}</div>
         </div>
-        <div class="mt-auto pt-2 border-t border-slate-100">
+      </div>
+      
+      <!-- Cart button -->
+      <div class="px-2.5 pb-2">
+        <div class="pt-2 border-t border-slate-100">
           <button class="w-full h-8 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm text-[11px]" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
             <i class="fa-solid fa-cart-plus"></i> Thêm
           </button>
@@ -212,11 +217,17 @@ function renderShop() {
 
     <!-- ========== DESKTOP CARD (ẩn trên mobile) ========== -->
     <div class="max-sm:hidden flex bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-col h-full hover:shadow-md transition duration-200 group">
-      <div class="bg-slate-50 border-b border-slate-100 flex items-center justify-center h-44 w-full overflow-hidden flex-shrink-0 relative group-hover:opacity-95 transition p-3">
-        ${p.image ? `<img src="${p.image}" class="w-full h-full object-contain" />` : `<span class="text-6xl select-none filter drop-shadow-sm opacity-60">${getIcon(p.ten)}</span>`}
+      <div class="bg-slate-50 border-b border-slate-100 flex items-center justify-center h-44 w-full overflow-hidden flex-shrink-0 relative transition p-3 cursor-pointer group/img overflow-hidden" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
+        ${p.image ? `<img src="${p.image}" class="w-full h-full object-contain transition duration-300 group-hover/img:scale-105" />` : `<span class="text-6xl select-none filter drop-shadow-sm opacity-60 transition duration-300 group-hover/img:scale-105">${getIcon(p.ten)}</span>`}
+        <!-- Hover Overlay -->
+        <div class="absolute inset-0 bg-slate-950/10 opacity-0 group-hover/img:opacity-100 transition duration-200 flex items-center justify-center">
+          <span class="w-10 h-10 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-md transform scale-90 group-hover/img:scale-100 transition duration-200">
+            <i class="fa-solid fa-magnifying-glass-plus text-sm"></i>
+          </span>
+        </div>
       </div>
       <div class="p-4 flex flex-col flex-1">
-        <div class="text-[15px] font-bold text-slate-800 leading-tight mb-1.5 line-clamp-2 h-[38px]" title="${p.ten}">${p.ten}</div>
+        <div class="text-[15px] font-bold text-slate-800 leading-tight mb-1.5 line-clamp-2 h-[38px] cursor-pointer hover:text-blue-600 transition" title="${p.ten}" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">${p.ten}</div>
         <div class="flex items-center gap-1.5 mb-3 flex-wrap">
           <span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1 font-semibold"><i class="fa-solid fa-hashtag text-slate-400/80"></i>${p.ma}</span>
           <span class="text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded font-black truncate max-w-[120px]">${p.loai || 'Hàng hóa'}</span>
@@ -674,3 +685,227 @@ function enableGradualSwipeToClose(modalId, closeFn) {
 // Enable for both Cart and Order drawer modals
 enableGradualSwipeToClose('cartModal', closeCart);
 enableGradualSwipeToClose('orderModal', closeOrderModal);
+
+// ==============================
+// PRODUCT DETAILS MODAL LOGIC
+// ==============================
+let currentViewingProduct = null;
+let currentDetailQty = 1;
+
+function showProductDetails(ma) {
+  const p = products.find(x => x.ma === ma);
+  if (!p) return;
+  
+  currentViewingProduct = p;
+  currentDetailQty = 1;
+  
+  const contentEl = document.getElementById('productDetailContent');
+  if (!contentEl) return;
+  
+  // Render content
+  contentEl.innerHTML = `
+    <div class="flex flex-col md:flex-row md:items-stretch">
+      <!-- Cột trái: Hình ảnh -->
+      <div class="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 flex items-center justify-center p-6 min-h-[260px] md:min-h-[360px] relative">
+        ${p.image ? `
+          <div class="relative w-full h-full min-h-[220px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white p-3 border border-slate-200/50 shadow-inner">
+            <img src="${p.image}" alt="${p.ten}" class="max-h-[280px] w-auto object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${p.image}')" />
+            <button onclick="openFullScreenImage('${p.image}')" class="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-slate-800 w-8 h-8 rounded-lg shadow-sm border border-slate-150 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
+              <i class="fa-solid fa-up-right-and-down-left-from-center text-[11px]"></i>
+            </button>
+          </div>
+        ` : `
+          <div class="flex flex-col items-center justify-center text-center p-8">
+            <div class="w-24 h-24 rounded-full bg-slate-200/50 flex items-center justify-center text-slate-400 mb-4 shadow-inner">
+              <span class="text-5xl select-none opacity-80">${getIcon(p.ten)}</span>
+            </div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Không có hình ảnh</span>
+          </div>
+        `}
+      </div>
+      
+      <!-- Cột phải: Thông tin sản phẩm -->
+      <div class="w-full md:w-1/2 p-5 xs:p-6 flex flex-col justify-between">
+        <div>
+          <!-- Loại sản phẩm -->
+          <div class="mb-2">
+            <span class="text-[10px] font-extrabold tracking-wide uppercase px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100/70 inline-block">
+              ${p.loai || 'Hàng hóa'}
+            </span>
+          </div>
+          
+          <!-- Tên sản phẩm -->
+          <h2 class="text-base xs:text-lg md:text-xl font-extrabold text-slate-900 leading-tight mb-2 select-text" title="${p.ten}">
+            ${p.ten}
+          </h2>
+          
+          <!-- Mã sản phẩm & Trạng thái -->
+          <div class="flex items-center gap-2 mb-4 flex-wrap">
+            <span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1 font-semibold select-all">
+              <i class="fa-solid fa-hashtag text-slate-400"></i> ${p.ma}
+            </span>
+            <button onclick="copyToClipboard('${p.ma.replace(/'/g, "\\'")}', this)" class="text-slate-400 hover:text-amber-500 transition text-[11px] p-1" title="Sao chép mã">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.trangthai === 'Đang theo dõi' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'}">
+              ${p.trangthai || 'Có sẵn'}
+            </span>
+          </div>
+          
+          <!-- Khung Giá & Đơn vị -->
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex items-center justify-between mb-5">
+            <div>
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Đơn giá</span>
+              <span class="text-lg md:text-xl font-black text-blue-600">${formatPrice(p.gia)}</span>
+            </div>
+            <div class="text-right">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Đơn vị tính</span>
+              <span class="inline-block px-2.5 py-0.5 bg-slate-200/60 text-slate-700 text-xs font-extrabold rounded-lg">${p.donvi || 'Cái'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Chọn số lượng & Thêm vào giỏ -->
+        <div class="mt-auto pt-4 border-t border-slate-100 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Số lượng mua</span>
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+              <button onclick="changeDetailQty(-1)" class="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition">
+                <i class="fa-solid fa-minus text-[10px]"></i>
+              </button>
+              <input type="number" id="detailQtyInput" value="1" min="1" class="w-10 text-center font-extrabold text-slate-800 bg-transparent focus:outline-none text-xs" onchange="validateDetailQty(this)" />
+              <button onclick="changeDetailQty(1)" class="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+          
+          <button onclick="addDetailProductToCart('${p.ma.replace(/'/g, "\\'")}')" class="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-900 font-extrabold rounded-xl text-sm shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-cart-plus text-base"></i>
+            <span id="detailAddToCartText">Thêm vào giỏ hàng</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('productDetailModal').classList.add('open');
+  updateDetailPriceTotal();
+}
+
+function closeProductDetailModal() {
+  document.getElementById('productDetailModal').classList.remove('open');
+  currentViewingProduct = null;
+}
+
+function closeProductDetailOnOutsideClick(e) {
+  if (e.target.id === 'productDetailModal') {
+    closeProductDetailModal();
+  }
+}
+
+// Lắng nghe phím ESC để đóng các modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeProductDetailModal();
+    closeCart();
+    closeOrderModal();
+    closeFullScreenImage();
+  }
+});
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const icon = btn.querySelector('i');
+    icon.className = 'fa-solid fa-check text-emerald-500';
+    showToast('<i class="fa-solid fa-circle-check"></i> Đã sao chép mã sản phẩm', 'success');
+    setTimeout(() => {
+      icon.className = 'fa-regular fa-copy text-slate-400';
+    }, 2000);
+  }).catch(err => {
+    console.error('Không thể sao chép: ', err);
+  });
+}
+
+function changeDetailQty(delta) {
+  const input = document.getElementById('detailQtyInput');
+  if (!input) return;
+  let val = parseInt(input.value) || 1;
+  val += delta;
+  if (val < 1) val = 1;
+  input.value = val;
+  currentDetailQty = val;
+  updateDetailPriceTotal();
+}
+
+function validateDetailQty(input) {
+  let val = parseInt(input.value) || 1;
+  if (val < 1) val = 1;
+  input.value = val;
+  currentDetailQty = val;
+  updateDetailPriceTotal();
+}
+
+function updateDetailPriceTotal() {
+  const textSpan = document.getElementById('detailAddToCartText');
+  if (!textSpan || !currentViewingProduct) return;
+  
+  const total = currentViewingProduct.gia * currentDetailQty;
+  if (total) {
+    textSpan.textContent = `Thêm vào giỏ - ${formatPrice(total)}`;
+  } else {
+    textSpan.textContent = 'Thêm vào giỏ - Liên hệ';
+  }
+}
+
+function addDetailProductToCart(ma) {
+  const p = products.find(x => x.ma === ma);
+  if (!p) return;
+  const qty = currentDetailQty;
+  const existing = cart.find(x => x.ma === ma);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({ ...p, qty: qty });
+  }
+  updateCartBadge();
+  saveCart();
+  showToast(`<i class="fa-solid fa-circle-check"></i> Đã thêm ${qty} sản phẩm vào giỏ`, 'success');
+  closeProductDetailModal();
+}
+
+// Lightbox xem ảnh full-screen
+function openFullScreenImage(src) {
+  let overlay = document.getElementById('fullscreenImageOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'fullscreenImageOverlay';
+    overlay.className = 'fixed inset-0 bg-black/90 z-[300] flex items-center justify-center p-4 cursor-zoom-out opacity-0 transition-opacity duration-200 pointer-events-none';
+    overlay.onclick = closeFullScreenImage;
+    overlay.innerHTML = `
+      <button class="absolute top-4 right-4 text-white text-3xl font-light hover:text-slate-300 transition w-10 h-10 flex items-center justify-center" onclick="closeFullScreenImage()">✕</button>
+      <img id="fullscreenImage" src="" class="max-w-full max-h-full object-contain rounded shadow-2xl transition-transform duration-200 scale-95" />
+    `;
+    document.body.appendChild(overlay);
+  }
+  
+  const img = document.getElementById('fullscreenImage');
+  img.src = src;
+  overlay.classList.remove('pointer-events-none');
+  overlay.classList.add('opacity-100');
+  setTimeout(() => {
+    img.classList.remove('scale-95');
+    img.classList.add('scale-100');
+  }, 50);
+}
+
+function closeFullScreenImage() {
+  const overlay = document.getElementById('fullscreenImageOverlay');
+  const img = document.getElementById('fullscreenImage');
+  if (overlay && img) {
+    img.classList.remove('scale-100');
+    img.classList.add('scale-95');
+    overlay.classList.remove('opacity-100');
+    overlay.classList.add('pointer-events-none');
+  }
+}
