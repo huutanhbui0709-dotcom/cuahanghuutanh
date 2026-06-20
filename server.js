@@ -91,7 +91,7 @@ function createFolderImageFilename(req, file, cb) {
 const upload = multer({ 
   storage: memoryStorage,
   fileFilter: function (req, file, cb) {
-    if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
+    if (/\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.originalname)) {
       cb(null, true);
     } else {
       cb(null, false);
@@ -103,7 +103,7 @@ const upload = multer({
 const uploadSlide = multer({ 
   storage: memoryStorage,
   fileFilter: function (req, file, cb) {
-    if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
+    if (/\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.originalname)) {
       cb(null, true);
     } else {
       cb(null, false);
@@ -115,7 +115,7 @@ const uploadSlide = multer({
 const uploadFolderImages = multer({
   storage: memoryStorage,
   fileFilter: function (req, file, cb) {
-    if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.originalname)) {
+    if (/\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.originalname)) {
       cb(null, true);
     } else {
       cb(null, false);

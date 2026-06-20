@@ -864,7 +864,7 @@ function handleFolderDrop(e) {
     if (entry.isFile) {
       pending++;
       entry.file(file => {
-        if (/\.(png|jpe?g|gif|webp|bmp)$/i.test(file.name)) {
+        if (/\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.name)) {
           imageFiles.push(file);
         }
         pending--;
@@ -897,7 +897,7 @@ function handleFolderDrop(e) {
 }
 
 function handleFolderUpload(e) {
-  const files = Array.from(e.target.files).filter(f => /\.(png|jpe?g|gif|webp|bmp)$/i.test(f.name));
+  const files = Array.from(e.target.files).filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f.name));
   e.target.value = '';
   if (files.length === 0) {
     showFolderUploadResult('error', '<i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy ảnh trong thư mục được chọn.');
