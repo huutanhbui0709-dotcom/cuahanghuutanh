@@ -15,7 +15,7 @@ const express = require('express');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
-const { uploadImageFile, deleteImageFile, USE_BLOB } = require('./lib/storage');
+const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./lib/storage');
 
 const IS_VERCEL = !!process.env.VERCEL;
 
@@ -190,12 +190,25 @@ function readJSONSync(file, fallback) {
   }
 }
 
-function makeQueuedWriter(filePath) {
+function makeQueuedWriter(filePath, blobPath) {
   let queue = Promise.resolve();
   return function write(data) {
     queue = queue
       .catch(() => {}) // không để lỗi trước đó chặn lần ghi sau
-      .then(() => fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8'));
+      .then(async () => {
+        await fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
+        if (USE_BLOB) {
+          try {
+            await vercelBlob.put(blobPath, JSON.stringify(data, null, 2), {
+              access: 'public',
+              addRandomSuffix: false
+            });
+            console.log(`☁️ Đã đồng bộ lên Vercel Blob: ${blobPath}`);
+          } catch (err) {
+            console.error(`❌ Lỗi đồng bộ lên Blob ${blobPath}:`, err.message);
+          }
+        }
+      });
     return queue;
   };
 }
@@ -245,15 +258,86 @@ let settings = readJSONSync(SETTINGS_FILE, {
   mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
 });
 
-const saveProducts = makeQueuedWriter(PRODUCTS_FILE);
-const saveOrders = makeQueuedWriter(ORDERS_FILE);
-const saveSettings = makeQueuedWriter(SETTINGS_FILE);
+const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'data/products.json');
+const saveOrders = makeQueuedWriter(ORDERS_FILE, 'data/orders.json');
+const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
+
+let isInitialized = false;
+let initPromise = null;
+
+async function initializeData() {
+  // Khởi tạo từ file cục bộ trước làm fallback
+  products = readJSONSync(PRODUCTS_FILE, products);
+  orders = readJSONSync(ORDERS_FILE, orders);
+  settings = readJSONSync(SETTINGS_FILE, settings);
+
+  if (USE_BLOB) {
+    try {
+      console.log('🔄 Đang đồng bộ dữ liệu từ Vercel Blob Storage...');
+      const { blobs } = await vercelBlob.list();
+
+      // Đồng bộ products.json
+      const prodBlob = blobs.find(b => b.pathname === 'data/products.json');
+      if (prodBlob) {
+        const res = await fetch(prodBlob.url);
+        products = await res.json();
+        console.log(`✅ Đã tải ${products.length} sản phẩm từ Blob`);
+      } else {
+        await vercelBlob.put('data/products.json', JSON.stringify(products, null, 2), { access: 'public', addRandomSuffix: false });
+        console.log('📤 Đã đẩy products.json mẫu lên Blob');
+      }
+
+      // Đồng bộ orders.json
+      const ordBlob = blobs.find(b => b.pathname === 'data/orders.json');
+      if (ordBlob) {
+        const res = await fetch(ordBlob.url);
+        orders = await res.json();
+        console.log(`✅ Đã tải ${orders.length} đơn hàng từ Blob`);
+      } else {
+        await vercelBlob.put('data/orders.json', JSON.stringify(orders, null, 2), { access: 'public', addRandomSuffix: false });
+        console.log('📤 Đã đẩy orders.json mẫu lên Blob');
+      }
+
+      // Đồng bộ settings.json
+      const setBlob = blobs.find(b => b.pathname === 'data/settings.json');
+      if (setBlob) {
+        const res = await fetch(setBlob.url);
+        settings = await res.json();
+        console.log('✅ Đã tải settings từ Blob');
+      } else {
+        await vercelBlob.put('data/settings.json', JSON.stringify(settings, null, 2), { access: 'public', addRandomSuffix: false });
+        console.log('📤 Đã đẩy settings.json mẫu lên Blob');
+      }
+    } catch (err) {
+      console.error('❌ Lỗi đồng bộ dữ liệu từ Blob:', err);
+    }
+  }
+  isInitialized = true;
+}
+
+async function ensureInitialized() {
+  if (isInitialized) return;
+  if (!initPromise) {
+    initPromise = initializeData();
+  }
+  await initPromise;
+}
 
 // ---------------------------------------------------------------------
 // APP
 // ---------------------------------------------------------------------
 const app = express();
 app.set('trust proxy', 1); // cần thiết khi chạy sau proxy của Railway/Render
+
+app.use(async (req, res, next) => {
+  try {
+    await ensureInitialized();
+    next();
+  } catch (err) {
+    console.error('Lỗi khởi tạo dữ liệu:', err);
+    res.status(500).send('Lỗi khởi tạo server.');
+  }
+});
 
 app.use(express.json({ limit: '2mb' }));
 
