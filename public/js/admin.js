@@ -16,6 +16,11 @@ function formatPrice(p) {
   return p.toLocaleString('vi-VN') + '₫';
 }
 
+function getProductImageUrl(p) {
+  if (!p || !p.image) return '';
+  return p.image + (p.updatedAt ? `?t=${p.updatedAt}` : '');
+}
+
 function statusBadge(s) {
   if (s === 'Đã xác nhận') return 'badge-green';
   if (s === 'Đã huỷ') return 'badge-red';
@@ -395,7 +400,7 @@ function renderAdminTable() {
       <tbody>${paged.map((p, i) => `
         <tr>
           <td>${(adminPage-1)*ITEMS_PER_PAGE + i + 1}</td>
-          <td>${p.image ? `<img src="${p.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" />` : '<i class="fa-solid fa-box"></i>'}</td>
+          <td>${p.image ? `<img src="${getProductImageUrl(p)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" />` : '<i class="fa-solid fa-box"></i>'}</td>
           <td><code style="font-size:.78rem;background:var(--bg);padding:2px 6px;border-radius:4px">${p.ma}</code></td>
           <td style="max-width:300px">${p.ten}</td>
           <td style="font-weight:700;color:var(--primary)">${formatPrice(p.gia)}</td>
@@ -438,7 +443,7 @@ function openProductModal(ma) {
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
   if (p && p.image) {
-    previewImg.src = p.image;
+    previewImg.src = getProductImageUrl(p);
     previewWrap.style.display = 'block';
   } else {
     previewImg.src = '';

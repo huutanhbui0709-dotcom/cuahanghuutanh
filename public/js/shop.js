@@ -39,6 +39,11 @@ function formatPriceMobile(p) {
   return p.toLocaleString('vi-VN') + '₫';
 }
 
+function getProductImageUrl(p) {
+  if (!p || !p.image) return '';
+  return p.image + (p.updatedAt ? `?t=${p.updatedAt}` : '');
+}
+
 // ==============================
 // LOAD DATA FROM SERVER
 // ==============================
@@ -191,7 +196,7 @@ function renderShop() {
         </span>
         <div class="flex flex-row items-stretch gap-2 mb-2">
           <div class="bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center w-20 h-20 overflow-hidden flex-shrink-0">
-            ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : `<span class="text-3xl select-none filter drop-shadow-sm opacity-60">${getIcon(p.ten)}</span>`}
+            ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-cover" />` : `<span class="text-3xl select-none filter drop-shadow-sm opacity-60">${getIcon(p.ten)}</span>`}
           </div>
           <div class="flex flex-col items-start justify-end flex-1 min-w-0">
             <div class="flex flex-col">
@@ -218,7 +223,7 @@ function renderShop() {
     <!-- ========== DESKTOP CARD (ẩn trên mobile) ========== -->
     <div class="max-sm:hidden flex bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-col h-full hover:shadow-md transition duration-200 group">
       <div class="bg-slate-50 border-b border-slate-100 flex items-center justify-center h-44 w-full overflow-hidden flex-shrink-0 relative transition p-3 cursor-pointer group/img overflow-hidden" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
-        ${p.image ? `<img src="${p.image}" class="w-full h-full object-contain transition duration-300 group-hover/img:scale-105" />` : `<span class="text-6xl select-none filter drop-shadow-sm opacity-60 transition duration-300 group-hover/img:scale-105">${getIcon(p.ten)}</span>`}
+        ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-contain transition duration-300 group-hover/img:scale-105" />` : `<span class="text-6xl select-none filter drop-shadow-sm opacity-60 transition duration-300 group-hover/img:scale-105">${getIcon(p.ten)}</span>`}
         <!-- Hover Overlay -->
         <div class="absolute inset-0 bg-slate-950/10 opacity-0 group-hover/img:opacity-100 transition duration-200 flex items-center justify-center">
           <span class="w-10 h-10 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-md transform scale-90 group-hover/img:scale-100 transition duration-200">
@@ -371,7 +376,7 @@ function renderCart() {
   body.innerHTML = cart.map(item => `
     <div class="flex gap-2 xxs:gap-3 items-start py-3 xxs:py-4 border-b border-slate-100">
       <div class="w-10 h-10 xxs:w-12 xxs:h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-        ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover" />` : `<span class="text-xl xxs:text-2xl">${getIcon(item.ten)}</span>`}
+        ${item.image ? `<img src="${getProductImageUrl(item)}" class="w-full h-full object-cover" />` : `<span class="text-xl xxs:text-2xl">${getIcon(item.ten)}</span>`}
       </div>
       <div class="flex-1 min-w-0">
         <div class="text-xs xxs:text-sm font-bold text-slate-800 leading-tight truncate" title="${item.ten}">${item.ten}</div>
@@ -709,8 +714,8 @@ function showProductDetails(ma) {
       <div class="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 flex items-center justify-center p-6 min-h-[260px] md:min-h-[360px] relative">
         ${p.image ? `
           <div class="relative w-full h-full min-h-[220px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white p-3 border border-slate-200/50 shadow-inner">
-            <img src="${p.image}" alt="${p.ten}" class="max-h-[280px] w-auto object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${p.image}')" />
-            <button onclick="openFullScreenImage('${p.image}')" class="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-slate-800 w-8 h-8 rounded-lg shadow-sm border border-slate-150 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
+            <img src="${getProductImageUrl(p)}" alt="${p.ten}" class="max-h-[280px] w-auto object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${getProductImageUrl(p)}')" />
+            <button onclick="openFullScreenImage('${getProductImageUrl(p)}')" class="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-slate-800 w-8 h-8 rounded-lg shadow-sm border border-slate-150 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
               <i class="fa-solid fa-up-right-and-down-left-from-center text-[11px]"></i>
             </button>
           </div>

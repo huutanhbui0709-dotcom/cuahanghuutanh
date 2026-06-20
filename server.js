@@ -590,8 +590,9 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
     trangthai: String(trangthai || 'Đang theo dõi').trim(),
   };
 
+  product.updatedAt = Date.now();
   if (req.file) {
-    const ext = path.extname(req.file.originalname);
+    const ext = path.extname(req.file.originalname).toLowerCase();
     const safeCode = cleanMa.replace(/[\\\/:*?"<>|]/g, '_');
     const filename = safeCode + ext;
     try {
@@ -626,8 +627,9 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
   if (loai !== undefined) product.loai = String(loai).trim();
   if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
 
+  product.updatedAt = Date.now();
   if (req.file) {
-    const ext = path.extname(req.file.originalname);
+    const ext = path.extname(req.file.originalname).toLowerCase();
     const safeCode = product.ma.replace(/[\\\/:\ *?"<>|]/g, '_');
     const filename = safeCode + ext;
     try {
@@ -666,8 +668,9 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
   if (loai !== undefined) product.loai = String(loai).trim();
   if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
 
+  product.updatedAt = Date.now();
   if (req.file) {
-    const ext = path.extname(req.file.originalname);
+    const ext = path.extname(req.file.originalname).toLowerCase();
     const safeCode = product.ma.replace(/[\\\/:\ *?"<>|]/g, '_');
     const filename = safeCode + ext;
     try {
@@ -755,6 +758,7 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
       existing.donvi = String(row.donvi || '').trim();
       existing.loai = String(row.loai || existing.loai || 'Hàng hóa thường').trim();
       existing.trangthai = String(row.trangthai || existing.trangthai || 'Đang theo dõi').trim();
+      existing.updatedAt = Date.now();
       updated++;
     } else {
       // Thêm sản phẩm mới
@@ -766,6 +770,7 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
         donvi: String(row.donvi || '').trim(),
         loai: String(row.loai || 'Hàng hóa thường').trim(),
         trangthai: String(row.trangthai || 'Đang theo dõi').trim(),
+        updatedAt: Date.now(),
       });
       added++;
     }
@@ -789,7 +794,7 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
 
   for (const file of req.files) {
     const originalName = file.originalname.replace(/\\/g, '/');
-    const ext = path.extname(originalName);
+    const ext = path.extname(originalName).toLowerCase();
     const code = path.basename(originalName, ext).trim();
     
     // Tìm sản phẩm tương ứng (không phân biệt hoa thường)
@@ -807,6 +812,7 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
           }
         }
         product.image = newImagePath;
+        product.updatedAt = Date.now();
         updatedCount++;
       } catch (err) {
         console.error(`Lỗi upload ảnh ${filename}:`, err);
