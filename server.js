@@ -368,6 +368,10 @@ app.get('/api/updates/stream', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  // Nguyên nhân 1: Bắt buộc Azure/Nginx BYPASS cơ chế Buffering
+  // Nếu không có header này, Azure sẽ giữ toàn bộ response trong bộ đệm
+  // và client sẽ không nhận được sự kiện SSE nào cho đến khi kết nối đóng.
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
   sseClients.push(res);
@@ -377,16 +381,21 @@ app.get('/api/updates/stream', (req, res) => {
   });
 });
 
-// Gửi ping định kỳ mỗi 25 giây để duy trì kết nối (tránh bị ngắt bởi proxy hoặc Azure do idle timeout)
+// Nguyên nhân 2: Sửa cú pháp vòng lặp Heartbeat và bảo vệ null-check
+// Nguyên nhân 3: Gửi ping mỗi 3 phút (180 giây) để vượt qua giới hạn
+// idle timeout 4 phút của Azure App Service, giữ kết nối luôn sống
 setInterval(() => {
-  sseClients.forEach(client => {
-    try {
-      client.write(': ping\n\n');
-    } catch (err) {
-      // connection is dead
-    }
-  });
-}, 25000);
+  if (sseClients && sseClients.length > 0) {
+    sseClients.forEach(client => {
+      try {
+        // Gửi comment ping để giữ đường truyền luôn active
+        client.write(': ping\n\n');
+      } catch (err) {
+        // Client đã chết, router sẽ tự hủy ở sự kiện close
+      }
+    });
+  }
+}, 180000); // Chạy mỗi 3 phút — dưới ngưỡng idle timeout 4 phút của Azure
 
 function broadcastUpdate(type, data = {}) {
   const payload = JSON.stringify({ type, data });
