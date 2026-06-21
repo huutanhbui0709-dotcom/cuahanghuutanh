@@ -27,23 +27,18 @@ const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./li
 const IS_VERCEL = !!process.env.VERCEL;
 
 // Tính toán DATA_DIR giống hệt để đảm bảo ảnh lưu đúng chỗ
+// Thư mục mặc định khi chạy dưới máy local của bồ
 const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
 let defaultDataDir = BUNDLED_DATA_DIR;
 
+// Kiểm tra xem có đang chạy thực tế trên Azure Web App không
 if (process.env.WEBSITE_SITE_NAME) {
-  // Lấy đường dẫn gốc HOME (ví dụ: /home)
-  const azureHome = process.env.HOME ||
-    (process.env.HOMEDRIVE && process.env.HOMEPATH ? process.env.HOMEDRIVE + process.env.HOMEPATH : null);
-
-  if (azureHome) {
-    // SỬA TẠI ĐÂY: Đưa vào thư mục 'site' nhưng nằm NGOÀI 'wwwroot'
-    // Đường dẫn chính xác sẽ là: /home/site/cuahang_bền_vững/
-    defaultDataDir = path.join(azureHome, 'site', 'cuahang_data_benvung');
-  }
+  // Trên Azure Linux, biến process.env.HOME luôn luôn là '/home'
+  // Thư mục '/home/site/' là vùng ĐỘC LẬP, vĩnh viễn không bị GitHub Actions đè dữ liệu
+  defaultDataDir = path.join('/home', 'site', 'cuahang_data_benvung');
 }
 
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : defaultDataDir;
-
 
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
