@@ -26,19 +26,24 @@ const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./li
 
 const IS_VERCEL = !!process.env.VERCEL;
 
+// Tính toán DATA_DIR giống hệt để đảm bảo ảnh lưu đúng chỗ
 const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
-
 let defaultDataDir = BUNDLED_DATA_DIR;
+
 if (process.env.WEBSITE_SITE_NAME) {
-  const azureHome = process.env.HOME || (process.env.HOMEDRIVE && process.env.HOMEPATH ? process.env.HOMEDRIVE + process.env.HOMEPATH : null);
+  // Lấy đường dẫn gốc HOME (ví dụ: /home)
+  const azureHome = process.env.HOME ||
+    (process.env.HOMEDRIVE && process.env.HOMEPATH ? process.env.HOMEDRIVE + process.env.HOMEPATH : null);
+
   if (azureHome) {
-    defaultDataDir = path.join(azureHome, 'data', 'cuahanghuutanh');
+    // SỬA TẠI ĐÂY: Đưa vào thư mục 'site' nhưng nằm NGOÀI 'wwwroot'
+    // Đường dẫn chính xác sẽ là: /home/site/cuahang_bền_vững/
+    defaultDataDir = path.join(azureHome, 'site', 'cuahang_data_benvung');
   }
 }
 
-const DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
-  : defaultDataDir;
+const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : defaultDataDir;
+
 
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
@@ -73,7 +78,7 @@ function createFolderImageFilename(req, file, cb) {
   cb(null, { filename: cleanBase + ext, originalName: originalName });
 }
 
-const upload = multer({ 
+const upload = multer({
   storage: memoryStorage,
   fileFilter: function (req, file, cb) {
     if (/\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.originalname)) {
@@ -85,7 +90,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-const uploadSlide = multer({ 
+const uploadSlide = multer({
   storage: memoryStorage,
   fileFilter: function (req, file, cb) {
     if (/\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.originalname)) {
@@ -123,7 +128,7 @@ async function cleanOldImagesOfCode(code, exceptFilename) {
         try {
           await fsp.unlink(fullPath);
           console.log(`🗑️ Đã dọn dẹp ảnh cũ trùng mã khác định dạng: ${fullPath}`);
-        } catch (err) {}
+        } catch (err) { }
       }
     }
   } catch (err) {
@@ -174,7 +179,7 @@ function makeQueuedWriter(filePath, blobPath) {
   let queue = Promise.resolve();
   return function write(data) {
     queue = queue
-      .catch(() => {}) // không để lỗi trước đó chặn lần ghi sau
+      .catch(() => { }) // không để lỗi trước đó chặn lần ghi sau
       .then(async () => {
         await fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
         if (USE_BLOB) {
@@ -509,7 +514,7 @@ app.get('/api/slides', async (req, res) => {
     let images = files
       .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
       .map(f => '/img/Slide_img/' + f);
-      
+
     // Nếu trong thư mục ghi đè không có slide nào, lấy từ thư mục mẫu của repo
     if (images.length === 0 && fs.existsSync(bundledDir)) {
       const bundledFiles = await fsp.readdir(bundledDir);
@@ -615,12 +620,12 @@ app.get('/api/admin/me', (req, res) => {
   const token = cookies.admin_token;
   const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
   const authenticated = token === expectedToken;
-  
+
   if (IS_VERCEL && !authenticated) {
     console.warn('⚠️  Session check failed - cookie missing or invalid');
     console.warn('  Headers cookie:', req.headers.cookie ? '(present)' : '(missing)');
   }
-  
+
   res.json({ authenticated });
 });
 
@@ -900,10 +905,10 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
     const originalName = file.originalname.replace(/\\/g, '/');
     const ext = path.extname(originalName).toLowerCase();
     const code = path.basename(originalName, ext).trim();
-    
+
     // Tìm sản phẩm tương ứng (không phân biệt hoa thường)
     const product = products.find(p => String(p.ma).trim().toLowerCase() === code.toLowerCase());
-    
+
     if (product) {
       const filename = code + ext;
       try {
@@ -941,11 +946,11 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
 
 app.put('/api/admin/settings', requireAdmin, async (req, res) => {
   const { address, phone, email, mapUrl } = req.body || {};
-  
+
   if (address !== undefined) settings.address = String(address).trim();
   if (phone !== undefined) settings.phone = String(phone).trim();
   if (email !== undefined) settings.email = String(email).trim();
-  
+
   if (mapUrl !== undefined) {
     let cleanMapUrl = String(mapUrl).trim();
     if (cleanMapUrl.includes('<iframe')) {
@@ -973,11 +978,11 @@ app.post('/api/admin/slides', requireAdmin, uploadSlide.single('image'), async (
   if (!req.file) {
     return res.status(400).json({ ok: false, message: 'Vui lòng chọn ảnh để tải lên.' });
   }
-  
+
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
   const ext = path.extname(req.file.originalname);
   const filename = 'slide-' + uniqueSuffix + ext;
-  
+
   try {
     const url = await uploadImageFile({ ...req.file, filename }, 'slides');
     console.log(`✅ Đã upload ảnh slide: ${filename}`);
@@ -991,7 +996,7 @@ app.post('/api/admin/slides', requireAdmin, uploadSlide.single('image'), async (
 app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
   const { url } = req.body || {};
   if (!url) return res.status(400).json({ ok: false, message: 'Đường dẫn ảnh không hợp lệ.' });
-  
+
   const filename = path.basename(url);
   try {
     await deleteImageFile(filename, 'slides');
