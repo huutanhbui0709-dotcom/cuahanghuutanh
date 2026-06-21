@@ -4,3 +4,8 @@ node/
 *.log
 .DS_Store
 
+# .gitignore
+data/public_img/
+data/orders.json
+data/products.json
+data/settings.json
