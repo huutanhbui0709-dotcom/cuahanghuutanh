@@ -798,7 +798,7 @@ function processExcelFile(file) {
           colMap.ten = row.findIndex(c => c.includes('Tên hàng') || c.toLowerCase().includes('ten hang'));
           colMap.gia = row.findIndex(c => c.includes('Giá') || c.toLowerCase().includes('gia'));
           colMap.donvi = row.findIndex(c => c.includes('Đơn vị') || c.toLowerCase().includes('don vi'));
-          colMap.loai = row.findIndex(c => c.includes('Loại') || c.toLowerCase().includes('loai'));
+          colMap.loai = row.findIndex(c => c.includes('Loại') || c.toLowerCase().includes('loai') || c.includes('Nhóm') || c.toLowerCase().includes('nhom'));
           colMap.trangthai = row.findIndex(c => c.includes('Trạng thái') || c.toLowerCase().includes('trang thai'));
           break;
         }

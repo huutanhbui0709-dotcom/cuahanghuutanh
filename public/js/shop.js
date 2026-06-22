@@ -133,7 +133,8 @@ function populateTypeFilter() {
 async function loadProducts() {
   try {
     const res = await fetch('/api/products');
-    products = await res.json();
+    const data = await res.json();
+    products = data.filter(p => p.trangthai !== 'Ngừng theo dõi');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Không tải được danh sách sản phẩm', 'error');
     products = [];
