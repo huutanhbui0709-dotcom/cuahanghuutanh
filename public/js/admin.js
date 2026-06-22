@@ -306,16 +306,29 @@ async function deleteSlide(url) {
 // ==============================
 // DASHBOARD
 // ==============================
+function goToProductsTab() {
+  const target = Array.from(document.querySelectorAll('.admin-sidebar-item')).find(el => el.textContent.includes('Sản phẩm'));
+  if (target) adminTab('products', target);
+}
+
+function filterDashboardStatus(status) {
+  const select = document.getElementById('dashboardOrderStatusFilter');
+  if (select) {
+    select.value = status;
+    renderDashboard();
+  }
+}
+
 function renderDashboard() {
   const pending = orders.filter(o => o.status === 'Chờ xác nhận').length;
   const confirmed = orders.filter(o => o.status === 'Đã xác nhận').length;
   const revenue = orders.filter(o => o.status !== 'Đã huỷ').reduce((s, o) => s + o.total, 0);
 
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card"><div class="stat-value">${products.length}</div><div class="stat-label"><i class="fa-solid fa-box"></i> Sản phẩm</div></div>
-    <div class="stat-card"><div class="stat-value">${orders.length}</div><div class="stat-label"><i class="fa-solid fa-clipboard-list"></i> Tổng đơn hàng</div></div>
-    <div class="stat-card"><div class="stat-value" style="color:#f59e0b">${pending}</div><div class="stat-label"><i class="fa-solid fa-hourglass-half"></i> Chờ xác nhận</div></div>
-    <div class="stat-card"><div class="stat-value" style="color:#10b981">${confirmed}</div><div class="stat-label"><i class="fa-solid fa-circle-check"></i> Đã xác nhận</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="goToProductsTab()"><div class="stat-value">${products.length}</div><div class="stat-label"><i class="fa-solid fa-box"></i> Sản phẩm</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="filterDashboardStatus('')"><div class="stat-value">${orders.length}</div><div class="stat-label"><i class="fa-solid fa-clipboard-list"></i> Tổng đơn hàng</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="filterDashboardStatus('Chờ xác nhận')"><div class="stat-value" style="color:#f59e0b">${pending}</div><div class="stat-label"><i class="fa-solid fa-hourglass-half"></i> Chờ xác nhận</div></div>
+    <div class="stat-card" style="cursor:pointer" onclick="filterDashboardStatus('Đã xác nhận')"><div class="stat-value" style="color:#10b981">${confirmed}</div><div class="stat-label"><i class="fa-solid fa-circle-check"></i> Đã xác nhận</div></div>
     <div class="stat-card"><div class="stat-value" style="font-size:1.2rem">${revenue > 0 ? revenue.toLocaleString('vi-VN') : '0'}</div><div class="stat-label"><i class="fa-solid fa-sack-dollar"></i> Doanh thu (VNĐ)</div></div>
   `;
 
