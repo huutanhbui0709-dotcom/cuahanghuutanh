@@ -129,6 +129,12 @@
                   style="padding: 7px 12px; font-size: 0.85rem;">
                   <option value="">Tất cả loại</option>
                 </select>
+                <select class="filter-select" id="adminStatusFilter" onchange="adminPage = 1; renderAdminTable()"
+                  style="padding: 7px 12px; font-size: 0.85rem;">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Đang theo dõi">Đang theo dõi</option>
+                  <option value="Ngừng theo dõi">Ngừng theo dõi</option>
+                </select>
                 <button class="btn btn-primary btn-sm" onclick="openProductModal()">
                   <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                 </button>

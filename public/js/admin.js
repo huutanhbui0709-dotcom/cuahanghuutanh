@@ -394,10 +394,12 @@ function renderPagination(total, current, id, onPage) {
 function renderAdminTable() {
   const q = (document.getElementById('adminSearch')?.value || '').toLowerCase();
   const typeFilter = document.getElementById('adminTypeFilter')?.value || '';
+  const statusFilter = document.getElementById('adminStatusFilter')?.value || '';
   
   let list = products.filter(p => {
     if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
     if (typeFilter && p.loai !== typeFilter) return false;
+    if (statusFilter && (p.trangthai || 'Đang theo dõi') !== statusFilter) return false;
     return true;
   });
   
@@ -419,7 +421,7 @@ function renderAdminTable() {
           <td style="font-weight:700;color:var(--primary)">${formatPrice(p.gia)}</td>
           <td>${p.donvi || '-'}</td>
           <td><span class="badge ${p.loai === 'Hàng hóa dịch vụ' ? 'badge-green' : 'badge-blue'}">${p.loai || '-'}</span></td>
-          <td><span class="badge badge-yellow">${p.trangthai || '-'}</span></td>
+          <td><span class="badge ${p.trangthai === 'Ngừng theo dõi' ? 'badge-red' : 'badge-yellow'}">${p.trangthai || 'Đang theo dõi'}</span></td>
           <td>
             <div class="row-actions">
               <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g,"\\'")}')"><i class="fa-solid fa-pencil"></i></button>
