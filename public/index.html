@@ -193,12 +193,14 @@
   <!-- NAV -->
   <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-3 xxs:gap-4">
-      <div class="flex items-center gap-2 xxs:gap-3 min-w-0">
-        <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
-          class="h-9 w-9 xxs:h-10 xxs:w-10 sm:h-12 sm:w-12 object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
-        <span class="font-extrabold text-base xxs:text-lg sm:text-2xl text-amber-400 tracking-wide truncate">CỬA HÀNG
-          HỮU TÁNH</span>
-      </div>
+      <a href="/">
+        <div class="flex items-center gap-2 xxs:gap-3 min-w-0">
+          <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
+            class="h-9 w-9 xxs:h-10 xxs:w-10 sm:h-12 sm:w-12 object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
+          <span class="font-extrabold text-base xxs:text-lg sm:text-2xl text-amber-400 tracking-wide truncate">CỬA HÀNG
+            HỮU TÁNH</span>
+        </div>
+      </a>
       <div class="flex-shrink-0">
         <button
           class="relative bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20"
@@ -258,7 +260,8 @@
           <!-- Populated dynamically by shop.js -->
         </div>
 
-        <div class="grid grid-cols-1 xxs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 content-start" id="productGrid"></div>
+        <div class="grid grid-cols-1 xxs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 content-start" id="productGrid">
+        </div>
         <div class="flex justify-center items-center gap-2 flex-wrap mt-8" id="pagination"></div>
       </div>
 
@@ -313,12 +316,15 @@
 
   <!-- ======= PRODUCT DETAIL MODAL ======= -->
   <div class="modal-overlay center" id="productDetailModal" onclick="closeProductDetailOnOutsideClick(event)">
-    <div class="modal modal-lg !bg-white shadow-2xl flex flex-col w-full max-w-[640px] rounded-2xl overflow-hidden mx-4 my-auto relative" onclick="event.stopPropagation()">
+    <div
+      class="modal modal-lg !bg-white shadow-2xl flex flex-col w-full max-w-[640px] rounded-2xl overflow-hidden mx-4 my-auto relative"
+      onclick="event.stopPropagation()">
       <!-- Close button on top right of the modal card -->
-      <button onclick="closeProductDetailModal()" class="absolute top-3 right-3 z-30 w-8 h-8 rounded-full bg-slate-950/50 hover:bg-slate-950/75 text-white flex items-center justify-center transition shadow backdrop-blur-sm">
+      <button onclick="closeProductDetailModal()"
+        class="absolute top-3 right-3 z-30 w-8 h-8 rounded-full bg-slate-950/50 hover:bg-slate-950/75 text-white flex items-center justify-center transition shadow backdrop-blur-sm">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
-      
+
       <!-- Modal Content Body -->
       <div id="productDetailContent" class="overflow-y-auto max-h-[85vh] p-0 flex flex-col bg-white">
         <!-- Filled dynamically by shop.js -->
@@ -449,6 +455,12 @@
       &copy; 2026 Cửa Hàng Điện Nước Hữu Tánh. Bản quyền được bảo lưu.
     </div>
   </footer>
+
+  <!-- Back to Top Button -->
+  <button id="backToTopBtn" onclick="scrollToTop()"
+    class="fixed bottom-6 right-6 z-40 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-lg transition duration-300 flex items-center justify-center opacity-0 pointer-events-none transform translate-y-4">
+    <i class="fa-solid fa-arrow-up text-base sm:text-lg"></i>
+  </button>
 
   <script src="js/shop.js"></script>
 </body>
