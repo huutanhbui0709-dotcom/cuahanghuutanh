@@ -380,26 +380,35 @@ function renderCart() {
   }
 
   body.innerHTML = cart.map(item => `
-    <div class="flex gap-2 xxs:gap-3 items-start py-3 xxs:py-4 border-b border-slate-100">
-      <div class="w-10 h-10 xxs:w-12 xxs:h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-        ${item.image ? `<img src="${getProductImageUrl(item)}" class="w-full h-full object-cover" />` : `<span class="text-xl xxs:text-2xl">${getIcon(item.ten)}</span>`}
+    <div class="swipe-container relative overflow-hidden w-full touch-pan-y" data-ma="${item.ma.replace(/'/g, "\\'")}">
+      <!-- Background Delete Action -->
+      <div class="absolute right-0 top-0 bottom-0 bg-red-500 text-white flex items-center justify-center w-16 cursor-pointer rounded-xl my-1" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')">
+        <i class="fa-solid fa-trash text-lg"></i>
       </div>
-      <div class="flex-1 min-w-0">
-        <div class="text-xs xxs:text-sm font-bold text-slate-800 leading-tight truncate" title="${item.ten}">${item.ten}</div>
-        <div class="text-[10px] xxs:text-xs font-mono font-bold text-slate-400 mt-0.5">${item.ma}</div>
-        <div class="flex items-center gap-1 xxs:gap-2 mt-2">
-          <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded bg-slate-100 font-bold hover:bg-slate-200 active:scale-95 text-slate-700 transition flex items-center justify-center text-xs xxs:text-sm" onclick="changeQty('${item.ma}',-1)">−</button>
-          <span class="w-6 xxs:w-8 text-center font-bold text-slate-800 text-xs xxs:text-sm">${item.qty}</span>
-          <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded bg-slate-100 font-bold hover:bg-slate-200 active:scale-95 text-slate-700 transition flex items-center justify-center text-xs xxs:text-sm" onclick="changeQty('${item.ma}',1)">+</button>
-          ${item.donvi ? `<span class="text-[10px] xxs:text-xs font-semibold text-slate-500 ml-0.5 xxs:ml-1">(${item.donvi})</span>` : ''}
+      <!-- Foreground content -->
+      <div class="swipe-content relative bg-white transition-transform duration-150 ease-out flex gap-2 xxs:gap-3 items-start py-3 xxs:py-4 border-b border-slate-100 w-full">
+        <div class="w-10 h-10 xxs:w-12 xxs:h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+          ${item.image ? `<img src="${getProductImageUrl(item)}" class="w-full h-full object-cover" />` : `<span class="text-xl xxs:text-2xl">${getIcon(item.ten)}</span>`}
         </div>
-      </div>
-      <div class="flex flex-col items-end gap-2 flex-shrink-0">
-        <div class="text-xs xxs:text-sm font-extrabold text-blue-600">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</div>
-        <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded-lg text-red-500 hover:bg-red-50 active:scale-95 flex items-center justify-center text-sm xxs:text-base transition" onclick="removeFromCart('${item.ma}')"><i class="fa-solid fa-trash"></i></button>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs xxs:text-sm font-bold text-slate-800 leading-tight truncate" title="${item.ten}">${item.ten}</div>
+          <div class="text-[10px] xxs:text-xs font-mono font-bold text-slate-400 mt-0.5">${item.ma}</div>
+          <div class="flex items-center gap-1 xxs:gap-2 mt-2">
+            <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded bg-slate-100 font-bold hover:bg-slate-200 active:scale-95 text-slate-700 transition flex items-center justify-center text-xs xxs:text-sm" onclick="changeQty('${item.ma.replace(/'/g, "\\'")}',-1)">−</button>
+            <span class="w-6 xxs:w-8 text-center font-bold text-slate-800 text-xs xxs:text-sm">${item.qty}</span>
+            <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded bg-slate-100 font-bold hover:bg-slate-200 active:scale-95 text-slate-700 transition flex items-center justify-center text-xs xxs:text-sm" onclick="changeQty('${item.ma.replace(/'/g, "\\'")}',1)">+</button>
+            ${item.donvi ? `<span class="text-[10px] xxs:text-xs font-semibold text-slate-500 ml-0.5 xxs:ml-1">(${item.donvi})</span>` : ''}
+          </div>
+        </div>
+        <div class="flex flex-col items-end gap-2 flex-shrink-0">
+          <div class="text-xs xxs:text-sm font-extrabold text-blue-600">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</div>
+          <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded-lg text-red-500 hover:bg-red-50 active:scale-95 flex items-center justify-center text-sm xxs:text-base transition" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+        </div>
       </div>
     </div>
   `).join('');
+
+  initSwipeToDelete();
 
   const total = cart.reduce((s, x) => s + (x.gia * x.qty), 0);
   footer.innerHTML = `
@@ -719,8 +728,8 @@ function showProductDetails(ma) {
       <!-- Cột trái: Hình ảnh -->
       <div class="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 flex items-center justify-center p-6 min-h-[260px] md:min-h-[360px] relative">
         ${p.image ? `
-          <div class="relative w-full h-full min-h-[220px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white p-3 border border-slate-200/50 shadow-inner">
-            <img src="${getProductImageUrl(p)}" alt="${p.ten}" class="max-h-[280px] w-auto object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${getProductImageUrl(p)}')" />
+          <div class="relative w-full h-[220px] md:h-[310px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white p-3 border border-slate-200/50 shadow-inner">
+            <img src="${getProductImageUrl(p)}" alt="${p.ten}" class="max-w-full max-h-full object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${getProductImageUrl(p)}')" />
             <button onclick="openFullScreenImage('${getProductImageUrl(p)}')" class="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-slate-800 w-8 h-8 rounded-lg shadow-sm border border-slate-150 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
               <i class="fa-solid fa-up-right-and-down-left-from-center text-[11px]"></i>
             </button>
@@ -957,6 +966,79 @@ function initRealtimeUpdates() {
   }
 
   connect();
+}
+
+function initSwipeToDelete() {
+  const containers = document.querySelectorAll('.swipe-container');
+  containers.forEach(container => {
+    const content = container.querySelector('.swipe-content');
+    const ma = container.getAttribute('data-ma');
+    if (!content || !ma) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    let isOpen = false;
+    let currentTranslate = 0;
+
+    container.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      content.style.transition = 'none';
+      isDragging = false;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', function(e) {
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const diffX = currentX - startX;
+      const diffY = currentY - startY;
+
+      if (!isDragging && Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+        isDragging = true;
+      }
+
+      if (isDragging) {
+        currentTranslate = isOpen ? -64 + diffX : diffX;
+        if (currentTranslate > 0) currentTranslate = 0;
+        if (currentTranslate < -120) currentTranslate = -120;
+
+        content.style.transform = `translateX(${currentTranslate}px)`;
+        if (e.cancelable) e.preventDefault();
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchend', function(e) {
+      if (!isDragging) return;
+      content.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      const currentX = e.changedTouches[0].clientX;
+      const diffX = currentX - startX;
+
+      // Nếu kéo rất xa sang trái, xóa thẳng sản phẩm khỏi giỏ hàng
+      if (currentTranslate < -100) {
+        content.style.transform = 'translateX(-100%)';
+        setTimeout(() => {
+          removeFromCart(ma);
+        }, 150);
+        return;
+      }
+
+      if (diffX < -30) {
+        content.style.transform = 'translateX(-64px)';
+        isOpen = true;
+      } else if (diffX > 30) {
+        content.style.transform = 'translateX(0)';
+        isOpen = false;
+      } else {
+        if (isOpen) {
+          content.style.transform = 'translateX(-64px)';
+        } else {
+          content.style.transform = 'translateX(0)';
+        }
+      }
+    });
+  });
 }
 
 initRealtimeUpdates();

@@ -477,7 +477,7 @@ async function saveProductForm() {
   const ten = document.getElementById('pf_ten').value.trim();
   const gia = document.getElementById('pf_gia').value;
   const donvi = document.getElementById('pf_donvi').value.trim();
-  const loai = document.getElementById('pf_loai').value;
+  const loai = document.getElementById('pf_loai').value.trim();
   const trangthai = document.getElementById('pf_trangthai').value.trim();
 
   if (!ma) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập mã sản phẩm', 'error'); return; }
