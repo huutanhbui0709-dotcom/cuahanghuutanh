@@ -1050,31 +1050,49 @@ initRealtimeUpdates();
 window.addEventListener('scroll', () => {
   const btn = document.getElementById('backToTopBtn');
   if (!btn) return;
-  const target = document.getElementById('shopControls') || document.getElementById('searchInput');
-  const targetTop = target ? target.getBoundingClientRect().top + window.scrollY : 300;
-  const navH = document.querySelector('nav')?.offsetHeight || 72;
   
-  if (window.scrollY > (targetTop - navH - 20)) {
-    btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-    btn.classList.add('opacity-100', 'translate-y-0');
+  if (window.innerWidth > 900) {
+    if (window.scrollY > 300) {
+      btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+      btn.classList.add('opacity-100', 'translate-y-0');
+    } else {
+      btn.classList.remove('opacity-100', 'translate-y-0');
+      btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    }
   } else {
-    btn.classList.remove('opacity-100', 'translate-y-0');
-    btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    const target = document.getElementById('shopControls') || document.getElementById('searchInput');
+    const targetTop = target ? target.getBoundingClientRect().top + window.scrollY : 300;
+    const navH = document.querySelector('nav')?.offsetHeight || 72;
+    
+    if (window.scrollY > (targetTop - navH - 20)) {
+      btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+      btn.classList.add('opacity-100', 'translate-y-0');
+    } else {
+      btn.classList.remove('opacity-100', 'translate-y-0');
+      btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    }
   }
 });
 
 function scrollToTop() {
-  const target = document.getElementById('shopControls') || document.getElementById('searchInput');
-  if (!target) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+  if (window.innerWidth > 900) {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  } else {
+    const target = document.getElementById('shopControls') || document.getElementById('searchInput');
+    if (!target) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const navH = document.querySelector('nav')?.offsetHeight || 72;
+    const targetTop = target.getBoundingClientRect().top;
+    const top = targetTop + window.scrollY - navH - 12;
+    window.scrollTo({
+      top: Math.max(0, top),
+      behavior: 'smooth'
+    });
   }
-  const navH = document.querySelector('nav')?.offsetHeight || 72;
-  const targetTop = target.getBoundingClientRect().top;
-  const top = targetTop + window.scrollY - navH - 12;
-  window.scrollTo({
-    top: Math.max(0, top),
-    behavior: 'smooth'
-  });
 }
 
