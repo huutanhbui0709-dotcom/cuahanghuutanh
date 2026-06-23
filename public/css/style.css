@@ -262,6 +262,7 @@
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.toast-success { background: var(--success); }
   .toast.toast-error { background: var(--danger); }
+  .toast.toast-warning { background: var(--accent); color: #1e293b; }
 
   /* Pagination */
   .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 20px; flex-wrap: wrap; }

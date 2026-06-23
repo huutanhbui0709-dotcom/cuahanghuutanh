@@ -19,6 +19,7 @@ const path = require('path');
 const crypto = require('crypto');
 const cookieParser = require('cookie');
 const express = require('express');
+const session = require('express-session');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
@@ -43,6 +44,7 @@ const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : def
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const SPAM_DEVICES_FILE = path.join(DATA_DIR, 'spam_devices.json');
 const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
 
 const IMG_DIR = path.join(DATA_DIR, 'public_img');
@@ -258,6 +260,10 @@ if (!fs.existsSync(SETTINGS_FILE)) {
   }
   console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
 }
+if (!fs.existsSync(SPAM_DEVICES_FILE) || fs.statSync(SPAM_DEVICES_FILE).size === 0) {
+  fs.writeFileSync(SPAM_DEVICES_FILE, '[]', 'utf8');
+  console.log('🛡️ Đã tạo/khởi tạo lại spam_devices.json tại:', SPAM_DEVICES_FILE);
+}
 
 let products = readJSONSync(PRODUCTS_FILE, []);
 let orders = readJSONSync(ORDERS_FILE, []);
@@ -267,10 +273,24 @@ let settings = readJSONSync(SETTINGS_FILE, {
   email: "diennuochuutanh@gmail.com",
   mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
 });
+let spamDevices = readJSONSync(SPAM_DEVICES_FILE, []);
+
+const deviceOrderAttempts = new Map();
+const blockedDevices = new Map();
+
+// Load initial blocked devices
+spamDevices.forEach(entry => {
+  if (entry.lockUntil && entry.lockUntil > Date.now()) {
+    if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
+    if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
+    if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+  }
+});
 
 const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'data/products.json');
 const saveOrders = makeQueuedWriter(ORDERS_FILE, 'data/orders.json');
 const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
+const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, 'data/spam_devices.json');
 
 let isInitialized = false;
 let initPromise = null;
@@ -280,6 +300,7 @@ async function initializeData() {
   products = readJSONSync(PRODUCTS_FILE, products);
   orders = readJSONSync(ORDERS_FILE, orders);
   settings = readJSONSync(SETTINGS_FILE, settings);
+  spamDevices = readJSONSync(SPAM_DEVICES_FILE, spamDevices);
 
   if (USE_BLOB) {
     try {
@@ -318,6 +339,24 @@ async function initializeData() {
         await vercelBlob.put('data/settings.json', JSON.stringify(settings, null, 2), { access: 'public', addRandomSuffix: false });
         console.log('📤 Đã đẩy settings.json mẫu lên Blob');
       }
+
+      // Đồng bộ spam_devices.json
+      const spamBlob = blobs.find(b => b.pathname === 'data/spam_devices.json');
+      if (spamBlob) {
+        const res = await fetch(spamBlob.url);
+        spamDevices = await res.json();
+        console.log(`✅ Đã tải ${spamDevices.length} thiết bị spam từ Blob`);
+        spamDevices.forEach(entry => {
+          if (entry.lockUntil && entry.lockUntil > Date.now()) {
+            if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
+            if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
+            if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+          }
+        });
+      } else {
+        await vercelBlob.put('data/spam_devices.json', JSON.stringify(spamDevices, null, 2), { access: 'public', addRandomSuffix: false });
+        console.log('📤 Đã đẩy spam_devices.json mẫu lên Blob');
+      }
     } catch (err) {
       console.error('❌ Lỗi đồng bộ dữ liệu từ Blob:', err);
     }
@@ -333,11 +372,18 @@ async function ensureInitialized() {
   await initPromise;
 }
 
-// ---------------------------------------------------------------------
-// APP
-// ---------------------------------------------------------------------
 const app = express();
 app.set('trust proxy', 1); // cần thiết khi chạy sau proxy của Railway/Render
+
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: 'auto',
+    maxAge: 3600000 * 24 // 24 giờ
+  }
+}));
 
 app.use(async (req, res, next) => {
   try {
@@ -524,7 +570,94 @@ app.get('/api/slides', async (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-  const { customer, phone, address, note, items } = req.body || {};
+  // Cơ chế chống Spam đặt hàng theo Device ID + IP + Fingerprint (khóa 1 tiếng nếu spam >= 5 lần trong 5 phút)
+  const deviceId = req.headers['x-device-id'] || 'unknown-device';
+  const ip = req.ip || 'unknown-ip';
+  const fingerprint = req.headers['x-browser-fingerprint'] || 'unknown-fp';
+  const now = Date.now();
+
+  const deviceLockUntil = blockedDevices.get(deviceId);
+  const ipLockUntil = blockedDevices.get(ip);
+  const fpLockUntil = blockedDevices.get(fingerprint);
+  const lockUntil = Math.max(deviceLockUntil || 0, ipLockUntil || 0, fpLockUntil || 0);
+
+  if (lockUntil && now < lockUntil) {
+    const remainingMin = Math.ceil((lockUntil - now) / 60000);
+    return res.status(429).json({
+      ok: false,
+      message: `Thiết bị của bạn đã bị tạm khóa do phát hiện spam đặt hàng. Vui lòng quay lại sau ${remainingMin} phút.`
+    });
+  }
+
+  let attempts = deviceOrderAttempts.get(deviceId) || [];
+  let ipAttempts = deviceOrderAttempts.get(ip) || [];
+  let fpAttempts = deviceOrderAttempts.get(fingerprint) || [];
+
+  // 1. Kiểm tra cảnh báo (đã có đơn đặt trong vòng 2 phút trước)
+  const hasOrderInTwoMin = attempts.some(t => t > now - 120000) || 
+                           ipAttempts.some(t => t > now - 120000) || 
+                           fpAttempts.some(t => t > now - 120000);
+
+  const { customer, phone, address, note, items, force } = req.body || {};
+
+  if (hasOrderInTwoMin && !force) {
+    return res.json({
+      ok: false,
+      requireConfirmation: true,
+      message: 'Hệ thống ghi nhận bạn đã có đơn đặt trong 2 phút qua. Bạn có muốn tiếp tục đặt không?'
+    });
+  }
+
+  // 2. Cập nhật danh sách lần đặt hàng trong vòng 5 phút qua (300,000 ms)
+  attempts = attempts.filter(t => t > now - 300000);
+  attempts.push(now);
+  deviceOrderAttempts.set(deviceId, attempts);
+
+  ipAttempts = ipAttempts.filter(t => t > now - 300000);
+  ipAttempts.push(now);
+  deviceOrderAttempts.set(ip, ipAttempts);
+
+  fpAttempts = fpAttempts.filter(t => t > now - 300000);
+  fpAttempts.push(now);
+  deviceOrderAttempts.set(fingerprint, fpAttempts);
+
+  const currentCount = Math.max(attempts.length, ipAttempts.length, fpAttempts.length);
+
+  if (currentCount >= 5) {
+    const lockTime = now + 3600000;
+    blockedDevices.set(deviceId, lockTime); // Khóa Device ID
+    blockedDevices.set(ip, lockTime);       // Khóa IP
+    blockedDevices.set(fingerprint, lockTime); // Khóa Fingerprint
+    
+    // Lưu / Cập nhật vào spam_devices.json
+    let entry = spamDevices.find(e => e.fingerprint === fingerprint || e.ip === ip || e.deviceId === deviceId);
+    if (!entry) {
+      entry = {
+        deviceId,
+        fingerprint,
+        ip,
+        count: 0,
+        time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        status: 'Spam'
+      };
+      spamDevices.push(entry);
+    }
+    entry.count = currentCount;
+    entry.lockUntil = lockTime;
+    entry.time = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    entry.status = 'Spam';
+
+    try {
+      await saveSpamDevices(spamDevices);
+    } catch (err) {
+      console.error('Lỗi lưu log spam:', err);
+    }
+
+    return res.status(429).json({
+      ok: false,
+      message: 'Phát hiện hành vi spam đặt hàng liên tục. Thiết bị của bạn đã bị tạm khóa 1 tiếng.'
+    });
+  }
 
   const cName = String(customer || '').trim();
   const cPhone = String(phone || '').trim();
@@ -570,6 +703,7 @@ app.post('/api/orders', async (req, res) => {
     items: orderItems,
     total,
     status: 'Chờ xác nhận',
+    deviceId, // Lưu ID thiết bị
   };
 
   orders.unshift(order);
@@ -581,7 +715,11 @@ app.post('/api/orders', async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu đơn hàng, vui lòng thử lại.' });
   }
 
-  res.json({ ok: true, order });
+  res.json({
+    ok: true,
+    order,
+    warning: hasOrderInTwoMin ? 'Hệ thống ghi nhận bạn đã có đơn đặt trong 2 phút qua. Đơn này vẫn được gửi đi thành công!' : undefined
+  });
 });
 
 // =====================================================================

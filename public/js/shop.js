@@ -449,6 +449,8 @@ function removeFromCart(ma) {
 // ==============================
 function openOrderForm() {
   closeCart();
+  const warningEl = document.getElementById('orderModalWarning');
+  if (warningEl) warningEl.classList.add('hidden');
   const confirmItems = document.getElementById('confirmItems');
   const total = cart.reduce((s, x) => s + (x.gia * x.qty), 0);
   confirmItems.innerHTML = cart.map(item => `
@@ -463,9 +465,114 @@ function openOrderForm() {
 
 function closeOrderModal() {
   document.getElementById('orderModal').classList.remove('open');
+  const warningEl = document.getElementById('orderModalWarning');
+  if (warningEl) warningEl.classList.add('hidden');
 }
 
-async function submitOrder() {
+function dismissOrderWarning() {
+  const warningEl = document.getElementById('orderModalWarning');
+  if (warningEl) warningEl.classList.add('hidden');
+  const btn = document.getElementById('submitOrderBtn');
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
+  }
+}
+
+function getOrCreateDeviceId() {
+  let devId = localStorage.getItem('device_id');
+  if (!devId) {
+    devId = 'dev_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36);
+    localStorage.setItem('device_id', devId);
+  }
+  return devId;
+}
+
+function getBrowserFingerprint() {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.textBaseline = "top";
+  ctx.font = "14px 'Arial'";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#f60";
+  ctx.fillRect(125, 1, 62, 20);
+  ctx.fillStyle = "#069";
+  ctx.fillText("antigravity-fingerprint", 2, 15);
+  const canvasData = canvas.toDataURL();
+  
+  const parts = [
+    navigator.userAgent,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    navigator.language,
+    navigator.platform,
+    new Date().getTimezoneOffset(),
+    canvasData.substring(0, 100)
+  ];
+  const str = parts.join('|||');
+  
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'fp_' + Math.abs(hash).toString(36);
+}
+
+function showTailwindConfirm(message) {
+  return new Promise((resolve) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 opacity-0';
+    
+    // Create modal box
+    const box = document.createElement('div');
+    box.className = 'bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform scale-95 transition-all duration-300 opacity-0 flex flex-col p-6';
+    
+    box.innerHTML = `
+      <div class="flex items-center gap-3 mb-4 text-amber-500">
+        <span class="text-3xl"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <h4 class="text-lg font-extrabold text-slate-900">Xác nhận đặt hàng</h4>
+      </div>
+      <p class="text-sm text-slate-600 font-medium leading-relaxed mb-6">${message}</p>
+      <div class="flex items-center justify-end gap-3 mt-auto">
+        <button id="twConfirmCancel" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition active:scale-95">Hủy</button>
+        <button id="twConfirmOk" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-extrabold rounded-xl text-sm transition shadow-md shadow-amber-500/20">Tiếp tục đặt</button>
+      </div>
+    `;
+    
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+      overlay.classList.remove('opacity-0');
+      box.classList.remove('opacity-0', 'scale-95');
+    });
+    
+    const cleanup = (value) => {
+      overlay.classList.add('opacity-0');
+      box.classList.add('opacity-0', 'scale-95');
+      setTimeout(() => {
+        overlay.remove();
+      }, 300);
+      resolve(value);
+    };
+    
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup(false);
+    });
+    
+    overlay.querySelector('#twConfirmCancel').addEventListener('click', () => cleanup(false));
+    overlay.querySelector('#twConfirmOk').addEventListener('click', () => cleanup(true));
+  });
+}
+
+async function submitOrder(force = false) {
+  const warningEl = document.getElementById('orderModalWarning');
+  if (warningEl) warningEl.classList.add('hidden');
+
   const name = document.getElementById('orderName').value.trim();
   const phone = document.getElementById('orderPhone').value.trim();
   const address = document.getElementById('orderAddress').value.trim();
@@ -483,18 +590,39 @@ async function submitOrder() {
   try {
     const res = await fetch('/api/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Device-ID': getOrCreateDeviceId(),
+        'X-Browser-Fingerprint': getBrowserFingerprint()
+      },
       body: JSON.stringify({
         customer: name,
         phone,
         address,
         note,
         items: cart.map(x => ({ ma: x.ma, qty: x.qty })),
+        force: force
       }),
     });
     const data = await res.json();
+
+    if (data.requireConfirmation) {
+      // Hiện cảnh báo trùng đơn ngay trong tab Thông tin đặt hàng (cho cả Mobile và Desktop/DC)
+      const warningEl = document.getElementById('orderModalWarning');
+      const warningTextEl = document.getElementById('orderModalWarningText');
+      if (warningEl && warningTextEl) {
+        warningTextEl.textContent = data.message;
+        warningEl.classList.remove('hidden');
+        const bodyEl = document.getElementById('orderModalBody');
+        if (bodyEl) bodyEl.scrollTop = 0;
+      }
+      return;
+    }
+
     if (!res.ok || !data.ok) {
       showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Đặt hàng thất bại'), 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
       return;
     }
     cart = [];
@@ -503,11 +631,12 @@ async function submitOrder() {
     closeOrderModal();
     ['orderName', 'orderPhone', 'orderAddress', 'orderNote'].forEach(id => document.getElementById(id).value = '');
     showToast(`<i class="fa-solid fa-party-horn"></i> Đặt hàng thành công! Mã đơn: ${data.order.id}`, 'success');
+    btn.disabled = false;
+    btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
-  } finally {
     btn.disabled = false;
-    btn.textContent = '<i class="fa-solid fa-circle-check"></i> Xác nhận đặt hàng';
+    btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
   }
 }
 
@@ -546,9 +675,6 @@ async function loadSettings() {
   }
 }
 
-// ==============================
-// HERO SLIDER
-// ==============================
 let currentSlideIdx = 0;
 let slideInterval;
 
@@ -716,13 +842,13 @@ let currentDetailQty = 1;
 function showProductDetails(ma) {
   const p = products.find(x => x.ma === ma);
   if (!p) return;
-  
+
   currentViewingProduct = p;
   currentDetailQty = 1;
-  
+
   const contentEl = document.getElementById('productDetailContent');
   if (!contentEl) return;
-  
+
   // Render content
   contentEl.innerHTML = `
     <div class="flex flex-col md:flex-row md:items-stretch">
@@ -809,7 +935,7 @@ function showProductDetails(ma) {
       </div>
     </div>
   `;
-  
+
   document.getElementById('productDetailModal').classList.add('open');
   updateDetailPriceTotal();
 }
@@ -826,7 +952,7 @@ function closeProductDetailOnOutsideClick(e) {
 }
 
 // Lắng nghe phím ESC để đóng các modal
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     closeProductDetailModal();
     closeCart();
@@ -870,7 +996,7 @@ function validateDetailQty(input) {
 function updateDetailPriceTotal() {
   const textSpan = document.getElementById('detailAddToCartText');
   if (!textSpan || !currentViewingProduct) return;
-  
+
   const total = currentViewingProduct.gia * currentDetailQty;
   if (total) {
     textSpan.textContent = `Thêm vào giỏ - ${formatPrice(total)}`;
@@ -909,7 +1035,7 @@ function openFullScreenImage(src) {
     `;
     document.body.appendChild(overlay);
   }
-  
+
   const img = document.getElementById('fullscreenImage');
   img.src = src;
   overlay.classList.remove('pointer-events-none');
@@ -982,14 +1108,14 @@ function initSwipeToDelete() {
     let isOpen = false;
     let currentTranslate = 0;
 
-    container.addEventListener('touchstart', function(e) {
+    container.addEventListener('touchstart', function (e) {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       content.style.transition = 'none';
       isDragging = false;
     }, { passive: true });
 
-    container.addEventListener('touchmove', function(e) {
+    container.addEventListener('touchmove', function (e) {
       const currentX = e.touches[0].clientX;
       const currentY = e.touches[0].clientY;
       const diffX = currentX - startX;
@@ -1009,10 +1135,10 @@ function initSwipeToDelete() {
       }
     }, { passive: false });
 
-    container.addEventListener('touchend', function(e) {
+    container.addEventListener('touchend', function (e) {
       if (!isDragging) return;
       content.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-      
+
       const currentX = e.changedTouches[0].clientX;
       const diffX = currentX - startX;
 
@@ -1050,7 +1176,7 @@ initRealtimeUpdates();
 window.addEventListener('scroll', () => {
   const btn = document.getElementById('backToTopBtn');
   if (!btn) return;
-  
+
   if (window.innerWidth > 900) {
     if (window.scrollY > 300) {
       btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
@@ -1063,7 +1189,7 @@ window.addEventListener('scroll', () => {
     const target = document.getElementById('shopControls') || document.getElementById('searchInput');
     const targetTop = target ? target.getBoundingClientRect().top + window.scrollY : 300;
     const navH = document.querySelector('nav')?.offsetHeight || 72;
-    
+
     if (window.scrollY > (targetTop - navH - 20)) {
       btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
       btn.classList.add('opacity-100', 'translate-y-0');

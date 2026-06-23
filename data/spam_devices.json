@@ -1,0 +1,26 @@
+[
+  {
+    "deviceId": "dev_wlebm4z7xje_mqox78ez",
+    "time": "09:51:51 23/6/2026",
+    "lockUntil": 1782186711009,
+    "status": "Spam"
+  },
+  {
+    "deviceId": "dev_d6qddg34xlv_mqq1uqwe",
+    "fingerprint": "fp_rt8ejd",
+    "ip": "::1",
+    "count": 5,
+    "time": "10:06:59 23/6/2026",
+    "status": "Spam",
+    "lockUntil": 1782187619981
+  },
+  {
+    "deviceId": "dev_c9fvsy65tza_mqq0ufkz",
+    "fingerprint": "fp_yuvln9",
+    "ip": "::ffff:192.168.1.46",
+    "count": 5,
+    "time": "12:29:30 23/6/2026",
+    "status": "Spam",
+    "lockUntil": 1782196170713
+  }
+]
