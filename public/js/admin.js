@@ -11,6 +11,9 @@ let orders = [];
 const ITEMS_PER_PAGE = 24;
 let adminPage = 1;
 
+const ORDERS_PER_PAGE = 20;
+let orderPage = 1;
+
 function formatPrice(p) {
   if (!p || p === 0) return 'Liên hệ';
   return p.toLocaleString('vi-VN') + '₫';
@@ -603,6 +606,7 @@ function resetOrderFilters() {
   if (dateFromInput) dateFromInput.value = '';
   if (dateToInput) dateToInput.value = '';
   if (statusFilter) statusFilter.value = '';
+  orderPage = 1;
   renderOrdersTable();
 }
 
@@ -647,16 +651,41 @@ function renderOrdersTable() {
     return true;
   });
 
+  // Cập nhật badge số lượng đơn hàng
+  const orderCountEl = document.getElementById('orderCount');
+  if (orderCountEl) {
+    orderCountEl.textContent = list.length === orders.length
+      ? `${list.length} đơn`
+      : `${list.length}/${orders.length} đơn`;
+  }
+
+  // Hiện/ẩn nút "Xóa tất cả đã huỷ"
+  const deleteAllBtn = document.getElementById('deleteAllCancelledBtn');
+  if (deleteAllBtn) {
+    const cancelledInList = list.filter(o => o.status === 'Đã huỷ').length;
+    deleteAllBtn.style.display = cancelledInList > 0 ? 'inline-flex' : 'none';
+    deleteAllBtn.title = `Xóa tất cả ${cancelledInList} đơn đã huỷ`;
+  }
+
   if (list.length === 0) {
     document.getElementById('ordersTable').innerHTML = '<p style="color:var(--muted);font-size:.875rem;padding:16px 0">Không tìm thấy đơn hàng phù hợp.</p>';
+    const orderPagEl = document.getElementById('orderPagination');
+    if (orderPagEl) orderPagEl.innerHTML = '';
     return;
   }
 
+  // Phân trang - tối đa 20 đơn / trang
+  const totalOrders = list.length;
+  const orderPages = Math.ceil(totalOrders / ORDERS_PER_PAGE);
+  if (orderPage > orderPages) orderPage = Math.max(1, orderPages);
+  const pagedOrders = list.slice((orderPage - 1) * ORDERS_PER_PAGE, orderPage * ORDERS_PER_PAGE);
+
   document.getElementById('ordersTable').innerHTML = `
     <table>
-      <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Địa chỉ</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-      <tbody>${list.map(o => `
+      <thead><tr><th>#</th><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Địa chỉ</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <tbody>${pagedOrders.map((o, i) => `
         <tr class="order-row">
+          <td style="color:var(--muted);font-size:.78rem">${(orderPage - 1) * ORDERS_PER_PAGE + i + 1}</td>
           <td>${o.id}</td>
           <td>${o.customer}</td>
           <td>${o.phone}</td>
@@ -676,6 +705,9 @@ function renderOrdersTable() {
       </tbody>
     </table>
   `;
+
+  // Render phân trang đơn hàng
+  renderPagination(orderPages, orderPage, 'orderPagination', (p) => { orderPage = p; renderOrdersTable(); });
 }
 
 async function deleteOrder(id) {
@@ -694,6 +726,31 @@ async function deleteOrder(id) {
     renderOrdersTable();
     renderDashboard();
     showToast(`<i class="fa-solid fa-trash"></i> Đã xoá đơn hàng ${id}`, 'success');
+  } catch (err) {
+    showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
+  }
+}
+
+async function deleteAllCancelledOrders() {
+  const cancelledCount = orders.filter(o => o.status === 'Đã huỷ').length;
+  if (cancelledCount === 0) {
+    showToast('<i class="fa-solid fa-circle-info"></i> Không có đơn hàng đã huỷ nào', 'error');
+    return;
+  }
+  if (!confirm(`Xoá vĩnh viễn TẤT CẢ ${cancelledCount} đơn hàng đã huỷ?\nHành động này không thể hoàn tác!`)) return;
+  try {
+    const res = await adminFetch('/api/admin/orders-cancelled/all', { method: 'DELETE' });
+    if (res.status === 401) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi xoá đơn hàng'), 'error');
+      return;
+    }
+    await loadOrders();
+    orderPage = 1;
+    renderOrdersTable();
+    renderDashboard();
+    showToast(`<i class="fa-solid fa-trash"></i> Đã xoá ${data.deleted} đơn hàng đã huỷ`, 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
   }

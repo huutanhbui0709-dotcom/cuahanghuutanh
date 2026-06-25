@@ -267,6 +267,8 @@
                 ">
               <div class="admin-card-title" style="margin: 0">
                 <i class="fa-solid fa-clipboard-list"></i> Quản lý đơn hàng
+                <span id="orderCount"
+                  style="font-size: .78rem; font-weight: 700; background: var(--bg); padding: 3px 10px; border-radius: 99px; margin-left: 6px; color: var(--muted);"></span>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <div style="position: relative;">
@@ -276,19 +278,19 @@
                   </span>
                   <input type="text" id="orderSearch" class="form-control"
                     style="width: 200px; padding: 7px 12px 7px 32px;" placeholder="Tìm mã đơn, tên, SĐT..."
-                    oninput="renderOrdersTable()" />
+                    oninput="orderPage=1; renderOrdersTable()" />
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 0.8rem; color: var(--muted); white-space: nowrap;">Từ:</span>
                   <input type="date" id="orderDateFrom" class="form-control"
-                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="renderOrdersTable()" />
+                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="orderPage=1; renderOrdersTable()" />
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 0.8rem; color: var(--muted); white-space: nowrap;">Đến:</span>
                   <input type="date" id="orderDateTo" class="form-control"
-                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="renderOrdersTable()" />
+                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="orderPage=1; renderOrdersTable()" />
                 </div>
-                <select class="filter-select" id="orderStatusFilter" onchange="renderOrdersTable()"
+                <select class="filter-select" id="orderStatusFilter" onchange="orderPage=1; renderOrdersTable()"
                   style="padding: 7px 12px; font-size: 0.85rem;">
                   <option value="">Tất cả trạng thái</option>
                   <option value="Chờ xác nhận">Chờ xác nhận</option>
@@ -299,9 +301,16 @@
                   style="color: var(--text); border-color: var(--border); padding: 8px 12px; height: 35px;">
                   <i class="fa-solid fa-rotate-left"></i>
                 </button>
+                <button class="btn btn-sm btn-danger" id="deleteAllCancelledBtn"
+                  onclick="deleteAllCancelledOrders()"
+                  title="Xóa tất cả đơn hàng đã huỷ"
+                  style="display:none; padding: 8px 14px; height: 35px;">
+                  <i class="fa-solid fa-trash"></i> Xóa tất cả đã huỷ
+                </button>
               </div>
             </div>
             <div class="table-wrap" id="ordersTable"></div>
+            <div class="pagination" id="orderPagination"></div>
           </div>
         </div>
 

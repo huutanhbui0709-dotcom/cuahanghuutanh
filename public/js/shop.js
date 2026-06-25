@@ -578,9 +578,68 @@ async function submitOrder(force = false) {
   const address = document.getElementById('orderAddress').value.trim();
   const note = document.getElementById('orderNote').value.trim();
 
-  if (!name) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập họ tên', 'error'); return; }
-  if (!phone) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập số điện thoại', 'error'); return; }
-  if (!address) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập địa chỉ', 'error'); return; }
+  // === Hàm tiện ích validate inline ===
+  function showFieldError(inputId, errorId, message) {
+    const input = document.getElementById(inputId);
+    const errorEl = document.getElementById(errorId);
+    if (input) input.classList.add('!border-red-400');
+    if (errorEl) { errorEl.textContent = message; errorEl.classList.remove('hidden'); }
+  }
+  function clearFieldError(inputId, errorId) {
+    const input = document.getElementById(inputId);
+    const errorEl = document.getElementById(errorId);
+    if (input) input.classList.remove('!border-red-400');
+    if (errorEl) { errorEl.textContent = ''; errorEl.classList.add('hidden'); }
+  }
+  function clearAllFieldErrors() {
+    clearFieldError('orderName', 'orderNameError');
+    clearFieldError('orderPhone', 'orderPhoneError');
+    clearFieldError('orderAddress', 'orderAddressError');
+  }
+
+  clearAllFieldErrors();
+  let hasError = false;
+
+  // Họ tên: bắt buộc, 2–50 ký tự
+  if (!name) {
+    showFieldError('orderName', 'orderNameError', 'Vui lòng nhập họ tên');
+    hasError = true;
+  } else if (name.length < 2) {
+    showFieldError('orderName', 'orderNameError', 'Họ tên tối thiểu 2 ký tự');
+    hasError = true;
+  } else if (name.length > 50) {
+    showFieldError('orderName', 'orderNameError', 'Họ tên tối đa 50 ký tự');
+    hasError = true;
+  }
+
+  // Số điện thoại: bắt buộc, 9–15 chữ số
+  if (!phone) {
+    showFieldError('orderPhone', 'orderPhoneError', 'Vui lòng nhập số điện thoại');
+    hasError = true;
+  } else if (!/^[0-9]{9,15}$/.test(phone)) {
+    showFieldError('orderPhone', 'orderPhoneError', 'Số điện thoại phải gồm 9–15 chữ số');
+    hasError = true;
+  }
+
+  // Địa chỉ: bắt buộc, 5–200 ký tự
+  if (!address) {
+    showFieldError('orderAddress', 'orderAddressError', 'Vui lòng nhập địa chỉ giao hàng');
+    hasError = true;
+  } else if (address.length < 5) {
+    showFieldError('orderAddress', 'orderAddressError', 'Địa chỉ tối thiểu 5 ký tự');
+    hasError = true;
+  } else if (address.length > 200) {
+    showFieldError('orderAddress', 'orderAddressError', 'Địa chỉ tối đa 200 ký tự');
+    hasError = true;
+  }
+
+  // Ghi chú: không bắt buộc, tối đa 300 ký tự
+  if (note.length > 300) {
+    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Ghi chú tối đa 300 ký tự', 'error');
+    hasError = true;
+  }
+
+  if (hasError) return;
   if (cart.length === 0) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Giỏ hàng trống', 'error'); return; }
 
   const btn = document.getElementById('submitOrderBtn');

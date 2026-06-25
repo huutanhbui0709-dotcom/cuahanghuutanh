@@ -660,14 +660,14 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  const cName = String(customer || '').trim();
-  const cPhone = String(phone || '').trim();
-  const cAddress = String(address || '').trim();
-  const cNote = String(note || '').trim();
+  const cName = String(customer || '').trim().slice(0, 50);
+  const cPhone = String(phone || '').trim().slice(0, 15);
+  const cAddress = String(address || '').trim().slice(0, 200);
+  const cNote = String(note || '').trim().slice(0, 300);
 
-  if (!cName) return res.status(400).json({ ok: false, message: 'Vui lòng nhập họ tên.' });
-  if (!cPhone) return res.status(400).json({ ok: false, message: 'Vui lòng nhập số điện thoại.' });
-  if (!cAddress) return res.status(400).json({ ok: false, message: 'Vui lòng nhập địa chỉ giao hàng.' });
+  if (!cName || cName.length < 2) return res.status(400).json({ ok: false, message: 'Họ tên phải từ 2–50 ký tự.' });
+  if (!cPhone || !/^[0-9]{9,15}$/.test(cPhone)) return res.status(400).json({ ok: false, message: 'Số điện thoại phải gồm 9–15 chữ số.' });
+  if (!cAddress || cAddress.length < 5) return res.status(400).json({ ok: false, message: 'Địa chỉ phải từ 5–200 ký tự.' });
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ ok: false, message: 'Giỏ hàng trống.' });
   }
@@ -807,6 +807,23 @@ app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
   res.json({ ok: true });
+});
+
+// Xóa TẤT CẢ đơn hàng đã huỷ
+app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => {
+  const before = orders.length;
+  orders = orders.filter((o) => o.status !== 'Đã huỷ');
+  const deleted = before - orders.length;
+  if (deleted === 0) {
+    return res.json({ ok: true, deleted: 0, message: 'Không có đơn hàng đã huỷ nào.' });
+  }
+  try {
+    await saveOrders(orders);
+    broadcastUpdate('orders_updated');
+  } catch (err) {
+    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
+  }
+  res.json({ ok: true, deleted });
 });
 
 app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req, res) => {
