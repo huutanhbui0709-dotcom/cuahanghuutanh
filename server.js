@@ -24,6 +24,7 @@ const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
 const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./lib/storage');
+const { sendOrderNotification } = require('./lib/mailer');
 
 const IS_VERCEL = !!process.env.VERCEL;
 
@@ -714,6 +715,9 @@ app.post('/api/orders', async (req, res) => {
     console.error('Lỗi lưu đơn hàng:', err);
     return res.status(500).json({ ok: false, message: 'Lỗi lưu đơn hàng, vui lòng thử lại.' });
   }
+
+  // Gửi mail thông báo bất đồng bộ — không chặn response trả về khách
+  sendOrderNotification(order);
 
   res.json({
     ok: true,
