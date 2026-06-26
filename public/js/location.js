@@ -12,7 +12,8 @@
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.id = 'btnGetLocation';
-  btn.textContent = '\uD83D\uDCCD S\u1EED d\u1EE5ng v\u1ECB tr\u00ED hi\u1EC7n t\u1EA1i';
+  // btn.textContent = '\uD83D\uDCCD S\u1EED d\u1EE5ng v\u1ECB tr\u00ED hi\u1EC7n t\u1EA1i';
+  btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Sử dụng vị trí hiện tại';
   btn.style.cssText =
     'margin-top:6px;padding:6px 12px;font-size:12px;font-weight:700;' +
     'color:#92400e;background:#fef3c7;border:1.5px solid #fbbf24;' +
@@ -58,7 +59,7 @@
       try {
         var resp = await fetch(
           'https://nominatim.openstreetmap.org/reverse?format=json' +
-            '&lat=' + lat + '&lon=' + lon + '&addressdetails=1',
+          '&lat=' + lat + '&lon=' + lon + '&addressdetails=1',
           { headers: { 'Accept-Language': 'vi' } }
         );
         var data = await resp.json();
