@@ -13,7 +13,7 @@
   btn.type = 'button';
   btn.id = 'btnGetLocation';
   // btn.textContent = '\uD83D\uDCCD S\u1EED d\u1EE5ng v\u1ECB tr\u00ED hi\u1EC7n t\u1EA1i';
-  btn.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="color: rgb(99, 230, 190);"></i> Sử dụng vị trí hiện tại';
+  btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Sử dụng vị trí hiện tại';
 
   btn.style.cssText =
     'margin-top:6px;padding:6px 12px;font-size:12px;font-weight:700;' +
