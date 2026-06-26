@@ -587,87 +587,44 @@
 
   <script>
     /* ===================================================================
-     * FACEBOOK MESSENGER FLOATING WIDGET - translate3d v4
-     *
-     * CSS anchor = fixed; bottom:95px; right:20px  (JS khong duoc dung vao)
-     * JS chi viet: style.transform = translate3d(fbCurX px, fbCurY px, 0)
-     *
-     * pointerdown  : fbIsClick = true, luu startX/Y, tat transition
-     * pointermove  : neu |delta| > 5px thi fbIsClick = false
-     * pointerup    :
-     *   fbIsClick = true  --> goi fbOpenChat()
-     *   fbIsClick = false --> fbSnapToEdge():
-     *     nua PHAI: targetX = 0, targetY = 0  (hít ve CSS goc)
-     *     nua TRAI: targetX = fbCurX + (20 - rect.left), targetY = 0
-     *     (Y luon = 0 --> khong de nut Back-to-Top)
+     * FACEBOOK MESSENGER FLOATING WIDGET - translate3d v5
+     * pageX/Y + timestamp double-guard: click khong bao gio bi nham la drag
      * =================================================================== */
     (function () {
       'use strict';
 
-      var fbEl = document.getElementById('fbChatWrapper');
+      var fbEl       = document.getElementById('fbChatWrapper');
+      var fbCurrentX = 0;   /* offset X hien tai (px), so voi CSS anchor    */
+      var fbCurrentY = 0;   /* offset Y hien tai – luon reset ve 0 khi snap  */
+      var fbStartX   = 0;   /* = pageX - fbCurrentX luc nhan xuong           */
+      var fbStartY   = 0;   /* = pageY - fbCurrentY luc nhan xuong           */
+      var fbIsClick  = true;
+      var fbIsDragging = false;
+      var fbDownTime = 0;   /* timestamp luc nhan xuong (ms)                 */
 
-      var fbCurX = 0, fbCurY = 0;
-      var fbIsClick = true, fbIsDragging = false;
-      var fbStartX = 0, fbStartY = 0;
-      var fbOriginX = 0, fbOriginY = 0;
-
-      function fbSetT(x, y) {
-        fbCurX = x; fbCurY = y;
-        fbEl.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
-      }
-
+      /* ── Snap ve men trai hoac phai ──────────────────────────────────── */
       function fbSnapToEdge() {
         var rect = fbEl.getBoundingClientRect();
-        var vw = window.innerWidth;
-        var sz = fbEl.offsetWidth;
-        var midX = rect.left + sz / 2;
-        var targetX = (midX < vw / 2)
-          ? fbCurX + (20 - rect.left)   /* snap men TRAI: cach le 20px */
-          : 0;                           /* snap men PHAI: ve CSS goc   */
-        fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25,1,0.5,1),box-shadow 0.2s';
-        fbSetT(targetX, 0);             /* Y = 0: luon ve bottom:95px  */
-      }
+        var ww   = window.innerWidth;
+        var midX = rect.left + rect.width / 2;
 
-      function fbOnDown(e) {
-        if (e.button !== undefined && e.button !== 0) return;
-        fbIsDragging = true;
-        fbIsClick    = true;
-        fbStartX  = e.clientX; fbStartY  = e.clientY;
-        fbOriginX = fbCurX;    fbOriginY = fbCurY;
-        fbEl.style.transition = 'none';
-        fbEl.classList.add('fb--dragging');
-        if (fbEl.setPointerCapture) fbEl.setPointerCapture(e.pointerId);
-        e.preventDefault();
-      }
-
-      function fbOnMove(e) {
-        if (!fbIsDragging) return;
-        var dx = e.clientX - fbStartX;
-        var dy = e.clientY - fbStartY;
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) fbIsClick = false;
-
-        var rect = fbEl.getBoundingClientRect();
-        var vw = window.innerWidth, vh = window.innerHeight, sz = fbEl.offsetWidth;
-        var projL = rect.left + (dx - (fbCurX - fbOriginX));
-        var projT = rect.top  + (dy - (fbCurY - fbOriginY));
-        var safeL = Math.max(0, Math.min(vw - sz, projL));
-        var safeT = Math.max(0, Math.min(vh - sz, projT));
-        fbSetT(fbOriginX + dx + (safeL - projL), fbOriginY + dy + (safeT - projT));
-        e.preventDefault();
-      }
-
-      function fbOnUp(e) {
-        if (!fbIsDragging) return;
-        fbIsDragging = false;
-        fbEl.classList.remove('fb--dragging');
-        if (fbIsClick) {
-          fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25,1,0.5,1),box-shadow 0.2s';
-          fbOpenChat();
+        if (midX < ww / 2) {
+          /* Men TRAI: ep X de nut cach le trai 20px.
+           * CSS anchor la right:20px, nen can translate am mot luong bang:
+           * -(windowWidth - nut_width - 40)  [40 = 20px le trai + 20px le phai] */
+          fbCurrentX = -(ww - rect.width - 40);
         } else {
-          fbSnapToEdge();
+          /* Men PHAI: tra ve CSS anchor (right:20px) bang cach reset X = 0 */
+          fbCurrentX = 0;
         }
+
+        fbCurrentY = 0; /* Ep Y = 0: nut luon ve bottom:95px, khong de nut vang */
+
+        fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+        fbEl.style.transform  = 'translate3d(' + fbCurrentX + 'px,' + fbCurrentY + 'px,0)';
       }
 
+      /* ── Mo khung chat Messenger ─────────────────────────────────────── */
       function fbOpenChat() {
         if (window.FB && window.FB.CustomerChat) {
           try { FB.CustomerChat.showDialog(); }
@@ -675,11 +632,75 @@
         }
       }
 
-      fbEl.addEventListener('pointerdown',   fbOnDown);
-      fbEl.addEventListener('pointermove',   fbOnMove);
-      fbEl.addEventListener('pointerup',     fbOnUp);
-      fbEl.addEventListener('pointercancel', fbOnUp);
-      fbEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+      /* ── pointerDown (mousedown / touchstart) ────────────────────────── */
+      function fbPointerDown(e) {
+        fbIsDragging = true;
+        fbIsClick    = true;
+        fbDownTime   = Date.now();
+
+        var pageX = e.touches ? e.touches[0].pageX : e.pageX;
+        var pageY = e.touches ? e.touches[0].pageY : e.pageY;
+
+        /* Luu moc: pageX - currentX = hang so trong suot phien keo */
+        fbStartX = pageX - fbCurrentX;
+        fbStartY = pageY - fbCurrentY;
+
+        fbEl.style.transition = 'none';
+        fbEl.classList.add('fb--dragging');
+      }
+
+      /* ── pointerMove (mousemove / touchmove) ─────────────────────────── */
+      function fbPointerMove(e) {
+        if (!fbIsDragging) return;
+
+        var pageX = e.touches ? e.touches[0].pageX : e.pageX;
+        var pageY = e.touches ? e.touches[0].pageY : e.pageY;
+
+        var newX = pageX - fbStartX;
+        var newY = pageY - fbStartY;
+
+        /* Neu dich chuyen > 3px theo bat ky truc -> xac nhan la DRAG */
+        if (Math.abs(newX - fbCurrentX) > 3 || Math.abs(newY - fbCurrentY) > 3) {
+          fbIsClick = false;
+        }
+
+        fbCurrentX = newX;
+        fbCurrentY = newY;
+        fbEl.style.transform = 'translate3d(' + fbCurrentX + 'px,' + fbCurrentY + 'px,0)';
+
+        if (e.cancelable) e.preventDefault();
+      }
+
+      /* ── pointerUp (mouseup / touchend) ─────────────────────────────── */
+      function fbPointerUp(e) {
+        if (!fbIsDragging) return;
+        fbIsDragging = false;
+        fbEl.classList.remove('fb--dragging');
+
+        /* QUYET DINH: click neu fbIsClick=true HOAC thoi gian nhan < 200ms */
+        var elapsed = Date.now() - fbDownTime;
+        if (fbIsClick || elapsed < 200) {
+          /* Giu nguyen vi tri, mo chat */
+          fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+          fbOpenChat();
+          return;
+        }
+
+        /* DRAG: snap ve men trai hoac phai, ep Y = 0 */
+        fbSnapToEdge();
+      }
+
+      /* ── Dang ky su kien cho ca PC lan Mobile ────────────────────────── */
+      fbEl.addEventListener('mousedown',  fbPointerDown);
+      document.addEventListener('mousemove',  fbPointerMove);
+      document.addEventListener('mouseup',    fbPointerUp);
+
+      fbEl.addEventListener('touchstart', fbPointerDown, { passive: true });
+      document.addEventListener('touchmove',  fbPointerMove, { passive: false });
+      document.addEventListener('touchend',   fbPointerUp);
+
+      /* Ngan context menu khi nhan giu tren mobile */
+      fbEl.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
     })();
   </script>
