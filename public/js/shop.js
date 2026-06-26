@@ -499,7 +499,7 @@ function getBrowserFingerprint() {
   ctx.fillStyle = "#069";
   ctx.fillText("antigravity-fingerprint", 2, 15);
   const canvasData = canvas.toDataURL();
-  
+
   const parts = [
     navigator.userAgent,
     screen.width + 'x' + screen.height,
@@ -510,7 +510,7 @@ function getBrowserFingerprint() {
     canvasData.substring(0, 100)
   ];
   const str = parts.join('|||');
-  
+
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -525,11 +525,11 @@ function showTailwindConfirm(message) {
     // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 opacity-0';
-    
+
     // Create modal box
     const box = document.createElement('div');
     box.className = 'bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform scale-95 transition-all duration-300 opacity-0 flex flex-col p-6';
-    
+
     box.innerHTML = `
       <div class="flex items-center gap-3 mb-4 text-amber-500">
         <span class="text-3xl"><i class="fa-solid fa-triangle-exclamation"></i></span>
@@ -541,16 +541,16 @@ function showTailwindConfirm(message) {
         <button id="twConfirmOk" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-extrabold rounded-xl text-sm transition shadow-md shadow-amber-500/20">Tiếp tục đặt</button>
       </div>
     `;
-    
+
     overlay.appendChild(box);
     document.body.appendChild(overlay);
-    
+
     // Animate in
     requestAnimationFrame(() => {
       overlay.classList.remove('opacity-0');
       box.classList.remove('opacity-0', 'scale-95');
     });
-    
+
     const cleanup = (value) => {
       overlay.classList.add('opacity-0');
       box.classList.add('opacity-0', 'scale-95');
@@ -559,11 +559,11 @@ function showTailwindConfirm(message) {
       }, 300);
       resolve(value);
     };
-    
+
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) cleanup(false);
     });
-    
+
     overlay.querySelector('#twConfirmCancel').addEventListener('click', () => cleanup(false));
     overlay.querySelector('#twConfirmOk').addEventListener('click', () => cleanup(true));
   });
@@ -1233,33 +1233,41 @@ initRealtimeUpdates();
 // BACK TO TOP
 // ==============================
 window.addEventListener('scroll', () => {
+  // Nếu đang trong quá trình bấm nút cuộn lên, không làm gì cả (giữ nút luôn ẩn)
+  if (isScrollingTop) {
+    // Xóa timeout cũ nếu có và kiểm tra khi nào kết thúc cuộn hẳn
+    clearTimeout(window.scrollEndTimeout);
+    window.scrollEndTimeout = setTimeout(() => {
+      isScrollingTop = false; // Đã dừng cuộn hẳn, tắt cờ hiệu
+    }, 100); // 100ms sau khi không còn sự kiện scroll nào kích hoạt nữa
+
+    return;
+  }
+
+  // --- Logic hiển thị nút hiện tại của bạn ở dưới đây ---
   const btn = document.getElementById('backToTopBtn');
-  if (!btn) return;
-
-  if (window.innerWidth > 900) {
-    if (window.scrollY > 300) {
-      btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-      btn.classList.add('opacity-100', 'translate-y-0');
-    } else {
-      btn.classList.remove('opacity-100', 'translate-y-0');
-      btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
-    }
+  if (window.scrollY > 300) { // Ví dụ cuộn xuống hơn 300px thì hiện
+    btn.classList.add('opacity-100', 'translate-y-0');
+    btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
   } else {
-    const target = document.getElementById('shopControls') || document.getElementById('searchInput');
-    const targetTop = target ? target.getBoundingClientRect().top + window.scrollY : 300;
-    const navH = document.querySelector('nav')?.offsetHeight || 72;
-
-    if (window.scrollY > (targetTop - navH - 20)) {
-      btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
-      btn.classList.add('opacity-100', 'translate-y-0');
-    } else {
-      btn.classList.remove('opacity-100', 'translate-y-0');
-      btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
-    }
+    btn.classList.remove('opacity-100', 'translate-y-0');
+    btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
   }
 });
 
+// Bổ sung một biến toàn cục (global variable) ở ngoài hàm
+let isScrollingTop = false;
+
 function scrollToTop() {
+  const btn = document.getElementById('backToTopBtn');
+  if (btn) {
+    btn.classList.remove('opacity-100', 'translate-y-0');
+    btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+  }
+
+  // Bật cờ hiệu đang tự động cuộn lên
+  isScrollingTop = true;
+
   if (window.innerWidth > 900) {
     window.scrollTo({
       top: 0,
