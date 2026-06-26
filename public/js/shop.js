@@ -1232,21 +1232,19 @@ initRealtimeUpdates();
 // ==============================
 // BACK TO TOP
 // ==============================
+// 1. Biến toàn cục kiểm tra trạng thái
+let isScrollingTop = false;
+
+// 2. Sự kiện theo dõi cuộn trang để ẩn/hiện nút
 window.addEventListener('scroll', () => {
-  // Nếu đang trong quá trình bấm nút cuộn lên, không làm gì cả (giữ nút luôn ẩn)
-  if (isScrollingTop) {
-    // Xóa timeout cũ nếu có và kiểm tra khi nào kết thúc cuộn hẳn
-    clearTimeout(window.scrollEndTimeout);
-    window.scrollEndTimeout = setTimeout(() => {
-      isScrollingTop = false; // Đã dừng cuộn hẳn, tắt cờ hiệu
-    }, 100); // 100ms sau khi không còn sự kiện scroll nào kích hoạt nữa
+  // Nếu đang trong quá trình tự động cuộn lên, giữ nút luôn ẩn và thoát ra luôn
+  if (isScrollingTop) return;
 
-    return;
-  }
-
-  // --- Logic hiển thị nút hiện tại của bạn ở dưới đây ---
   const btn = document.getElementById('backToTopBtn');
-  if (window.scrollY > 300) { // Ví dụ cuộn xuống hơn 300px thì hiện
+  if (!btn) return; // Phòng trường hợp id nút chưa đúng
+
+  // Cuộn xuống hơn 300px thì hiện nút
+  if (window.scrollY > 300) {
     btn.classList.add('opacity-100', 'translate-y-0');
     btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
   } else {
@@ -1255,12 +1253,11 @@ window.addEventListener('scroll', () => {
   }
 });
 
-// Bổ sung một biến toàn cục (global variable) ở ngoài hàm
-let isScrollingTop = false;
-
+// 3. Hàm cuộn lên đỉnh trang TỰ CHỈNH TỐC ĐỘ (Chậm và Mượt)
 function scrollToTop() {
   const btn = document.getElementById('backToTopBtn');
   if (btn) {
+    // Ẩn ngay lập tức khi vừa bấm
     btn.classList.remove('opacity-100', 'translate-y-0');
     btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
   }
@@ -1268,24 +1265,51 @@ function scrollToTop() {
   // Bật cờ hiệu đang tự động cuộn lên
   isScrollingTop = true;
 
-  if (window.innerWidth > 900) {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  } else {
+  // Xác định vị trí đích cần cuộn về
+  let targetTop = 0;
+  if (window.innerWidth <= 900) {
     const target = document.getElementById('shopControls') || document.getElementById('searchInput');
-    if (!target) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
+    if (target) {
+      const navH = document.querySelector('nav')?.offsetHeight || 72;
+      targetTop = target.getBoundingClientRect().top + window.scrollY - navH - 12;
+      targetTop = Math.max(0, targetTop);
     }
-    const navH = document.querySelector('nav')?.offsetHeight || 72;
-    const targetTop = target.getBoundingClientRect().top;
-    const top = targetTop + window.scrollY - navH - 12;
-    window.scrollTo({
-      top: Math.max(0, top),
-      behavior: 'smooth'
-    });
   }
+
+  // --- THUẬT TOÁN TỰ LÀM MƯỢT VÀ GIẢM TỐC ĐỘ ---
+  const startPosition = window.scrollY;
+  const distance = targetTop - startPosition;
+  const duration = 1500; // <--- CHỈNH TỐC ĐỘ: 1000ms = 1 giây (Số càng lớn cuộn càng chậm)
+  let startTime = null;
+
+  function animation(currentTime) {
+    if (startTime === null) startTime = currentTime;
+    const timeElapsed = currentTime - startTime;
+
+    // Công thức toán học giúp chuyển động chậm dần đều ở đuôi
+    const run = easeOutQuad(timeElapsed, startPosition, distance, duration);
+
+    window.scrollTo(0, run);
+
+    if (timeElapsed < duration) {
+      requestAnimationFrame(animation);
+    } else {
+      // KHI ĐÃ ĐẾN ĐÍCH HOÀN TOÀN:
+      window.scrollTo(0, targetTop);
+
+      // Tắt cờ hiệu ngay lập tức để giải phóng cho nút có thể hiện lại lần sau
+      isScrollingTop = false;
+    }
+  }
+
+  function easeOutQuad(t, b, c, d) {
+    t /= d;
+    return -c * t * (t - 2) + b;
+  };
+
+  requestAnimationFrame(animation);
 }
+
+
+
 
