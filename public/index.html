@@ -514,10 +514,12 @@
 
   <!-- ===== FACEBOOK MESSENGER FLOATING WIDGET ===== -->
   <style>
-    /* ================================================================
-     * CSS gốc: LUÔN fixed bottom:95px / right:20px
-     * Nằm trên Back-to-Top (bottom:20px, cao 56px → cần 20+56+19=95px)
-     * ================================================================ */
+    /* =================================================================
+     * CSS anchor: CO DINH bottom:95px / right:20px.
+     * JS khong ghi de top/left/bottom/right.
+     * Moi di chuyen CHI qua style.transform = translate3d(X,Y,0).
+     * Khi snap: Y = 0 --> nut ve dung chieu doc CSS goc.
+     * ================================================================= */
     #fbChatWrapper {
       position: fixed;
       bottom: 95px;
@@ -530,24 +532,16 @@
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-      transition: box-shadow 0.2s, transform 0.15s;
+      transform: translate3d(0, 0, 0);
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s;
       box-shadow: 0 4px 18px rgba(6, 127, 181, 0.45);
     }
     #fbChatWrapper:hover {
-      transform: scale(1.08);
       box-shadow: 0 6px 24px rgba(164, 63, 241, 0.5);
     }
-    /* Đang kéo: tắt mọi transition, cursor grabbing */
-    #fbChatWrapper.fbSnap--dragging {
-      transition: none !important;
-      transform: scale(1.12);
+    #fbChatWrapper.fb--dragging {
       cursor: grabbing;
-    }
-    /* Snap về cạnh: spring animation chỉ cho trục X (left) */
-    #fbChatWrapper.fbSnap--snapping {
-      transition: left 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
-                  box-shadow 0.2s,
-                  transform 0.15s !important;
+      box-shadow: 0 8px 28px rgba(6, 127, 181, 0.55);
     }
     #fbChatInner {
       width: 100%;
@@ -558,15 +552,32 @@
       align-items: center;
       justify-content: center;
       pointer-events: none;
+      transition: transform 0.15s ease;
     }
-    #fbChatInner svg {
-      width: 30px;
-      height: 30px;
-      fill: #fff;
+    #fbChatWrapper:hover #fbChatInner { transform: scale(1.08); }
+    #fbChatWrapper.fb--dragging #fbChatInner { transform: scale(1.13); }
+    #fbChatInner svg { width: 30px; height: 30px; fill: #fff; }
+    #fbChatWrapper::after {
+      content: 'Chat Messenger';
+      position: absolute;
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #1e293b;
+      color: #fff;
+      font-size: 12px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      white-space: nowrap;
+      padding: 4px 10px;
+      border-radius: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
     }
+    #fbChatWrapper:hover:not(.fb--dragging)::after { opacity: 1; }
   </style>
 
-  <div id="fbChatWrapper" title="Chat với chúng tôi qua Messenger">
+  <div id="fbChatWrapper" title="Chat voi chung toi qua Messenger">
     <div id="fbChatInner">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2C6.477 2 2 6.145 2 11.259c0 2.913 1.454 5.512 3.726 7.21V21l2.699-1.484C9.356 19.836 10.658 20 12 20c5.523 0 10-4.145 10-9.259C22 6.144 17.523 2 12 2zm1.078 12.472-2.548-2.718-4.97 2.718 5.467-5.804 2.612 2.718 4.907-2.718-5.468 5.804z"/>
@@ -576,177 +587,99 @@
 
   <script>
     /* ===================================================================
-     * FACEBOOK MESSENGER FLOATING WIDGET – SNAP-TO-EDGE v3
+     * FACEBOOK MESSENGER FLOATING WIDGET - translate3d v4
      *
-     * Thuật toán:
-     *  • CSS giữ `bottom: 95px; right: 20px` làm gốc vĩnh viễn.
-     *  • Khi người dùng kéo lần đầu, chuyển sang hệ left/top tuyệt đối
-     *    (chụp getBoundingClientRect tại đúng thời điểm nhấn chuột).
-     *  • Biến cờ `fbIsClick` reset = true mỗi lần pointerDown.
-     *    Chỉ set false khi delta > 5px trong pointerMove.
-     *  • pointerUp:
-     *    - fbIsClick = true  → KHÔNG snap, gọi fbOpenChat()
-     *    - fbIsClick = false → fbSnapToEdge(): chỉ thay đổi trục X (left),
-     *      trục Y (top) GIỮ NGUYÊN → nút không tụt xuống đáy.
+     * CSS anchor = fixed; bottom:95px; right:20px  (JS khong duoc dung vao)
+     * JS chi viet: style.transform = translate3d(fbCurX px, fbCurY px, 0)
+     *
+     * pointerdown  : fbIsClick = true, luu startX/Y, tat transition
+     * pointermove  : neu |delta| > 5px thi fbIsClick = false
+     * pointerup    :
+     *   fbIsClick = true  --> goi fbOpenChat()
+     *   fbIsClick = false --> fbSnapToEdge():
+     *     nua PHAI: targetX = 0, targetY = 0  (hít ve CSS goc)
+     *     nua TRAI: targetX = fbCurX + (20 - rect.left), targetY = 0
+     *     (Y luon = 0 --> khong de nut Back-to-Top)
      * =================================================================== */
     (function () {
       'use strict';
 
-      /* ---------- DOM ---------- */
       var fbEl = document.getElementById('fbChatWrapper');
 
-      /* ---------- Trạng thái ---------- */
-      var fbIsClick    = true;   // true = click, false = drag
-      var fbIsDragging = false;  // đang trong phiên nhấn giữ
-      var fbInDragMode = false;  // đã chuyển sang hệ left/top chưa
+      var fbCurX = 0, fbCurY = 0;
+      var fbIsClick = true, fbIsDragging = false;
+      var fbStartX = 0, fbStartY = 0;
+      var fbOriginX = 0, fbOriginY = 0;
 
-      var fbStartMouseX = 0;
-      var fbStartMouseY = 0;
-      var fbOriginLeft  = 0;   // left của nút lúc bắt đầu kéo
-      var fbOriginTop   = 0;   // top  của nút lúc bắt đầu kéo
-      var fbCurLeft     = 0;   // left hiện tại
-      var fbCurTop      = 0;   // top  hiện tại
-
-      /* =================================================================
-       * fbEnterDragMode()
-       * Chuyển nút từ CSS bottom/right sang left/top tuyệt đối.
-       * Gọi một lần duy nhất khi người dùng nhấn xuống lần đầu.
-       * ================================================================= */
-      function fbEnterDragMode() {
-        var rect  = fbEl.getBoundingClientRect();
-        fbCurLeft = rect.left;
-        fbCurTop  = rect.top;
-        fbEl.style.bottom = '';
-        fbEl.style.right  = '';
-        fbEl.style.left   = fbCurLeft + 'px';
-        fbEl.style.top    = fbCurTop  + 'px';
-        fbInDragMode = true;
+      function fbSetT(x, y) {
+        fbCurX = x; fbCurY = y;
+        fbEl.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
       }
 
-      /* =================================================================
-       * fbSnapToEdge()
-       * Snap về mép TRÁI hoặc PHẢI dựa vào vị trí tâm nút.
-       * CHỈ thay đổi trục X (left).
-       * Trục Y (fbCurTop / style.top) KHÔNG bị đụng → không tụt đáy.
-       * ================================================================= */
       function fbSnapToEdge() {
-        var vw     = window.innerWidth;
-        var sz     = fbEl.offsetWidth;          // 56px
-        var MARGIN = 20;                        // khoảng cách mép màn hình
-        var midX   = fbCurLeft + sz / 2;       // tâm nút theo trục X
-
-        var targetLeft = (midX < vw / 2)
-          ? MARGIN                             // Nửa TRÁI → snap mép trái
-          : (vw - sz - MARGIN);               // Nửa PHẢI → snap mép phải
-
-        /* Bật spring transition chỉ cho trục X */
-        fbEl.classList.add('fbSnap--snapping');
-        fbEl.style.left = targetLeft + 'px';
-        fbCurLeft = targetLeft;
-
-        /* Gỡ class sau khi animation kết thúc (≥ 380ms transition) */
-        setTimeout(function () {
-          fbEl.classList.remove('fbSnap--snapping');
-        }, 450);
+        var rect = fbEl.getBoundingClientRect();
+        var vw = window.innerWidth;
+        var sz = fbEl.offsetWidth;
+        var midX = rect.left + sz / 2;
+        var targetX = (midX < vw / 2)
+          ? fbCurX + (20 - rect.left)   /* snap men TRAI: cach le 20px */
+          : 0;                           /* snap men PHAI: ve CSS goc   */
+        fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25,1,0.5,1),box-shadow 0.2s';
+        fbSetT(targetX, 0);             /* Y = 0: luon ve bottom:95px  */
       }
 
-      /* =================================================================
-       * fbOnPointerDown – mousedown / touchstart
-       * ================================================================= */
-      function fbOnPointerDown(e) {
-        if (e.type === 'mousedown' && e.button !== 0) return;
-
-        /* Chuyển sang hệ left/top lần đầu tiên */
-        if (!fbInDragMode) fbEnterDragMode();
-
-        fbIsDragging  = true;
-        fbIsClick     = true;          /* reset cờ – mặc định là CLICK */
-
-        var pt        = e.touches ? e.touches[0] : e;
-        fbStartMouseX = pt.clientX;
-        fbStartMouseY = pt.clientY;
-        fbOriginLeft  = fbCurLeft;
-        fbOriginTop   = fbCurTop;
-
-        fbEl.classList.add('fbSnap--dragging');
+      function fbOnDown(e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        fbIsDragging = true;
+        fbIsClick    = true;
+        fbStartX  = e.clientX; fbStartY  = e.clientY;
+        fbOriginX = fbCurX;    fbOriginY = fbCurY;
+        fbEl.style.transition = 'none';
+        fbEl.classList.add('fb--dragging');
+        if (fbEl.setPointerCapture) fbEl.setPointerCapture(e.pointerId);
         e.preventDefault();
       }
 
-      /* =================================================================
-       * fbOnPointerMove – mousemove / touchmove
-       * ================================================================= */
-      function fbOnPointerMove(e) {
+      function fbOnMove(e) {
         if (!fbIsDragging) return;
+        var dx = e.clientX - fbStartX;
+        var dy = e.clientY - fbStartY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) fbIsClick = false;
 
-        var pt = e.touches ? e.touches[0] : e;
-        var dx = pt.clientX - fbStartMouseX;
-        var dy = pt.clientY - fbStartMouseY;
-
-        /* Nếu dịch chuyển > 5px theo bất kỳ trục → xác nhận là DRAG */
-        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-          fbIsClick = false;
-        }
-
-        /* Giới hạn trong viewport */
-        var vw   = window.innerWidth;
-        var vh   = window.innerHeight;
-        var sz   = fbEl.offsetWidth;
-        var newL = Math.min(Math.max(0, fbOriginLeft + dx), vw - sz);
-        var newT = Math.min(Math.max(0, fbOriginTop  + dy), vh - sz);
-
-        fbCurLeft = newL;
-        fbCurTop  = newT;
-        fbEl.style.left = newL + 'px';
-        fbEl.style.top  = newT + 'px';
-
+        var rect = fbEl.getBoundingClientRect();
+        var vw = window.innerWidth, vh = window.innerHeight, sz = fbEl.offsetWidth;
+        var projL = rect.left + (dx - (fbCurX - fbOriginX));
+        var projT = rect.top  + (dy - (fbCurY - fbOriginY));
+        var safeL = Math.max(0, Math.min(vw - sz, projL));
+        var safeT = Math.max(0, Math.min(vh - sz, projT));
+        fbSetT(fbOriginX + dx + (safeL - projL), fbOriginY + dy + (safeT - projT));
         e.preventDefault();
       }
 
-      /* =================================================================
-       * fbOnPointerUp – mouseup / touchend
-       * ================================================================= */
-      function fbOnPointerUp(e) {
+      function fbOnUp(e) {
         if (!fbIsDragging) return;
         fbIsDragging = false;
-        fbEl.classList.remove('fbSnap--dragging');
-
+        fbEl.classList.remove('fb--dragging');
         if (fbIsClick) {
-          /* ── CLICK ─────────────────────────────────────────────────
-           * Giữ nguyên vị trí nút, KHÔNG kích hoạt snap.
-           * Gọi hàm mở khung chat.                                   */
+          fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25,1,0.5,1),box-shadow 0.2s';
           fbOpenChat();
         } else {
-          /* ── DRAG ──────────────────────────────────────────────────
-           * Snap về mép trái/phải (chỉ trục X).
-           * Trục Y (top) giữ nguyên → nút ở đúng cao độ thả chuột.  */
           fbSnapToEdge();
         }
       }
 
-      /* =================================================================
-       * fbOpenChat – mở khung chat Facebook Messenger
-       * ================================================================= */
       function fbOpenChat() {
         if (window.FB && window.FB.CustomerChat) {
-          try {
-            FB.CustomerChat.showDialog();
-          } catch (err) {
-            console.warn('[fbChat] showDialog() lỗi:', err);
-          }
+          try { FB.CustomerChat.showDialog(); }
+          catch (err) { console.warn('[fbChat]', err); }
         }
       }
 
-      /* =================================================================
-       * Gắn event listeners
-       * ================================================================= */
-      /* Desktop */
-      fbEl.addEventListener('mousedown',  fbOnPointerDown);
-      document.addEventListener('mousemove', fbOnPointerMove);
-      document.addEventListener('mouseup',   fbOnPointerUp);
-      /* Mobile / Touch */
-      fbEl.addEventListener('touchstart', fbOnPointerDown, { passive: false });
-      document.addEventListener('touchmove', fbOnPointerMove, { passive: false });
-      document.addEventListener('touchend',  fbOnPointerUp);
+      fbEl.addEventListener('pointerdown',   fbOnDown);
+      fbEl.addEventListener('pointermove',   fbOnMove);
+      fbEl.addEventListener('pointerup',     fbOnUp);
+      fbEl.addEventListener('pointercancel', fbOnUp);
+      fbEl.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
     })();
   </script>
@@ -754,4 +687,4 @@
   <script src="js/shop.js"></script>
 </body>
 
-</html>
+</html>
