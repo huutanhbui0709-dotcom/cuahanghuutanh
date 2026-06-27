@@ -170,7 +170,7 @@
   .cart-count.visible { display: flex; }
 
   /* ===== CART MODAL (slide-in from right) ===== */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 9999; }
   .modal-overlay.open { display: flex; align-items: flex-end; justify-content: flex-end; }
   .modal { background: #fff; width: 100%; max-width: 480px; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: -8px 0 40px rgba(0,0,0,.2); animation: slideIn .25s ease; }
   @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -258,7 +258,7 @@
   .order-detail { display: inline-block; vertical-align: middle; font-size: .8rem; color: var(--muted); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* Toast */
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: .875rem; font-weight: 600; z-index: 9999; transform: translateY(100px); opacity: 0; transition: all .3s; max-width: 320px; display: flex; align-items: center; gap: 8px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: .875rem; font-weight: 600; z-index: 10000; transform: translateY(100px); opacity: 0; transition: all .3s; max-width: 320px; display: flex; align-items: center; gap: 8px; }
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.toast-success { background: var(--success); }
   .toast.toast-error { background: var(--danger); }
