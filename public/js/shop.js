@@ -99,12 +99,14 @@ function populateTypeFilter() {
   const types = [...new Set(products.map(p => p.loai).filter(Boolean))];
   const counts = getTypeCounts();
   const totalValid = products.filter(p => p.ma && p.ten).length;
+  const totalBestseller = products.filter(p => p.ma && p.ten && p.isBestSeller).length;
 
   // ---- Sidebar buttons (#categoryList) ----
   const listEl = document.getElementById('categoryList');
   if (listEl) {
     listEl.innerHTML = [
       { label: 'Tất cả', value: '', count: totalValid },
+      { label: '⭐ Bán chạy nhất', value: 'bestseller', count: totalBestseller },
       ...types.map(t => ({ label: t, value: t, count: counts[t] || 0 }))
     ].map(item => `
       <button class="cat-btn${item.value === currentType ? ' active' : ''}" data-type="${item.value}" onclick="setCategory(this.dataset.type)">
@@ -120,6 +122,7 @@ function populateTypeFilter() {
   if (pillEl) {
     pillEl.innerHTML = [
       { label: 'Tất cả', value: '', count: totalValid },
+      { label: '⭐ Bán chạy nhất', value: 'bestseller', count: totalBestseller },
       ...types.map(t => ({ label: t, value: t, count: counts[t] || 0 }))
     ].map(item => `
       <button class="cat-pill${item.value === currentType ? ' active' : ''}" data-type="${item.value}" onclick="setCategory(this.dataset.type)">
@@ -152,7 +155,7 @@ function getFilteredProducts() {
   let list = products.filter(p => {
     if (!p.ma || !p.ten) return false;
     const match = !q || p.ten.toLowerCase().includes(q) || p.ma.toLowerCase().includes(q);
-    const matchType = !currentType || p.loai === currentType;
+    const matchType = !currentType || (currentType === 'bestseller' ? p.isBestSeller === true : p.loai === currentType);
     return match && matchType;
   });
   if (sort === 'name_asc') list.sort((a, b) => a.ten.localeCompare(b.ten, 'vi'));

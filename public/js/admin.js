@@ -414,7 +414,7 @@ function renderAdminTable() {
   document.getElementById('adminProductCount').textContent = total;
   document.getElementById('adminTable').innerHTML = `
     <table>
-      <thead><tr><th>#</th><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá bán</th><th>ĐVT</th><th>Loại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>#</th><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá bán</th><th>ĐVT</th><th>Loại</th><th>Trạng thái</th><th>BÁN CHẠY</th><th>Thao tác</th></tr></thead>
       <tbody>${paged.map((p, i) => `
         <tr>
           <td>${(adminPage-1)*ITEMS_PER_PAGE + i + 1}</td>
@@ -425,6 +425,9 @@ function renderAdminTable() {
           <td>${p.donvi || '-'}</td>
           <td><span class="badge ${p.loai === 'Hàng hóa dịch vụ' ? 'badge-green' : 'badge-blue'}">${p.loai || '-'}</span></td>
           <td><span class="badge ${p.trangthai === 'Ngừng theo dõi' ? 'badge-red' : 'badge-yellow'}">${p.trangthai || 'Đang theo dõi'}</span></td>
+          <td style="text-align:center">
+            <input type="checkbox" ${p.isBestSeller ? 'checked' : ''} onchange="toggleBestSeller('${p.ma.replace(/'/g,"\\'")}', this.checked)" style="width:18px;height:18px;cursor:pointer">
+          </td>
           <td>
             <div class="row-actions">
               <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g,"\\'")}')"><i class="fa-solid fa-pencil"></i></button>
@@ -561,6 +564,33 @@ async function deleteProduct(ma) {
     showToast('<i class="fa-solid fa-trash"></i> Đã xoá sản phẩm', 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
+  }
+}
+
+async function toggleBestSeller(ma, isChecked) {
+  try {
+    const res = await adminFetch('/api/products/bestseller', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: ma, isBestSeller: isChecked })
+    });
+    if (res.status === 401) return;
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi cập nhật trạng thái bán chạy'), 'error');
+      renderAdminTable();
+      return;
+    }
+    const prod = products.find(p => p.ma === ma);
+    if (prod) {
+      prod.isBestSeller = isChecked;
+    }
+    showToast('<i class="fa-solid fa-star"></i> Đã cập nhật trạng thái bán chạy', 'success');
+  } catch (err) {
+    showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
+    renderAdminTable();
   }
 }
 

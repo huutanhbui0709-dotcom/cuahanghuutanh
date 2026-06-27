@@ -869,6 +869,41 @@ app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => 
   res.json({ ok: true, deleted });
 });
 
+app.patch('/api/products/bestseller', requireAdmin, async (req, res) => {
+  try {
+    const { id, isBestSeller } = req.body || {};
+    if (!id) {
+      return res.status(400).json({ ok: false, message: 'Thiếu thông tin mã sản phẩm (id).' });
+    }
+
+    // Đọc file bất đồng bộ từ PRODUCTS_FILE
+    const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
+    const productsList = JSON.parse(raw || '[]');
+
+    const product = productsList.find(p => p.ma === id);
+    if (!product) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
+    }
+
+    product.isBestSeller = !!isBestSeller;
+
+    // Cập nhật cả cache RAM 'products'
+    const cachedProduct = products.find(p => p.ma === id);
+    if (cachedProduct) {
+      cachedProduct.isBestSeller = !!isBestSeller;
+    }
+
+    // Lưu dữ liệu bất đồng bộ qua queue writer an toàn
+    await saveProducts(productsList);
+    broadcastUpdate('products_updated');
+
+    res.json({ ok: true, message: 'Cập nhật sản phẩm bán chạy thành công.' });
+  } catch (err) {
+    console.error('Lỗi khi cập nhật bestseller:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi cập nhật sản phẩm bán chạy.' });
+  }
+});
+
 app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req, res) => {
   const { ma, ten, gia, donvi, loai, trangthai } = req.body || {};
   const cleanMa = String(ma || '').trim();
