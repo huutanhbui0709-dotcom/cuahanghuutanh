@@ -238,10 +238,10 @@ async function seedImagesFromPublic() {
     for (const file of files) {
       const srcPath = path.join(bundledImgDir, file);
       const destPath = path.join(IMG_DIR, file);
-      
+
       const stats = await fsp.stat(srcPath);
       if (stats.isDirectory()) continue;
-      
+
       if (!(await existsAsync(destPath))) {
         await fsp.copyFile(srcPath, destPath);
         copied++;
@@ -275,7 +275,7 @@ async function initializeData() {
       await fsp.writeFile(PRODUCTS_FILE, seed, 'utf8');
       console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
     }
-    
+
     if (!(await existsAsync(ORDERS_FILE))) {
       const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
       const seed = (await existsAsync(seedOrders))
@@ -310,7 +310,7 @@ async function initializeData() {
         if (spamStats.size === 0) {
           await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
         }
-      } catch (err) {}
+      } catch (err) { }
     }
 
     // 4. Load dữ liệu lên Cache RAM bất đồng bộ
@@ -619,9 +619,17 @@ app.post('/api/orders', async (req, res) => {
 
   if (lockUntil && now < lockUntil) {
     const remainingMin = Math.ceil((lockUntil - now) / 60000);
+    let remainingStr = '';
+    if (remainingMin >= 60) {
+      const hours = Math.floor(remainingMin / 60);
+      const mins = remainingMin % 60;
+      remainingStr = `${hours} giờ ${mins > 0 ? ` ${mins} phút` : ''}`;
+    } else {
+      remainingStr = `${remainingMin} phút`;
+    }
     return res.status(429).json({
       ok: false,
-      message: `Thiết bị của bạn đã bị tạm khóa do phát hiện spam đặt hàng. Vui lòng quay lại sau ${remainingMin} phút.`
+      message: `Thiết bị của bạn đã bị tạm khóa do phát hiện spam đặt hàng. Vui lòng quay lại sau ${remainingStr}.`
     });
   }
 
@@ -630,9 +638,9 @@ app.post('/api/orders', async (req, res) => {
   let fpAttempts = deviceOrderAttempts.get(fingerprint) || [];
 
   // 1. Kiểm tra cảnh báo (đã có đơn đặt trong vòng 2 phút trước)
-  const hasOrderInTwoMin = attempts.some(t => t > now - 120000) || 
-                           ipAttempts.some(t => t > now - 120000) || 
-                           fpAttempts.some(t => t > now - 120000);
+  const hasOrderInTwoMin = attempts.some(t => t > now - 120000) ||
+    ipAttempts.some(t => t > now - 120000) ||
+    fpAttempts.some(t => t > now - 120000);
 
   const { customer, phone, address, note, items, force } = req.body || {};
 
@@ -660,11 +668,11 @@ app.post('/api/orders', async (req, res) => {
   const currentCount = Math.max(attempts.length, ipAttempts.length, fpAttempts.length);
 
   if (currentCount >= 5) {
-    const lockTime = now + 3600000;
+    const lockTime = now + 86400000; // Khóa 24 tiếng
     blockedDevices.set(deviceId, lockTime); // Khóa Device ID
     blockedDevices.set(ip, lockTime);       // Khóa IP
     blockedDevices.set(fingerprint, lockTime); // Khóa Fingerprint
-    
+
     // Lưu / Cập nhật vào spam_devices.json
     let entry = spamDevices.find(e => e.fingerprint === fingerprint || e.ip === ip || e.deviceId === deviceId);
     if (!entry) {
@@ -691,7 +699,7 @@ app.post('/api/orders', async (req, res) => {
 
     return res.status(429).json({
       ok: false,
-      message: 'Phát hiện hành vi spam đặt hàng liên tục. Thiết bị của bạn đã bị tạm khóa 1 tiếng.'
+      message: 'Phát hiện hành vi spam đặt hàng liên tục. Thiết bị của bạn đã bị tạm khóa 24 giờ.'
     });
   }
 
