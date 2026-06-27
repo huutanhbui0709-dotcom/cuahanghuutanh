@@ -160,13 +160,18 @@ function normalizePath(p) {
 // mỗi lần thay đổi sẽ ghi đè lại file - các lệnh ghi được xếp hàng
 // tuần tự để tránh ghi đè chồng lên nhau khi có nhiều request cùng lúc)
 // ---------------------------------------------------------------------
-function ensureDirSync(dir) {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+async function existsAsync(filePath) {
+  try {
+    await fsp.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function readJSONSync(file, fallback) {
+async function readJSONAsync(file, fallback) {
   try {
-    const raw = fs.readFileSync(file, 'utf8');
+    const raw = await fsp.readFile(file, 'utf8');
     return JSON.parse(raw);
   } catch (err) {
     return fallback;
@@ -179,43 +184,66 @@ function makeQueuedWriter(filePath, blobPath) {
     queue = queue
       .catch(() => { }) // không để lỗi trước đó chặn lần ghi sau
       .then(async () => {
-        await fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
-        if (USE_BLOB) {
-          try {
-            await vercelBlob.put(blobPath, JSON.stringify(data, null, 2), {
-              access: 'public',
-              addRandomSuffix: false
-            });
-            console.log(`☁️ Đã đồng bộ lên Vercel Blob: ${blobPath}`);
-          } catch (err) {
-            console.error(`❌ Lỗi đồng bộ lên Blob ${blobPath}:`, err.message);
+        try {
+          const content = JSON.stringify(data, null, 2);
+          await fsp.writeFile(filePath, content, 'utf8');
+          if (USE_BLOB) {
+            try {
+              await vercelBlob.put(blobPath, content, {
+                access: 'public',
+                addRandomSuffix: false
+              });
+              console.log(`☁️ Đã đồng bộ lên Vercel Blob: ${blobPath}`);
+            } catch (err) {
+              console.error(`❌ Lỗi đồng bộ lên Blob ${blobPath}:`, err.message);
+            }
           }
+        } catch (err) {
+          console.error(`❌ Lỗi trong hàng đợi ghi file (${filePath}):`, err.message);
         }
       });
     return queue;
   };
 }
 
-ensureDirSync(DATA_DIR);
-ensureDirSync(SLIDE_IMG_DIR);
+// Khởi tạo các biến cache RAM
+let products = [];
+let orders = [];
+let settings = {
+  address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
+  phone: "0945 592 209",
+  email: "diennuochuutanh@gmail.com",
+  mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
+};
+let spamDevices = [];
+
+const deviceOrderAttempts = new Map();
+const blockedDevices = new Map();
+
+const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'data/products.json');
+const saveOrders = makeQueuedWriter(ORDERS_FILE, 'data/orders.json');
+const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
+const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, 'data/spam_devices.json');
 
 // Khi server khởi động lần đầu trên Azure (hoặc sau mỗi lần deploy), copy
 // tất cả ảnh từ thư mục public/img/ vào IMG_DIR (persistent directory).
 // Chỉ copy những file CHƯA CÓ trong IMG_DIR để không ghi đè ảnh đã được
 // cập nhật qua admin interface.
-function seedImagesFromPublic() {
+async function seedImagesFromPublic() {
   const bundledImgDir = path.join(__dirname, 'public', 'img');
-  if (!fs.existsSync(bundledImgDir)) return;
+  if (!(await existsAsync(bundledImgDir))) return;
   try {
-    const files = fs.readdirSync(bundledImgDir);
+    const files = await fsp.readdir(bundledImgDir);
     let copied = 0;
     for (const file of files) {
       const srcPath = path.join(bundledImgDir, file);
       const destPath = path.join(IMG_DIR, file);
-      // Bỏ qua thư mục con (Slide_img) và file đã tồn tại trong persistent dir
-      if (fs.statSync(srcPath).isDirectory()) continue;
-      if (!fs.existsSync(destPath)) {
-        fs.copyFileSync(srcPath, destPath);
+      
+      const stats = await fsp.stat(srcPath);
+      if (stats.isDirectory()) continue;
+      
+      if (!(await existsAsync(destPath))) {
+        await fsp.copyFile(srcPath, destPath);
         copied++;
       }
     }
@@ -227,140 +255,147 @@ function seedImagesFromPublic() {
   }
 }
 
-seedImagesFromPublic();
-
-// Nếu chưa có products.json trong DATA_DIR, dùng dữ liệu mẫu đi kèm repo
-// (trường hợp DATA_DIR được trỏ tới 1 ổ đĩa mới gắn lần đầu).
-if (!fs.existsSync(PRODUCTS_FILE)) {
-  const seed = fs.existsSync(BUNDLED_PRODUCTS_SEED)
-    ? fs.readFileSync(BUNDLED_PRODUCTS_SEED, 'utf8')
-    : '[]';
-  fs.writeFileSync(PRODUCTS_FILE, seed, 'utf8');
-  console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
-}
-if (!fs.existsSync(ORDERS_FILE)) {
-  const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
-  const seed = fs.existsSync(seedOrders)
-    ? fs.readFileSync(seedOrders, 'utf8')
-    : '[]';
-  fs.writeFileSync(ORDERS_FILE, seed, 'utf8');
-  console.log('📋 Đã tạo orders.json mới từ dữ liệu mẫu tại:', ORDERS_FILE);
-}
-if (!fs.existsSync(SETTINGS_FILE)) {
-  const seedSettings = path.join(BUNDLED_DATA_DIR, 'settings.json');
-  if (fs.existsSync(seedSettings)) {
-    fs.writeFileSync(SETTINGS_FILE, fs.readFileSync(seedSettings, 'utf8'), 'utf8');
-  } else {
-    const defaultSettings = {
-      address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
-      phone: "0945 592 209",
-      email: "diennuochuutanh@gmail.com",
-      mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
-    };
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf8');
-  }
-  console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
-}
-if (!fs.existsSync(SPAM_DEVICES_FILE) || fs.statSync(SPAM_DEVICES_FILE).size === 0) {
-  fs.writeFileSync(SPAM_DEVICES_FILE, '[]', 'utf8');
-  console.log('🛡️ Đã tạo/khởi tạo lại spam_devices.json tại:', SPAM_DEVICES_FILE);
-}
-
-let products = readJSONSync(PRODUCTS_FILE, []);
-let orders = readJSONSync(ORDERS_FILE, []);
-let settings = readJSONSync(SETTINGS_FILE, {
-  address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
-  phone: "0945 592 209",
-  email: "diennuochuutanh@gmail.com",
-  mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
-});
-let spamDevices = readJSONSync(SPAM_DEVICES_FILE, []);
-
-const deviceOrderAttempts = new Map();
-const blockedDevices = new Map();
-
-// Load initial blocked devices
-spamDevices.forEach(entry => {
-  if (entry.lockUntil && entry.lockUntil > Date.now()) {
-    if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
-    if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
-    if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
-  }
-});
-
-const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'data/products.json');
-const saveOrders = makeQueuedWriter(ORDERS_FILE, 'data/orders.json');
-const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
-const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, 'data/spam_devices.json');
-
 let isInitialized = false;
 let initPromise = null;
 
 async function initializeData() {
-  // Khởi tạo từ file cục bộ trước làm fallback
-  products = readJSONSync(PRODUCTS_FILE, products);
-  orders = readJSONSync(ORDERS_FILE, orders);
-  settings = readJSONSync(SETTINGS_FILE, settings);
-  spamDevices = readJSONSync(SPAM_DEVICES_FILE, spamDevices);
+  try {
+    // 1. Đảm bảo thư mục tồn tại bất đồng bộ
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    await fsp.mkdir(SLIDE_IMG_DIR, { recursive: true });
 
-  if (USE_BLOB) {
-    try {
-      console.log('🔄 Đang đồng bộ dữ liệu từ Vercel Blob Storage...');
-      const { blobs } = await vercelBlob.list();
+    // 2. Seed ảnh từ public sang IMG_DIR
+    await seedImagesFromPublic();
 
-      // Đồng bộ products.json
-      const prodBlob = blobs.find(b => b.pathname === 'data/products.json');
-      if (prodBlob) {
-        const res = await fetch(prodBlob.url);
-        products = await res.json();
-        console.log(`✅ Đã tải ${products.length} sản phẩm từ Blob`);
-      } else {
-        await vercelBlob.put('data/products.json', JSON.stringify(products, null, 2), { access: 'public', addRandomSuffix: false });
-        console.log('📤 Đã đẩy products.json mẫu lên Blob');
-      }
-
-      // Đồng bộ orders.json
-      const ordBlob = blobs.find(b => b.pathname === 'data/orders.json');
-      if (ordBlob) {
-        const res = await fetch(ordBlob.url);
-        orders = await res.json();
-        console.log(`✅ Đã tải ${orders.length} đơn hàng từ Blob`);
-      } else {
-        await vercelBlob.put('data/orders.json', JSON.stringify(orders, null, 2), { access: 'public', addRandomSuffix: false });
-        console.log('📤 Đã đẩy orders.json mẫu lên Blob');
-      }
-
-      // Đồng bộ settings.json
-      const setBlob = blobs.find(b => b.pathname === 'data/settings.json');
-      if (setBlob) {
-        const res = await fetch(setBlob.url);
-        settings = await res.json();
-        console.log('✅ Đã tải settings từ Blob');
-      } else {
-        await vercelBlob.put('data/settings.json', JSON.stringify(settings, null, 2), { access: 'public', addRandomSuffix: false });
-        console.log('📤 Đã đẩy settings.json mẫu lên Blob');
-      }
-
-      // Đồng bộ spam_devices.json
-      const spamBlob = blobs.find(b => b.pathname === 'data/spam_devices.json');
-      if (spamBlob) {
-        const res = await fetch(spamBlob.url);
-        spamDevices = await res.json();
-        console.log(`✅ Đã tải ${spamDevices.length} thiết bị spam từ Blob`);
-        spamDevices.forEach(entry => {
-          if (entry.lockUntil && entry.lockUntil > Date.now()) {
-            if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
-            if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
-            if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
-          }
-        });
-      } else {
-        await vercelBlob.put('data/spam_devices.json', JSON.stringify(spamDevices, null, 2), { access: 'public', addRandomSuffix: false });
-        console.log('📤 Đã đẩy spam_devices.json mẫu lên Blob');
-      }
-    } catch (err) {
-      console.error('❌ Lỗi đồng bộ dữ liệu từ Blob:', err);
+    // 3. Khởi tạo/seed các file JSON nếu chưa có
+    if (!(await existsAsync(PRODUCTS_FILE))) {
+      const seed = (await existsAsync(BUNDLED_PRODUCTS_SEED))
+        ? await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8')
+        : '[]';
+      await fsp.writeFile(PRODUCTS_FILE, seed, 'utf8');
+      console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
     }
+    
+    if (!(await existsAsync(ORDERS_FILE))) {
+      const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
+      const seed = (await existsAsync(seedOrders))
+        ? await fsp.readFile(seedOrders, 'utf8')
+        : '[]';
+      await fsp.writeFile(ORDERS_FILE, seed, 'utf8');
+      console.log('📋 Đã tạo orders.json mới từ dữ liệu mẫu tại:', ORDERS_FILE);
+    }
+
+    if (!(await existsAsync(SETTINGS_FILE))) {
+      const seedSettings = path.join(BUNDLED_DATA_DIR, 'settings.json');
+      if (await existsAsync(seedSettings)) {
+        await fsp.writeFile(SETTINGS_FILE, await fsp.readFile(seedSettings, 'utf8'), 'utf8');
+      } else {
+        const defaultSettings = {
+          address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
+          phone: "0945 592 209",
+          email: "diennuochuutanh@gmail.com",
+          mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
+        };
+        await fsp.writeFile(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf8');
+      }
+      console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
+    }
+
+    if (!(await existsAsync(SPAM_DEVICES_FILE))) {
+      await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
+      console.log('🛡️ Đã tạo/khởi tạo lại spam_devices.json tại:', SPAM_DEVICES_FILE);
+    } else {
+      try {
+        const spamStats = await fsp.stat(SPAM_DEVICES_FILE);
+        if (spamStats.size === 0) {
+          await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
+        }
+      } catch (err) {}
+    }
+
+    // 4. Load dữ liệu lên Cache RAM bất đồng bộ
+    products = await readJSONAsync(PRODUCTS_FILE, []);
+    orders = await readJSONAsync(ORDERS_FILE, []);
+    settings = await readJSONAsync(SETTINGS_FILE, {
+      address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
+      phone: "0945 592 209",
+      email: "diennuochuutanh@gmail.com",
+      mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
+    });
+    spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
+
+    // 5. Cập nhật danh sách thiết bị bị khóa
+    blockedDevices.clear();
+    spamDevices.forEach(entry => {
+      if (entry.lockUntil && entry.lockUntil > Date.now()) {
+        if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
+        if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
+        if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+      }
+    });
+
+    // 6. Đồng bộ dữ liệu với Vercel Blob nếu bật USE_BLOB
+    if (USE_BLOB) {
+      try {
+        console.log('🔄 Đang đồng bộ dữ liệu từ Vercel Blob Storage...');
+        const { blobs } = await vercelBlob.list();
+
+        // Đồng bộ products.json
+        const prodBlob = blobs.find(b => b.pathname === 'data/products.json');
+        if (prodBlob) {
+          const res = await fetch(prodBlob.url);
+          products = await res.json();
+          console.log(`✅ Đã tải ${products.length} sản phẩm từ Blob`);
+        } else {
+          await vercelBlob.put('data/products.json', JSON.stringify(products, null, 2), { access: 'public', addRandomSuffix: false });
+          console.log('📤 Đã đẩy products.json mẫu lên Blob');
+        }
+
+        // Đồng bộ orders.json
+        const ordBlob = blobs.find(b => b.pathname === 'data/orders.json');
+        if (ordBlob) {
+          const res = await fetch(ordBlob.url);
+          orders = await res.json();
+          console.log(`✅ Đã tải ${orders.length} đơn hàng từ Blob`);
+        } else {
+          await vercelBlob.put('data/orders.json', JSON.stringify(orders, null, 2), { access: 'public', addRandomSuffix: false });
+          console.log('📤 Đã đẩy orders.json mẫu lên Blob');
+        }
+
+        // Đồng bộ settings.json
+        const setBlob = blobs.find(b => b.pathname === 'data/settings.json');
+        if (setBlob) {
+          const res = await fetch(setBlob.url);
+          settings = await res.json();
+          console.log('✅ Đã tải settings từ Blob');
+        } else {
+          await vercelBlob.put('data/settings.json', JSON.stringify(settings, null, 2), { access: 'public', addRandomSuffix: false });
+          console.log('📤 Đã đẩy settings.json mẫu lên Blob');
+        }
+
+        // Đồng bộ spam_devices.json
+        const spamBlob = blobs.find(b => b.pathname === 'data/spam_devices.json');
+        if (spamBlob) {
+          const res = await fetch(spamBlob.url);
+          spamDevices = await res.json();
+          console.log(`✅ Đã tải ${spamDevices.length} thiết bị spam từ Blob`);
+          spamDevices.forEach(entry => {
+            if (entry.lockUntil && entry.lockUntil > Date.now()) {
+              if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
+              if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
+              if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+            }
+          });
+        } else {
+          await vercelBlob.put('data/spam_devices.json', JSON.stringify(spamDevices, null, 2), { access: 'public', addRandomSuffix: false });
+          console.log('📤 Đã đẩy spam_devices.json mẫu lên Blob');
+        }
+      } catch (err) {
+        console.error('❌ Lỗi đồng bộ dữ liệu từ Blob:', err);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Lỗi nghiêm trọng khi khởi tạo dữ liệu:', err);
   }
   isInitialized = true;
 }
@@ -517,10 +552,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 const ADMIN_HTML_PATH = path.join(__dirname, 'private', 'admin.html');
 let adminHtmlCache = null;
 
-app.get(ADMIN_PATH, (req, res) => {
+app.get(ADMIN_PATH, async (req, res) => {
   try {
     if (!adminHtmlCache) {
-      adminHtmlCache = fs.readFileSync(ADMIN_HTML_PATH, 'utf8');
+      adminHtmlCache = await fsp.readFile(ADMIN_HTML_PATH, 'utf8');
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(adminHtmlCache);
@@ -549,7 +584,7 @@ app.get('/api/slides', async (req, res) => {
   const bundledDir = path.join(__dirname, 'public', 'img', 'Slide_img');
   try {
     let files = [];
-    if (fs.existsSync(dir)) {
+    if (await existsAsync(dir)) {
       files = await fsp.readdir(dir);
     }
     // Lọc chỉ lấy các file định dạng ảnh
@@ -558,7 +593,7 @@ app.get('/api/slides', async (req, res) => {
       .map(f => '/img/Slide_img/' + f);
 
     // Nếu trong thư mục ghi đè không có slide nào, lấy từ thư mục mẫu của repo
-    if (images.length === 0 && fs.existsSync(bundledDir)) {
+    if (images.length === 0 && await existsAsync(bundledDir)) {
       const bundledFiles = await fsp.readdir(bundledDir);
       images = bundledFiles
         .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
