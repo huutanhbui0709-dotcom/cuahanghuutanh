@@ -586,7 +586,11 @@ app.get('/api/products', (req, res) => {
 });
 
 app.get('/api/settings', (req, res) => {
-  res.json(settings);
+  const publicSettings = { ...settings };
+  if (!req.session || !req.session.isAdmin) {
+    delete publicSettings.geminiApiKey;
+  }
+  res.json(publicSettings);
 });
 
 app.get('/api/slides', async (req, res) => {
@@ -1187,11 +1191,13 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
 });
 
 app.put('/api/admin/settings', requireAdmin, async (req, res) => {
-  const { address, phone, email, mapUrl } = req.body || {};
+  const { address, phone, email, mapUrl, geminiApiKey, geminiKeySource } = req.body || {};
 
   if (address !== undefined) settings.address = String(address).trim();
   if (phone !== undefined) settings.phone = String(phone).trim();
   if (email !== undefined) settings.email = String(email).trim();
+  if (geminiApiKey !== undefined) settings.geminiApiKey = String(geminiApiKey).trim();
+  if (geminiKeySource !== undefined) settings.geminiKeySource = String(geminiKeySource).trim();
 
   if (mapUrl !== undefined) {
     let cleanMapUrl = String(mapUrl).trim();
@@ -1308,9 +1314,9 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
       return res.status(400).json({ ok: false, message: 'Không có file PDF nào được tải lên.' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (settings.geminiKeySource === 'custom' && settings.geminiApiKey) ? settings.geminiApiKey : process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ ok: false, message: 'Chưa cấu hình GEMINI_API_KEY trong hệ thống.' });
+      return res.status(500).json({ ok: false, message: 'Chưa cấu hình Gemini API Key trong hệ thống. Vui lòng nhập ở phần Công cụ hoặc kiểm tra cấu hình Azure/file .env.' });
     }
 
     // Đọc danh sách sản phẩm hiện có

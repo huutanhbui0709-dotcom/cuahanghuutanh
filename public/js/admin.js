@@ -186,6 +186,7 @@ function adminTab(tab, el) {
   if (tab === 'settings') loadSettingsForm();
   if (tab === 'slides') loadAdminSlides();
   if (tab === 'suppliers') loadSuppliersList();
+  if (tab === 'tools') loadGeminiApiKeyToInput();
 }
 
 async function loadSettingsForm() {
@@ -1645,6 +1646,89 @@ async function exportSingleInvoiceExcel(index) {
       btn.removeAttribute('disabled');
       btn.innerHTML = originalHTML;
     }
+  }
+}
+
+// ==============================
+// GEMINI API KEY MANAGEMENT
+// ==============================
+async function toggleGeminiKeySource() {
+  const source = document.querySelector('input[name="geminiKeySource"]:checked').value;
+  const container = document.getElementById('customApiKeyContainer');
+  const hint = document.getElementById('geminiKeyHint');
+  
+  if (source === 'custom') {
+    if (container) container.style.display = 'flex';
+    if (hint) hint.innerHTML = 'Hệ thống sẽ sử dụng Key cá nhân do bạn nhập ở trên.';
+  } else {
+    if (container) container.style.display = 'none';
+    if (hint) hint.innerHTML = 'Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.';
+  }
+
+  // Tự động lưu nguồn khóa lên server khi thay đổi lựa chọn
+  try {
+    await adminFetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geminiKeySource: source })
+    });
+  } catch (err) {
+    console.error('Lỗi lưu nguồn API key:', err);
+  }
+}
+
+async function loadGeminiApiKeyToInput() {
+  try {
+    const res = await adminFetch('/api/settings');
+    const settings = await res.json();
+    
+    // Đánh dấu nguồn key hiện tại
+    const source = settings.geminiKeySource || 'env';
+    const radio = document.querySelector(`input[name="geminiKeySource"][value="${source}"]`);
+    if (radio) {
+      radio.checked = true;
+    }
+    
+    const input = document.getElementById('inputGeminiApiKey');
+    if (input) {
+      input.value = settings.geminiApiKey || '';
+    }
+
+    // Hiển thị khung nhập nếu cần thiết
+    const container = document.getElementById('customApiKeyContainer');
+    const hint = document.getElementById('geminiKeyHint');
+    if (source === 'custom') {
+      if (container) container.style.display = 'flex';
+      if (hint) hint.innerHTML = 'Hệ thống sẽ sử dụng Key cá nhân do bạn nhập ở trên.';
+    } else {
+      if (container) container.style.display = 'none';
+      if (hint) hint.innerHTML = 'Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.';
+    }
+  } catch (err) {
+    console.error('Lỗi tải Gemini API Key:', err);
+  }
+}
+
+async function saveGeminiApiKey() {
+  const input = document.getElementById('inputGeminiApiKey');
+  const key = input ? input.value.trim() : '';
+
+  try {
+    const res = await adminFetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geminiApiKey: key })
+    });
+    if (res.status === 401) return;
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast('<i class="fa-solid fa-circle-check"></i> Đã lưu Gemini API Key thành công!', 'success');
+    } else {
+      showToast('<i class="fa-solid fa-xmark"></i> Lỗi: ' + (data.message || 'Không thể lưu'), 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối mạng.', 'error');
   }
 }
 

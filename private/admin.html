@@ -424,6 +424,31 @@
 
         <!-- TOOLS -->
         <div class="admin-tab" id="tab-tools">
+          <!-- CẤU HÌNH API KEY -->
+          <div class="admin-card" style="margin-bottom: 20px;">
+            <div class="admin-card-title"><i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cấu hình Gemini API Key</div>
+            
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0;">
+                <input type="radio" name="geminiKeySource" value="env" checked onchange="toggleGeminiKeySource()" />
+                Sử dụng API Key hệ thống (Cấu hình trên Azure / file .env)
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0 0 10px 0;">
+                <input type="radio" name="geminiKeySource" value="custom" onchange="toggleGeminiKeySource()" />
+                Sử dụng API Key cá nhân nhập trực tiếp
+              </label>
+            </div>
+
+            <div id="customApiKeyContainer" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <input type="password" id="inputGeminiApiKey" placeholder="Nhập Gemini API Key cá nhân của bạn..." style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem;" />
+              <button class="btn btn-primary" onclick="saveGeminiApiKey()"><i class="fa-solid fa-floppy-disk"></i> Lưu Key</button>
+            </div>
+            
+            <p id="geminiKeyHint" style="font-size: .8rem; color: var(--muted); margin-top: 8px; margin-bottom: 0;">
+              Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.
+            </p>
+          </div>
+
           <div class="admin-card">
             <div class="admin-card-title">
               <i class="fa-solid fa-file-pdf"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF)
