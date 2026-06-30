@@ -50,7 +50,7 @@ async function adminFetch(url, options) {
 // ==============================
 async function checkAuth() {
   try {
-    const res = await fetch('/api/admin/me', { 
+    const res = await fetch('/api/admin/me', {
       credentials: 'same-origin',
       headers: { 'Accept': 'application/json' }
     });
@@ -116,7 +116,7 @@ async function handleLogin(e) {
 }
 
 async function adminLogout() {
-  try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }); } catch (err) {}
+  try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }); } catch (err) { }
   showLogin();
 }
 
@@ -185,6 +185,7 @@ function adminTab(tab, el) {
   if (tab === 'dashboard') renderDashboard();
   if (tab === 'settings') loadSettingsForm();
   if (tab === 'slides') loadAdminSlides();
+  if (tab === 'suppliers') loadSuppliersList();
 }
 
 async function loadSettingsForm() {
@@ -256,13 +257,13 @@ async function loadAdminSlides() {
 async function uploadNewSlide(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const statusEl = document.getElementById('slideUploadStatus');
   statusEl.textContent = 'Đang tải lên...';
-  
+
   const formData = new FormData();
   formData.append('image', file);
-  
+
   try {
     const res = await adminFetch('/api/admin/slides', {
       method: 'POST',
@@ -338,7 +339,7 @@ function renderDashboard() {
   const dashboardStatusFilter = document.getElementById('dashboardOrderStatusFilter')?.value || '';
   const filteredOrders = dashboardStatusFilter ? orders.filter(o => o.status === dashboardStatusFilter) : orders;
   const recent = filteredOrders.slice(0, 5);
-  
+
   if (recent.length === 0) {
     document.getElementById('recentOrdersTable').innerHTML = '<p style="color:var(--muted);font-size:.875rem;padding:16px 0">Chưa có đơn hàng nào.</p>';
     return;
@@ -365,13 +366,13 @@ function populateProductTypeFilter() {
   const select = document.getElementById('adminTypeFilter');
   if (!select) return;
   const currentVal = select.value;
-  
+
   const types = [...new Set(products.map(p => p.loai).filter(Boolean))].sort();
-  
+
   let html = '<option value="">Tất cả loại</option>';
   html += types.map(t => `<option value="${t}">${t}</option>`).join('');
   select.innerHTML = html;
-  
+
   if (types.includes(currentVal)) {
     select.value = currentVal;
   } else {
@@ -382,15 +383,15 @@ function populateProductTypeFilter() {
 function renderPagination(total, current, id, onPage) {
   const el = document.getElementById(id);
   if (total <= 1) { el.innerHTML = ''; return; }
-  let html = `<button class="page-btn" onclick="(${onPage.toString()})(${current-1})" ${current<=1?'disabled':''}>‹</button>`;
+  let html = `<button class="page-btn" onclick="(${onPage.toString()})(${current - 1})" ${current <= 1 ? 'disabled' : ''}>‹</button>`;
   for (let i = 1; i <= total; i++) {
     if (total > 7 && Math.abs(i - current) > 2 && i !== 1 && i !== total) {
-      if (i === 2 || i === total-1) html += `<span style="padding:0 4px;color:var(--muted)">…</span>`;
+      if (i === 2 || i === total - 1) html += `<span style="padding:0 4px;color:var(--muted)">…</span>`;
       continue;
     }
-    html += `<button class="page-btn ${i===current?'active':''}" onclick="(${onPage.toString()})(${i})">${i}</button>`;
+    html += `<button class="page-btn ${i === current ? 'active' : ''}" onclick="(${onPage.toString()})(${i})">${i}</button>`;
   }
-  html += `<button class="page-btn" onclick="(${onPage.toString()})(${current+1})" ${current>=total?'disabled':''}>›</button>`;
+  html += `<button class="page-btn" onclick="(${onPage.toString()})(${current + 1})" ${current >= total ? 'disabled' : ''}>›</button>`;
   el.innerHTML = html;
 }
 
@@ -398,18 +399,18 @@ function renderAdminTable() {
   const q = (document.getElementById('adminSearch')?.value || '').toLowerCase();
   const typeFilter = document.getElementById('adminTypeFilter')?.value || '';
   const statusFilter = document.getElementById('adminStatusFilter')?.value || '';
-  
+
   let list = products.filter(p => {
     if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
     if (typeFilter && p.loai !== typeFilter) return false;
     if (statusFilter && (p.trangthai || 'Đang theo dõi') !== statusFilter) return false;
     return true;
   });
-  
+
   const total = list.length;
   const pages = Math.ceil(total / ITEMS_PER_PAGE);
   if (adminPage > pages) adminPage = Math.max(1, pages);
-  const paged = list.slice((adminPage-1)*ITEMS_PER_PAGE, adminPage*ITEMS_PER_PAGE);
+  const paged = list.slice((adminPage - 1) * ITEMS_PER_PAGE, adminPage * ITEMS_PER_PAGE);
 
   document.getElementById('adminProductCount').textContent = total;
   document.getElementById('adminTable').innerHTML = `
@@ -417,7 +418,7 @@ function renderAdminTable() {
       <thead><tr><th>#</th><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá bán</th><th>ĐVT</th><th>Loại</th><th>Trạng thái</th><th>BÁN CHẠY</th><th>Thao tác</th></tr></thead>
       <tbody>${paged.map((p, i) => `
         <tr>
-          <td>${(adminPage-1)*ITEMS_PER_PAGE + i + 1}</td>
+          <td>${(adminPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
           <td>${p.image ? `<img src="${getProductImageUrl(p)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" />` : '<i class="fa-solid fa-box"></i>'}</td>
           <td><code style="font-size:.78rem;background:var(--bg);padding:2px 6px;border-radius:4px">${p.ma}</code></td>
           <td style="max-width:300px">${p.ten}</td>
@@ -426,12 +427,12 @@ function renderAdminTable() {
           <td><span class="badge ${p.loai === 'Hàng hóa dịch vụ' ? 'badge-green' : 'badge-blue'}">${p.loai || '-'}</span></td>
           <td><span class="badge ${p.trangthai === 'Ngừng theo dõi' ? 'badge-red' : 'badge-yellow'}">${p.trangthai || 'Đang theo dõi'}</span></td>
           <td style="text-align:center">
-            <input type="checkbox" ${p.isBestSeller ? 'checked' : ''} onchange="toggleBestSeller('${p.ma.replace(/'/g,"\\'")}', this.checked)" style="width:18px;height:18px;cursor:pointer">
+            <input type="checkbox" ${p.isBestSeller ? 'checked' : ''} onchange="toggleBestSeller('${p.ma.replace(/'/g, "\\'")}', this.checked)" style="width:18px;height:18px;cursor:pointer">
           </td>
           <td>
             <div class="row-actions">
-              <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g,"\\'")}')"><i class="fa-solid fa-pencil"></i></button>
-              <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.ma.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-pencil"></i></button>
+              <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
             </div>
           </td>
         </tr>`).join('')}
@@ -478,10 +479,10 @@ function previewProductImage(event) {
   const file = event.target.files[0];
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
-  
+
   if (file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       previewImg.src = e.target.result;
       previewWrap.style.display = 'block';
     }
@@ -608,11 +609,11 @@ function parseCreatedAt(createdAtStr) {
     }
   }
   if (!datePart) return null;
-  
+
   const separator = datePart.includes('/') ? '/' : '-';
   const dateSplit = datePart.split(separator);
   if (dateSplit.length !== 3) return null;
-  
+
   let day, month, year;
   if (dateSplit[0].length === 4) {
     year = parseInt(dateSplit[0], 10);
@@ -623,7 +624,7 @@ function parseCreatedAt(createdAtStr) {
     month = parseInt(dateSplit[1], 10) - 1;
     year = parseInt(dateSplit[2], 10);
   }
-  
+
   return new Date(year, month, day);
 }
 
@@ -643,12 +644,12 @@ function resetOrderFilters() {
 function renderOrdersTable() {
   const filter = document.getElementById('orderStatusFilter')?.value || '';
   const searchQuery = (document.getElementById('orderSearch')?.value || '').toLowerCase().trim();
-  
+
   const fromVal = document.getElementById('orderDateFrom')?.value;
   const toVal = document.getElementById('orderDateTo')?.value;
   let fromDate = null;
   let toDate = null;
-  
+
   if (fromVal) {
     const [y, m, d] = fromVal.split('-').map(Number);
     fromDate = new Date(y, m - 1, d);
@@ -661,15 +662,15 @@ function renderOrdersTable() {
   let list = orders.filter(o => {
     // 1. Filter by status
     if (filter && o.status !== filter) return false;
-    
+
     // 2. Filter by search query
     if (searchQuery) {
       const match = (o.id || '').toLowerCase().includes(searchQuery) ||
-                    (o.customer || '').toLowerCase().includes(searchQuery) ||
-                    (o.phone || '').toLowerCase().includes(searchQuery);
+        (o.customer || '').toLowerCase().includes(searchQuery) ||
+        (o.phone || '').toLowerCase().includes(searchQuery);
       if (!match) return false;
     }
-    
+
     // 3. Filter by date range
     if (fromDate || toDate) {
       const orderDate = parseCreatedAt(o.createdAt);
@@ -677,7 +678,7 @@ function renderOrdersTable() {
       if (fromDate && orderDate < fromDate) return false;
       if (toDate && orderDate > toDate) return false;
     }
-    
+
     return true;
   });
 
@@ -869,7 +870,7 @@ function handleFileUpload(e) {
 
 function processExcelFile(file) {
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -906,7 +907,7 @@ function processExcelFile(file) {
         if (!ma || !ten) continue;
         rows.push({
           ma, ten,
-          gia: colMap.gia >= 0 ? (parseInt(String(row[colMap.gia]).replace(/\D/g,'')) || 0) : 0,
+          gia: colMap.gia >= 0 ? (parseInt(String(row[colMap.gia]).replace(/\D/g, '')) || 0) : 0,
           donvi: colMap.donvi >= 0 ? String(row[colMap.donvi] || '').trim() : '',
           loai: colMap.loai >= 0 ? String(row[colMap.loai] || '').trim() : 'Hàng hóa thường',
           trangthai: colMap.trangthai >= 0 ? String(row[colMap.trangthai] || '').trim() : 'Đang theo dõi',
@@ -931,7 +932,7 @@ function processExcelFile(file) {
 
       showUploadResult('success', `<i class="fa-solid fa-circle-check"></i> Import hoàn tất! <strong>Thêm mới: ${data.added}</strong> | Cập nhật: ${data.updated} | Lỗi dữ liệu: ${data.errors}`);
       showToast(`Import thành công: +${data.added} mới, ${data.updated} cập nhật`, 'success');
-    } catch(err) {
+    } catch (err) {
       showUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi đọc file: ${err.message}`);
     }
   };
@@ -1112,7 +1113,7 @@ function showFolderUploadResult(type, msg) {
   const el = document.getElementById('folderUploadResult');
   const bgMap = { success: '#d1fae5', error: '#fee2e2', info: '#dbeafe' };
   const colorMap = { success: '#065f46', error: '#991b1b', info: '#1e40af' };
-  el.innerHTML = `<div class="upload-result" style="background:${bgMap[type]||'#f1f5f9'};color:${colorMap[type]||'#1e293b'};padding:14px 16px;border-radius:8px;font-size:.875rem;line-height:1.6">${msg}</div>`;
+  el.innerHTML = `<div class="upload-result" style="background:${bgMap[type] || '#f1f5f9'};color:${colorMap[type] || '#1e293b'};padding:14px 16px;border-radius:8px;font-size:.875rem;line-height:1.6">${msg}</div>`;
 }
 
 // ==============================
@@ -1133,7 +1134,7 @@ function showToast(msg, type = '') {
 checkAuth();
 
 ['productModal', 'orderDetailModal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) {
+  document.getElementById(id).addEventListener('click', function (e) {
     if (e.target === this) this.classList.remove('open');
   });
 });
@@ -1185,3 +1186,465 @@ function initRealtimeUpdates() {
 }
 
 initRealtimeUpdates();
+
+// =====================================================================
+// TOOLS MODULE - PARSE INVOICE PDF FRONTEND LOGIC
+// =====================================================================
+let selectedInvoiceFiles = [];
+let parsedInvoicesList = [];
+
+function handleInvoiceDragOver(e) {
+  e.preventDefault();
+  const zone = document.getElementById('invoiceUploadZone');
+  if (zone) zone.style.borderColor = 'var(--primary)';
+}
+
+function handleInvoiceDragLeave(e) {
+  e.preventDefault();
+  const zone = document.getElementById('invoiceUploadZone');
+  if (zone) zone.style.borderColor = 'var(--border)';
+}
+
+function handleInvoiceDrop(e) {
+  e.preventDefault();
+  const zone = document.getElementById('invoiceUploadZone');
+  if (zone) zone.style.borderColor = 'var(--border)';
+
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    filterAndSetInvoiceFiles(e.dataTransfer.files);
+  }
+}
+
+function handleInvoiceFilesSelect(e) {
+  if (e.target.files && e.target.files.length > 0) {
+    filterAndSetInvoiceFiles(e.target.files);
+  }
+}
+
+function filterAndSetInvoiceFiles(filesList) {
+  selectedInvoiceFiles = [];
+  const listEl = document.getElementById('invoiceFilesList');
+  const btnProcess = document.getElementById('btnProcessInvoices');
+  const btnClear = document.getElementById('btnClearInvoices');
+  const uploadText = document.getElementById('invoiceUploadText');
+
+  for (let i = 0; i < filesList.length; i++) {
+    const file = filesList[i];
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      if (file.size <= 5 * 1024 * 1024) {
+        selectedInvoiceFiles.push(file);
+      } else {
+        showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} vượt quá 5MB.`, 'error');
+      }
+    } else {
+      showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} không phải định dạng PDF.`, 'error');
+    }
+  }
+
+  if (selectedInvoiceFiles.length > 0) {
+    uploadText.innerHTML = `Đã chọn <strong>${selectedInvoiceFiles.length} file PDF</strong> hóa đơn`;
+    listEl.style.display = 'block';
+    listEl.innerHTML = '<ul style="margin: 8px 0 0 16px; padding: 0;">' +
+      selectedInvoiceFiles.map(f => `<li>${f.name} (${(f.size / (1024 * 1024)).toFixed(2)} MB)</li>`).join('') +
+      '</ul>';
+    btnProcess.removeAttribute('disabled');
+    btnClear.style.display = 'inline-block';
+  } else {
+    clearInvoiceSelection();
+  }
+}
+
+function clearInvoiceSelection() {
+  selectedInvoiceFiles = [];
+  parsedInvoicesList = [];
+  document.getElementById('invoiceFileInput').value = '';
+  document.getElementById('invoiceUploadText').innerHTML = 'Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file';
+  document.getElementById('invoiceFilesList').style.display = 'none';
+  document.getElementById('invoiceFilesList').innerHTML = '';
+  document.getElementById('btnProcessInvoices').setAttribute('disabled', 'true');
+  document.getElementById('btnClearInvoices').style.display = 'none';
+  updateExportInventoryStatus();
+}
+
+async function processInvoices() {
+  if (selectedInvoiceFiles.length === 0) return;
+
+  const btnProcess = document.getElementById('btnProcessInvoices');
+  const btnClear = document.getElementById('btnClearInvoices');
+  const statusEl = document.getElementById('invoiceProcessingStatus');
+  const resultsContainer = document.getElementById('invoiceResultsContainer');
+
+  // Trạng thái đang tải
+  btnProcess.setAttribute('disabled', 'true');
+  btnClear.style.display = 'none';
+  statusEl.style.display = 'block';
+  resultsContainer.innerHTML = '';
+
+  const formData = new FormData();
+  selectedInvoiceFiles.forEach(file => {
+    formData.append('files', file);
+  });
+
+  try {
+    const res = await adminFetch('/api/tools/parse-invoice', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (res.status === 401) {
+      statusEl.style.display = 'none';
+      return;
+    }
+
+    const data = await res.json();
+    statusEl.style.display = 'none';
+
+    if (!res.ok || !data.ok) {
+      showToast(`<i class="fa-solid fa-xmark"></i> ${data.message || 'Lỗi xử lý hóa đơn'}`, 'error');
+      btnProcess.removeAttribute('disabled');
+      btnClear.style.display = 'inline-block';
+      return;
+    }
+
+    renderInvoiceResults(data.results);
+    parsedInvoicesList = data.results.filter(r => r.ok).map(r => r.data);
+    updateExportInventoryStatus();
+    showToast('<i class="fa-solid fa-check"></i> Đã xử lý xong toàn bộ hóa đơn PDF!', 'success');
+  } catch (err) {
+    console.error(err);
+    statusEl.style.display = 'none';
+    showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối máy chủ.', 'error');
+    btnProcess.removeAttribute('disabled');
+    btnClear.style.display = 'inline-block';
+  }
+}
+
+function renderInvoiceResults(results) {
+  const container = document.getElementById('invoiceResultsContainer');
+  container.innerHTML = '';
+
+  if (!results || results.length === 0) {
+    container.innerHTML = '<div class="admin-card"><p>Không có kết quả trả về.</p></div>';
+    return;
+  }
+
+  // 1. Tạo vùng điều hướng Tab phân trang
+  const tabsContainer = document.createElement('div');
+  tabsContainer.className = 'invoice-tabs';
+  tabsContainer.style.display = 'flex';
+  tabsContainer.style.gap = '8px';
+  tabsContainer.style.marginBottom = '16px';
+  tabsContainer.style.flexWrap = 'wrap';
+
+  results.forEach((res, index) => {
+    const tabBtn = document.createElement('button');
+    tabBtn.className = `btn btn-sm invoice-tab-btn ${index === 0 ? 'btn-primary' : 'btn-outline'}`;
+    tabBtn.id = `invoice-tab-btn-${index}`;
+    if (index !== 0) tabBtn.style.color = 'black';
+    tabBtn.innerHTML = `<i class="fa-solid fa-file-invoice"></i> Hóa đơn ${index + 1}`;
+    tabBtn.onclick = () => showInvoiceResultTab(index);
+    tabsContainer.appendChild(tabBtn);
+  });
+
+  container.appendChild(tabsContainer);
+
+  // 2. Tạo nội dung cho từng hóa đơn
+  results.forEach((res, index) => {
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'invoice-result-content';
+    contentDiv.id = `invoice-content-${index}`;
+    contentDiv.style.display = index === 0 ? 'block' : 'none';
+
+    const card = document.createElement('div');
+    card.className = 'admin-card';
+    card.style.marginBottom = '20px';
+
+    if (!res.ok) {
+      card.innerHTML = `
+        <div style="color: var(--danger); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-triangle-exclamation"></i> Lỗi file: ${res.fileName}
+        </div>
+        <p style="margin-top: 8px; font-size: 0.85rem; color: var(--muted);">${res.message || 'Lỗi không xác định.'}</p>
+      `;
+      contentDiv.appendChild(card);
+      container.appendChild(contentDiv);
+      return;
+    }
+
+    const inv = res.data;
+    const dateStr = inv.invoiceDate ? `${inv.invoiceDate.date}/${inv.invoiceDate.month}/${inv.invoiceDate.year}` : 'N/A';
+
+    // Tạo HTML bảng sản phẩm
+    let tableRows = '';
+    const products = inv.products || [];
+    products.forEach(p => {
+      tableRows += `
+        <tr>
+          <td>${p.name || ''}</td>
+          <td>${p.unit || ''}</td>
+          <td style="text-align: right;">${p.quantity || 0}</td>
+          <td style="text-align: right;">${(p.price || 0).toLocaleString('vi-VN')}</td>
+          <td style="text-align: right; font-weight: 600;">${(p.amount || 0).toLocaleString('vi-VN')}</td>
+          <td style="text-align: right; color: #16a34a; font-weight: 500;">${p.taxPercent !== undefined ? p.taxPercent + '%' : '0%'}</td>
+        </tr>
+      `;
+    });
+
+    // Lọc các sản phẩm chưa có trên hệ thống
+    const newProducts = products.filter(p => p.isNewSystemProduct);
+    let alertHTML = '';
+    if (newProducts.length > 0) {
+      alertHTML = `
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 16px;">
+          <strong style="color: #b45309; font-size: 0.9rem; display: block; margin-bottom: 4px;">
+            <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
+          </strong>
+          <ul style="margin: 0 0 0 16px; padding: 0; font-size: 0.85rem; color: #78350f;">
+            ${newProducts.map(p => `<li>${p.name} (ĐVT: ${p.unit || 'N/A'})</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+        <div>
+          <h4 style="margin: 0; font-size: 1rem; color: var(--text);"><i class="fa-solid fa-file-invoice"></i> Hóa đơn: ${res.fileName}</h4>
+          <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--muted);"><strong>Đơn vị bán:</strong> ${inv.sellerName || 'N/A'}</p>
+        </div>
+        <div style="font-size: 0.85rem; text-align: right; color: var(--text);">
+          <div><strong>Ký hiệu (Serial):</strong> ${inv.serial || 'N/A'}</div>
+          <div><strong>Mã thuế/Cơ quan thuế:</strong> ${inv.taxCode || 'N/A'}</div>
+          <div><strong>Ngày hóa đơn:</strong> ${dateStr}</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.9rem; font-weight: 600; color: black;">Danh sách sản phẩm</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-success btn-sm btn-export-invoice-excel" onclick="exportSingleInvoiceExcel(${index})">
+            <i class="fa-solid fa-file-excel"></i> Xuất Excel Nhập Kho
+          </button>
+          <button class="btn btn-outline btn-sm btn-copy-table" style="color: black; border-color: #ccc;" onclick="copyInvoiceTableToClipboard(this, ${index})">
+            <i class="fa-solid fa-copy"></i> Copy Bảng sang Excel
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" id="invoice-table-${index}">
+          <thead>
+            <tr>
+              <th>Tên sản phẩm</th>
+              <th>ĐVT</th>
+              <th style="text-align: right;">Số lượng</th>
+              <th style="text-align: right;">Đơn giá</th>
+              <th style="text-align: right;">Thành tiền</th>
+              <th style="text-align: right;">Thuế (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows || '<tr><td colspan="6" style="text-align:center;">Không có sản phẩm nào.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      ${alertHTML}
+    `;
+
+    contentDiv.appendChild(card);
+    container.appendChild(contentDiv);
+  });
+
+  // Khôi phục các nút
+  document.getElementById('btnProcessInvoices').removeAttribute('disabled');
+  document.getElementById('btnClearInvoices').style.display = 'inline-block';
+}
+
+function showInvoiceResultTab(index) {
+  // Thay đổi class hoạt động của nút tab
+  document.querySelectorAll('.invoice-tab-btn').forEach(btn => {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-outline');
+    btn.style.color = 'black';
+  });
+  const activeBtn = document.getElementById(`invoice-tab-btn-${index}`);
+  if (activeBtn) {
+    activeBtn.classList.remove('btn-outline');
+    activeBtn.classList.add('btn-primary');
+    activeBtn.style.color = '';
+  }
+
+  // Ẩn/Hiện nội dung tương ứng
+  document.querySelectorAll('.invoice-result-content').forEach(content => {
+    content.style.display = 'none';
+  });
+  const activeContent = document.getElementById(`invoice-content-${index}`);
+  if (activeContent) {
+    activeContent.style.display = 'block';
+  }
+}
+
+function copyInvoiceTableToClipboard(btn, index) {
+  const table = document.getElementById(`invoice-table-${index}`);
+  if (!table) return;
+
+  // Lấy dữ liệu từ bảng để tạo chuỗi dạng Tab-separated values (TSV)
+  const rows = table.querySelectorAll('tbody tr');
+  let tsvContent = "Tên sản phẩm\tĐVT\tSố lượng\tĐơn giá\tThành tiền\n";
+
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('td');
+    if (cols.length >= 5) {
+      const name = cols[0].innerText.trim();
+      const unit = cols[1].innerText.trim();
+      const qty = cols[2].innerText.replace(/\./g, '').trim(); // bỏ dấu chấm phân tách hàng nghìn nếu có
+      const price = cols[3].innerText.replace(/\./g, '').trim();
+      const amt = cols[4].innerText.replace(/\./g, '').trim();
+      tsvContent += `${name}\t${unit}\t${qty}\t${price}\t${amt}\n`;
+    }
+  });
+
+  navigator.clipboard.writeText(tsvContent).then(() => {
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã copy!';
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-success');
+    btn.style.color = '';
+    showToast('<i class="fa-solid fa-check"></i> Đã sao chép bảng vào Clipboard (Dạng Excel)!', 'success');
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.classList.remove('btn-success');
+      btn.classList.add('btn-outline');
+      btn.style.color = 'black';
+    }, 2000);
+  }).catch(err => {
+    console.error('Không thể copy:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Không thể sao chép dữ liệu.', 'error');
+  });
+}
+
+// ==============================
+// NHÀ CUNG CẤP (SUPPLIERS)
+// ==============================
+async function loadSuppliersList() {
+  try {
+    const res = await adminFetch('/api/suppliers');
+    const data = await res.json();
+    const tbody = document.getElementById('suppliersTableBody');
+    if (!tbody) return;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px 0;">Chưa có dữ liệu nhà cung cấp.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(s => `
+      <tr>
+        <td><code style="font-size: .85rem; background: var(--bg); padding: 2px 6px; border-radius: 4px;">${s.code || ''}</code></td>
+        <td style="font-weight: 500;">${s.name || ''}</td>
+        <td>${s.phone || '-'}</td>
+        <td><span class="badge ${s.status === 'Ngừng theo dõi' ? 'badge-red' : 'badge-green'}">${s.status || 'Đang theo dõi'}</span></td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.error('Lỗi khi tải danh sách nhà cung cấp:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Không tải được danh sách nhà cung cấp.', 'error');
+  }
+}
+
+async function importSuppliersExcel(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById('btnImportSuppliers');
+  const spinner = document.getElementById('supplierImportSpinner');
+  
+  if (btn) btn.style.display = 'none';
+  if (spinner) spinner.style.display = 'inline-block';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await adminFetch('/api/suppliers/import', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await res.json();
+    if (result.ok) {
+      showToast(`<i class="fa-solid fa-circle-check"></i> Import hoàn tất! +${result.added} mới, ${result.updated} cập nhật`, 'success');
+      await loadSuppliersList();
+    } else {
+      showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${result.message}`, 'error');
+    }
+  } catch (err) {
+    console.error('Lỗi import nhà cung cấp:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối khi import.', 'error');
+  } finally {
+    if (btn) btn.style.display = 'inline-block';
+    if (spinner) spinner.style.display = 'none';
+    event.target.value = ''; // Reset input
+  }
+}
+
+// ==============================
+// SUBTAB SWITCH & EXPORT INVENTORY
+// ==============================
+// ==============================
+// EXPORT SINGLE INVOICE TO EXCEL
+// ==============================
+async function exportSingleInvoiceExcel(index) {
+  const inv = parsedInvoicesList[index];
+  if (!inv) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
+    return;
+  }
+
+  // Tìm nút xuất để tạo hiệu ứng spinner
+  const btn = document.querySelector(`#invoice-content-${index} .btn-export-invoice-excel`);
+  let originalHTML = '';
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.setAttribute('disabled', 'true');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+  }
+
+  try {
+    const res = await adminFetch('/api/tools/export-inventory', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify([inv]) // Gửi dưới dạng mảng có 1 hóa đơn
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Lỗi xuất file từ máy chủ.');
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Phieu_Nhap_Kho_${inv.serial || 'Invoice'}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    showToast('<i class="fa-solid fa-circle-check"></i> Đã xuất file nhập kho thành công!', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.removeAttribute('disabled');
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+

@@ -23,6 +23,7 @@ const session = require('express-session');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
 
@@ -42,10 +43,13 @@ if (process.env.WEBSITE_SITE_NAME) {
 
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : defaultDataDir;
 
+const XLSX = require('xlsx');
+
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const SPAM_DEVICES_FILE = path.join(DATA_DIR, 'spam_devices.json');
+const SUPPLIERS_FILE = path.join(DATA_DIR, 'suppliers.json');
 const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
 
 const IMG_DIR = path.join(DATA_DIR, 'public_img');
@@ -216,6 +220,7 @@ let settings = {
   mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
 };
 let spamDevices = [];
+let suppliers = [];
 
 const deviceOrderAttempts = new Map();
 const blockedDevices = new Map();
@@ -224,6 +229,7 @@ const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'data/products.json');
 const saveOrders = makeQueuedWriter(ORDERS_FILE, 'data/orders.json');
 const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
 const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, 'data/spam_devices.json');
+const saveSuppliers = makeQueuedWriter(SUPPLIERS_FILE, 'data/suppliers.json');
 
 // Khi server khởi động lần đầu trên Azure (hoặc sau mỗi lần deploy), copy
 // tất cả ảnh từ thư mục public/img/ vào IMG_DIR (persistent directory).
@@ -313,6 +319,11 @@ async function initializeData() {
       } catch (err) { }
     }
 
+    if (!(await existsAsync(SUPPLIERS_FILE))) {
+      await fsp.writeFile(SUPPLIERS_FILE, '[]', 'utf8');
+      console.log('🚛 Đã tạo/khởi tạo lại suppliers.json tại:', SUPPLIERS_FILE);
+    }
+
     // 4. Load dữ liệu lên Cache RAM bất đồng bộ
     products = await readJSONAsync(PRODUCTS_FILE, []);
     orders = await readJSONAsync(ORDERS_FILE, []);
@@ -323,6 +334,7 @@ async function initializeData() {
       mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
     });
     spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
+    suppliers = await readJSONAsync(SUPPLIERS_FILE, []);
 
     // 5. Cập nhật danh sách thiết bị bị khóa
     blockedDevices.clear();
@@ -554,11 +566,9 @@ let adminHtmlCache = null;
 
 app.get(ADMIN_PATH, async (req, res) => {
   try {
-    if (!adminHtmlCache) {
-      adminHtmlCache = await fsp.readFile(ADMIN_HTML_PATH, 'utf8');
-    }
+    const html = await fsp.readFile(ADMIN_HTML_PATH, 'utf8');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(adminHtmlCache);
+    res.send(html);
   } catch (err) {
     console.error('Lỗi đọc file admin.html:', err);
     res.status(500).send('Lỗi tải trang quản trị.');
@@ -1236,6 +1246,573 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Lỗi xoá slide:', err);
     res.status(500).json({ ok: false, message: 'Không tìm thấy ảnh slide hoặc lỗi khi xoá.' });
+  }
+});
+
+// =====================================================================
+// TOOLS MODULE - PARSE INVOICE PDF WITH GEMINI
+// =====================================================================
+const uploadInvoice = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: function (req, file, cb) {
+    if (/\.pdf$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file PDF.'));
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // Giới hạn 5MB
+});
+
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: function (req, file, cb) {
+    if (/\.(xlsx|xls)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file Excel (.xlsx hoặc .xls).'));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 } // Giới hạn 10MB
+});
+
+function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+  if (s1 === s2) return 1.0;
+
+  // Thuật toán Levenshtein distance đơn giản
+  const track = Array(s2.length + 1).fill(null).map(() => Array(s1.length + 1).fill(null));
+  for (let i = 0; i <= s1.length; i += 1) track[0][i] = i;
+  for (let j = 0; j <= s2.length; j += 1) track[j][0] = j;
+  for (let j = 1; j <= s2.length; j += 1) {
+    for (let i = 1; i <= s1.length; i += 1) {
+      const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1, // deletion
+        track[j - 1][i] + 1, // insertion
+        track[j - 1][i - 1] + indicator // substitution
+      );
+    }
+  }
+  const distance = track[s2.length][s1.length];
+  const maxLength = Math.max(s1.length, s2.length);
+  if (maxLength === 0) return 1.0;
+  return (maxLength - distance) / maxLength;
+}
+
+app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 15), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Không có file PDF nào được tải lên.' });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ ok: false, message: 'Chưa cấu hình GEMINI_API_KEY trong hệ thống.' });
+    }
+
+    // Đọc danh sách sản phẩm hiện có
+    let systemProducts = [];
+    try {
+      if (fs.existsSync(PRODUCTS_FILE)) {
+        const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
+        systemProducts = JSON.parse(raw);
+      } else {
+        const raw = await fsp.readFile(path.join(__dirname, 'data', 'products.json'), 'utf8');
+        systemProducts = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('Lỗi khi đọc file products.json:', err);
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.5-flash',
+      generationConfig: { responseMimeType: 'application/json' }
+    });
+
+    const results = [];
+
+    // Duyệt qua từng file bất đồng bộ
+    for (const file of req.files) {
+      // Sửa lỗi font tiếng Việt do multer mã hóa tên file bằng latin1 (ISO-8859-1)
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      try {
+        const prompt = `Hãy đọc hóa đơn GTGT PDF được cung cấp và trích xuất thông tin chi tiết chính xác theo định dạng JSON sau:
+{
+  "sellerName": "Tên đơn vị bán hàng",
+  "serial": "Ký hiệu hóa đơn (Ký hiệu / Serial)",
+  "taxCode": "Mã của cơ quan thuế hoặc Mã số thuế người bán",
+  "invoiceDate": {
+    "date": "Ngày (dạng số ví dụ: 25)",
+    "month": "Tháng (dạng số ví dụ: 06)",
+    "year": "Năm (dạng số ví dụ: 2026)"
+  },
+  "products": [
+    {
+      "name": "Tên sản phẩm",
+      "unit": "ĐVT",
+      "quantity": 10,
+      "price": 5000,
+      "amount": 50000,
+      "taxPercent": 10
+    }
+  ]
+}
+Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riêng cho sản phẩm đó (ví dụ: 0, 5, 8, 10). Nếu không ghi thuế hoặc thuế suất là 0% thì trả về 0.`;
+
+        // Gọi API Gemini bằng cấu trúc mảng phẳng (Flat Array) theo SDK mới nhất
+        const response = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: file.buffer.toString('base64'),
+              mimeType: 'application/pdf'
+            }
+          }
+        ]);
+
+        const textResult = response.response.text();
+        const parsed = JSON.parse(textResult);
+
+        // Đối chiếu tên sản phẩm
+        if (parsed.products && Array.isArray(parsed.products)) {
+          for (const prod of parsed.products) {
+            const hasMatch = systemProducts.some(sysP => {
+              const sim = calculateSimilarity(prod.name, sysP.ten);
+              return sim >= 0.85 || prod.name.toLowerCase().includes(sysP.ten.toLowerCase()) || sysP.ten.toLowerCase().includes(prod.name.toLowerCase());
+            });
+            if (!hasMatch) {
+              prod.isNewSystemProduct = true;
+            }
+          }
+        }
+
+        results.push({
+          ok: true,
+          fileName: originalName,
+          data: parsed
+        });
+
+      } catch (err) {
+        console.error(`Lỗi xử lý file ${originalName}:`, err);
+        results.push({
+          ok: false,
+          fileName: originalName,
+          message: err.message
+        });
+      } finally {
+        // Giải phóng bộ nhớ RAM lập tức cho file này
+        file.buffer = null;
+      }
+    }
+
+    res.json({ ok: true, results });
+
+  } catch (err) {
+    console.error('Lỗi API parse-invoice:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi xử lý hóa đơn: ' + err.message });
+  }
+});
+
+// API lấy danh sách nhà cung cấp
+app.get('/api/suppliers', requireAdmin, (req, res) => {
+  res.json(suppliers);
+});
+
+// API import nhà cung cấp từ file Excel
+app.post('/api/suppliers/import', requireAdmin, uploadExcel.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: 'Không có file nào được tải lên.' });
+    }
+
+    // Đọc dữ liệu từ file Excel trong memory buffer
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+
+    // Trích xuất dữ liệu thô dạng mảng 2 chiều
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (rawData.length < 3) {
+      return res.status(400).json({ ok: false, message: 'File Excel không đúng định dạng hoặc không chứa đủ dữ liệu.' });
+    }
+
+    // Dòng 3 làm tiêu đề (index 2), dòng 4 trở đi là data (index 3+)
+    const headers = rawData[2];
+
+    const colMap = {
+      code: headers.findIndex(h => String(h || '').trim() === 'Mã nhà cung cấp'),
+      name: headers.findIndex(h => String(h || '').trim() === 'Tên nhà cung cấp'),
+      phone: headers.findIndex(h => String(h || '').trim() === 'Số điện thoại'),
+      status: headers.findIndex(h => String(h || '').trim() === 'Trạng thái')
+    };
+
+    if (colMap.code === -1 || colMap.name === -1) {
+      return res.status(400).json({
+        ok: false,
+        message: 'File Excel thiếu các cột bắt buộc: "Mã nhà cung cấp", "Tên nhà cung cấp".'
+      });
+    }
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    // Đọc danh sách hiện tại từ bộ nhớ đệm
+    const currentSuppliers = [...suppliers];
+
+    for (let i = 3; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
+
+      const code = String(row[colMap.code] || '').trim();
+      const name = String(row[colMap.name] || '').trim();
+      if (!code || !name) continue;
+
+      const phone = colMap.phone !== -1 ? String(row[colMap.phone] || '').trim() : '';
+      const status = colMap.status !== -1 ? String(row[colMap.status] || '').trim() : 'Đang theo dõi';
+
+      const existingIndex = currentSuppliers.findIndex(s => s.code === code);
+      if (existingIndex !== -1) {
+        currentSuppliers[existingIndex] = { code, name, phone, status };
+        updatedCount++;
+      } else {
+        currentSuppliers.push({ code, name, phone, status });
+        addedCount++;
+      }
+    }
+
+    // Cập nhật cache và ghi file qua queued writer bảo vệ I/O
+    suppliers = currentSuppliers;
+    await saveSuppliers(suppliers);
+
+    res.json({
+      ok: true,
+      message: `Import thành công! Thêm mới: ${addedCount}, Cập nhật: ${updatedCount}`,
+      added: addedCount,
+      updated: updatedCount
+    });
+
+  } catch (err) {
+    console.error('Lỗi API import nhà cung cấp:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi xử lý file Excel: ' + err.message });
+  } finally {
+    if (req.file) {
+      req.file.buffer = null;
+    }
+  }
+});
+
+// API xuất file Excel nhập kho từ hóa đơn GTGT
+app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
+  try {
+    let invoices = req.body;
+    if (!invoices) {
+      return res.status(400).json({ ok: false, message: 'Dữ liệu hóa đơn không hợp lệ.' });
+    }
+
+    if (!Array.isArray(invoices)) {
+      invoices = [invoices];
+    }
+
+    // Đọc file template
+    const templatePath = path.join(__dirname, 'data', 'template', 'Nhap_khau_phieu_nhap_kho.xlsx');
+    if (!fs.existsSync(templatePath)) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy file template Nhap_khau_phieu_nhap_kho.xlsx' });
+    }
+
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(templatePath);
+    const worksheet = workbook.getWorksheet(1);
+
+    // Đọc danh sách nhà cung cấp hệ thống để đối chiếu
+    let suppliersList = [];
+    try {
+      if (fs.existsSync(SUPPLIERS_FILE)) {
+        const raw = await fsp.readFile(SUPPLIERS_FILE, 'utf8');
+        suppliersList = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('Lỗi đọc file suppliers.json:', err);
+    }
+
+    // Đọc danh sách sản phẩm hệ thống để đối chiếu
+    let systemProducts = [];
+    try {
+      if (fs.existsSync(PRODUCTS_FILE)) {
+        const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
+        systemProducts = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('Lỗi đọc file products.json:', err);
+    }
+
+    const normalizeName = (str) => {
+      if (!str) return '';
+      return str.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/[.,-]/g, '')
+        .trim();
+    };
+
+    // Xác định cấu trúc cột động từ dòng 8 của template
+    let headerRowNumber = 8;
+    let colIndices = {
+      date: 2,       // B
+      serial: 3,     // C
+      supplierCode: 4, // D
+      supplierName: 5, // E
+      description: 6,  // F
+      paymentMethod: 7, // G
+      productCode: 8,  // H
+      productName: 9,  // I
+      warehouseCode: 12, // L
+      unit: 14,        // N
+      quantity: 15,    // O
+      price: 16,       // P (Assuming P is price and Q is amount)
+      amount: 17,      // Q
+      discountPercent: 18, // R
+      discountAmount: 19,  // S
+      taxPercent: 20,      // T
+      taxAmount: 21,       // U
+      paymentAmount: 22    // V
+    };
+
+    const headerRow = worksheet.getRow(8);
+    headerRow.eachCell((cell, colNumber) => {
+      let rawVal = '';
+      if (cell.value && cell.value.richText) {
+        rawVal = cell.value.richText.map(rt => rt.text).join('');
+      } else {
+        rawVal = String(cell.value || '');
+      }
+      const val = rawVal.toLowerCase().trim();
+      
+      if (val.includes('tên') && (val.includes('sản phẩm') || val.includes('hàng') || val.includes('vật tư'))) {
+        colIndices.productName = colNumber;
+      }
+      if (val.includes('đơn vị tính') || val === 'đvt') {
+        colIndices.unit = colNumber;
+      }
+      if (val.includes('số lượng')) {
+        colIndices.quantity = colNumber;
+      }
+      if (val.includes('đơn giá')) {
+        colIndices.price = colNumber;
+      }
+      if (val.includes('thành tiền')) {
+        colIndices.amount = colNumber;
+      }
+      if (val.includes('ngày')) {
+        colIndices.date = colNumber;
+      }
+      if (val.includes('số chứng từ') || val.includes('số hóa đơn') || val.includes('ký hiệu')) {
+        colIndices.serial = colNumber;
+      }
+      if (val.includes('mã đối tượng') || val.includes('mã nhà cung cấp') || val.includes('mã khách')) {
+        colIndices.supplierCode = colNumber;
+      }
+      if (val.includes('tên đối tượng') || val.includes('tên nhà cung cấp') || val.includes('tên khách')) {
+        colIndices.supplierName = colNumber;
+      }
+      if (val.includes('mã sản phẩm') || val.includes('mã hàng') || val.includes('mã vật tư')) {
+        colIndices.productCode = colNumber;
+      }
+      if (val.includes('hình thức') || val === 'hình thức thanh toán') {
+        colIndices.paymentMethod = colNumber;
+      }
+      if (val.includes('thuế suất') || val === 'thuế (%)' || val === '% thuế') {
+        colIndices.taxPercent = colNumber;
+      }
+      if (val.includes('tiền thuế') || val.includes('thuế gtgt')) {
+        if (!val.includes('suất') && !val.includes('%')) {
+          colIndices.taxAmount = colNumber;
+        }
+      }
+    });
+
+    // Các giá trị dự phòng (fallback) nếu scanner không tìm thấy tiêu đề tương ứng
+    colIndices.date = colIndices.date || 2;
+    colIndices.serial = colIndices.serial || 3;
+    colIndices.supplierCode = colIndices.supplierCode || 4;
+    colIndices.supplierName = colIndices.supplierName || 5;
+    colIndices.description = colIndices.description || 6;
+    colIndices.paymentMethod = colIndices.paymentMethod || 7;
+    colIndices.productCode = colIndices.productCode || 8;
+    colIndices.productName = colIndices.productName || 9;
+    colIndices.warehouseCode = colIndices.warehouseCode || 12;
+    colIndices.unit = colIndices.unit || 14;
+    colIndices.quantity = colIndices.quantity || 15;
+    colIndices.price = colIndices.price || 16;
+    colIndices.amount = colIndices.amount || 17;
+
+    // Hàng dữ liệu mẫu đầu tiên (Hàng 9)
+    const firstDataRow = worksheet.getRow(9);
+    const defaultColA = firstDataRow.getCell(1).value;  // Cột A: Loại nhập kho mẫu
+    const defaultColL = firstDataRow.getCell(colIndices.warehouseCode || 12).value; // Cột L: Mã kho mẫu
+
+    let currentRow = headerRowNumber + 1;
+
+    for (const inv of invoices) {
+      // 1. Logic dò tìm Mã nhà cung cấp (Cột D) và Tên đối tượng (Cột E)
+      const sellerNameNormalized = normalizeName(inv.sellerName);
+      const foundSupplier = suppliersList.find(s => normalizeName(s.name) === sellerNameNormalized);
+
+      let supplierCode = 'NCC_MOI';
+      let supplierName = inv.sellerName || 'N/A';
+
+      if (foundSupplier) {
+        supplierCode = foundSupplier.code;
+        supplierName = foundSupplier.name;
+      }
+
+      // 2. Xử lý Cột Diễn giải (Cột F) - Tính "Lần N" trong tháng của NCC
+      let orderCountInMonth = 1;
+      try {
+        const monthNum = inv.invoiceDate ? Number(inv.invoiceDate.month) : null;
+        const yearNum = inv.invoiceDate ? Number(inv.invoiceDate.year) : null;
+        if (monthNum && yearNum && orders) {
+          const matchedOrders = orders.filter(o => {
+            if (!o.createdAt) return false;
+            const oDate = new Date(o.createdAt);
+            const oMonth = oDate.getMonth() + 1;
+            const oYear = oDate.getFullYear();
+            return oMonth === monthNum && oYear === yearNum && normalizeName(o.supplierName || o.customer || '') === sellerNameNormalized;
+          });
+          orderCountInMonth = matchedOrders.length + 1;
+        }
+      } catch (e) {
+        console.error('Lỗi tính Lần N nhập kho:', e);
+      }
+
+      const monthStr = inv.invoiceDate ? String(inv.invoiceDate.month).padStart(2, '0') : 'N/A';
+      const descriptionText = `Nhập kho tháng ${monthStr} từ nhà cung cấp ${supplierName} Lần ${orderCountInMonth}`;
+
+      // Định dạng ngày chứng từ DD/MM/YYYY
+      let dateStr = '';
+      if (inv.invoiceDate) {
+        const d = String(inv.invoiceDate.date || '').padStart(2, '0');
+        const m = String(inv.invoiceDate.month || '').padStart(2, '0');
+        const y = inv.invoiceDate.year || '';
+        if (d && m && y) dateStr = `${d}/${m}/${y}`;
+      }
+
+      const products = inv.products || [];
+      for (let pIdx = 0; pIdx < products.length; pIdx++) {
+        const p = products[pIdx];
+        const row = worksheet.getRow(currentRow);
+
+        // Nếu vượt số dòng ban đầu của mẫu, sao chép định dạng từ Dòng 9
+        if (currentRow > 9) {
+          row.height = firstDataRow.height;
+          firstDataRow.eachCell({ includeEmpty: true }, (srcCell, colNumber) => {
+            const destCell = row.getCell(colNumber);
+            destCell.style = srcCell.style;
+          });
+        }
+
+        // Điền giá trị mặc định cho Cột A và Cột L
+        row.getCell(1).value = defaultColA;
+        if (colIndices.warehouseCode) {
+          row.getCell(colIndices.warehouseCode).value = defaultColL;
+        }
+
+        // Điền các cột chung từ hóa đơn
+        if (colIndices.date) row.getCell(colIndices.date).value = dateStr;
+        if (colIndices.serial) row.getCell(colIndices.serial).value = inv.serial || '';
+        if (colIndices.supplierCode) row.getCell(colIndices.supplierCode).value = supplierCode;
+        if (colIndices.supplierName) row.getCell(colIndices.supplierName).value = supplierName;
+
+        // Cột F (Diễn giải) và Cột G (Hình thức thanh toán): Fill đầy đủ cho mọi dòng sản phẩm
+        if (colIndices.description) {
+          row.getCell(colIndices.description).value = descriptionText;
+        }
+        if (colIndices.paymentMethod) {
+          row.getCell(colIndices.paymentMethod).value = inv.paymentMethod || 'Tiền mặt';
+        }
+
+        // 3. Logic đối chiếu sản phẩm trong hệ thống (yêu cầu trùng khớp các con số như 100mm, 150mm...)
+        const systemMatch = systemProducts.find(sysP => {
+          const pNums = (p.name.match(/\d+/g) || []).join(',');
+          const sysNums = (sysP.ten.match(/\d+/g) || []).join(',');
+          if (pNums !== sysNums) return false; // Loại trừ nếu thông số kích thước/số số lượng khác nhau
+
+          const sim = calculateSimilarity(p.name, sysP.ten);
+          return sim >= 0.85 || p.name.toLowerCase().includes(sysP.ten.toLowerCase()) || sysP.ten.toLowerCase().includes(p.name.toLowerCase());
+        });
+
+        let pCode = 'SP_MOI';
+        let pName = p.name || '';
+        if (systemMatch) {
+          pCode = systemMatch.ma;
+          pName = systemMatch.ten;
+        }
+
+        // Hàm chuyển đổi chuỗi số có định dạng nghìn/thập phân kiểu Việt Nam/Anh thành số chuẩn JS
+        const parseCleanNumber = (val) => {
+          if (val === undefined || val === null) return 0;
+          if (typeof val === 'number') return val;
+          let str = String(val).replace(/[^0-9.,-]/g, '').trim();
+          
+          const lastDot = str.lastIndexOf('.');
+          const lastComma = str.lastIndexOf(',');
+          
+          if (lastComma > lastDot) {
+            // Định dạng kiểu VN: 80.000.000,00 -> xóa chấm, thay phẩy thành chấm
+            str = str.replace(/\./g, '').replace(/,/g, '.');
+          } else if (lastDot > lastComma) {
+            // Định dạng kiểu Anh: 80,000,000.00 -> xóa phẩy
+            str = str.replace(/,/g, '');
+          } else {
+            // Chỉ chứa 1 loại ký tự phân cách nghìn
+            str = str.replace(/[.,]/g, '');
+          }
+          
+          const num = parseFloat(str);
+          return isNaN(num) ? 0 : num;
+        };
+
+        const qty = parseCleanNumber(p.quantity);
+        const price = parseCleanNumber(p.price);
+        const amount = parseCleanNumber(p.amount);
+
+        if (colIndices.productCode) row.getCell(colIndices.productCode).value = pCode;
+        if (colIndices.productName) row.getCell(colIndices.productName).value = pName;
+        if (colIndices.unit) row.getCell(colIndices.unit).value = p.unit || '';
+        if (colIndices.quantity) row.getCell(colIndices.quantity).value = qty;
+        if (colIndices.price) row.getCell(colIndices.price).value = price;
+        if (colIndices.amount) row.getCell(colIndices.amount).value = amount;
+
+        // Tính thuế và điền vào các cột tương ứng
+        const taxRate = p.taxPercent !== undefined ? Number(p.taxPercent) : 0;
+        const taxAmt = Math.round(amount * taxRate / 100);
+
+        if (colIndices.discountPercent) row.getCell(colIndices.discountPercent).value = 0;
+        if (colIndices.discountAmount) row.getCell(colIndices.discountAmount).value = 0;
+        if (colIndices.taxPercent) row.getCell(colIndices.taxPercent).value = taxRate / 100;
+        if (colIndices.taxAmount) row.getCell(colIndices.taxAmount).value = taxAmt;
+        if (colIndices.paymentAmount) row.getCell(colIndices.paymentAmount).value = amount + taxAmt;
+
+        row.commit();
+        currentRow++;
+      }
+    }
+
+    // Thiết lập Header tải file về
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Nhap_khau_phieu_nhap_kho_export.xlsx');
+
+    // Ghi trực tiếp vào response stream
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error('Lỗi API export-inventory:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi xuất Excel: ' + err.message });
   }
 });
 

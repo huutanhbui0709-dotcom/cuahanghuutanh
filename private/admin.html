@@ -85,6 +85,12 @@
         <div class="admin-sidebar-item" onclick="adminTab('settings', this)">
           <i class="fa-solid fa-gear"></i> Cài đặt Footer
         </div>
+        <div class="admin-sidebar-item" onclick="adminTab('suppliers', this)">
+          <i class="fa-solid fa-truck-field"></i> Nhà cung cấp
+        </div>
+        <div class="admin-sidebar-item" onclick="adminTab('tools', this)">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Công cụ
+        </div>
       </div>
       <div class="admin-content">
         <!-- DASHBOARD -->
@@ -347,6 +353,44 @@
           </div>
         </div>
 
+        <!-- SUPPLIERS -->
+        <div class="admin-tab" id="tab-suppliers">
+          <div class="admin-card">
+            <div class="admin-card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <span><i class="fa-solid fa-truck-field"></i> Quản lý Nhà cung cấp</span>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" id="supplierExcelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="importSuppliersExcel(event)" />
+                <button class="btn btn-primary" onclick="document.getElementById('supplierExcelFileInput').click()" id="btnImportSuppliers">
+                  <i class="fa-solid fa-file-import"></i> Import Excel
+                </button>
+                <div id="supplierImportSpinner" style="display: none; font-size: 0.85rem; color: var(--text);">
+                  <i class="fa-solid fa-spinner fa-spin" style="color: var(--primary);"></i> Đang xử lý...
+                </div>
+              </div>
+            </div>
+            <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
+              Nhập danh sách nhà cung cấp từ file Excel. Hệ thống sẽ tự động đồng bộ theo Mã nhà cung cấp.
+            </p>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Mã NCC</th>
+                    <th>Tên nhà cung cấp</th>
+                    <th>Số điện thoại</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="suppliersTableBody">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: var(--muted); padding: 20px 0;">Chưa có dữ liệu nhà cung cấp.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- SLIDES -->
         <div class="admin-tab" id="tab-slides">
           <div class="admin-card">
@@ -376,6 +420,50 @@
               <!-- Sẽ render động qua js -->
             </div>
           </div>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="admin-tab" id="tab-tools">
+          <div class="admin-card">
+            <div class="admin-card-title">
+              <i class="fa-solid fa-file-pdf"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF)
+            </div>
+            <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
+              Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF cùng lúc.
+            </p>
+            <div class="upload-zone" id="invoiceUploadZone" onclick="document.getElementById('invoiceFileInput').click()"
+              ondragover="handleInvoiceDragOver(event)" ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
+              <div class="upload-zone-icon"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
+              <div class="upload-zone-text" id="invoiceUploadText">
+                Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file
+              </div>
+              <div class="upload-zone-hint">
+                Chỉ chấp nhận file định dạng .pdf (Dung lượng < 5MB/file)
+              </div>
+            </div>
+            <input type="file" id="invoiceFileInput" multiple accept=".pdf" style="display: none"
+              onchange="handleInvoiceFilesSelect(event)" />
+            <div id="invoiceFilesList" style="margin-top: 12px; font-size: 0.9rem; color: var(--muted); display: none;">
+              <!-- Liệt kê danh sách file đã chọn -->
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 10px;">
+              <button class="btn btn-primary" id="btnProcessInvoices" onclick="processInvoices()">
+                <i class="fa-solid fa-play"></i> Xử lý hóa đơn
+              </button>
+              <button class="btn btn-outline" id="btnClearInvoices" onclick="clearInvoiceSelection()" style="display: none;">
+                Xoá lựa chọn
+              </button>
+            </div>
+            <div id="invoiceProcessingStatus" style="margin-top: 16px; display: none;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
+                <span id="invoiceStatusText">Đang gửi dữ liệu hóa đơn và xử lý bằng AI...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kết quả bốc tách -->
+          <div id="invoiceResultsContainer" style="margin-top: 24px;"></div>
         </div>
       </div>
     </div>
