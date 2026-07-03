@@ -1389,6 +1389,19 @@ function renderInvoiceResults(results) {
       `;
     });
 
+    // Cảnh báo nhà cung cấp chưa có trên hệ thống
+    let supplierAlertHTML = '';
+    if (inv.isNewSupplier) {
+      supplierAlertHTML = `
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 12px; border-radius: 6px; margin-top: 16px;">
+          <strong style="color: #991b1b; font-size: 0.9rem; display: block; margin-bottom: 4px;">
+            <i class="fa-solid fa-building-circle-exclamation"></i> Cảnh báo: Nhà cung cấp chưa có trên hệ thống
+          </strong>
+          <span style="font-size: 0.85rem; color: #7f1d1d;">${inv.sellerName || 'Không xác định'}</span>
+        </div>
+      `;
+    }
+
     // Lọc các sản phẩm chưa có trên hệ thống
     const newProducts = products.filter(p => p.isNewSystemProduct);
     let alertHTML = '';
@@ -1453,6 +1466,7 @@ function renderInvoiceResults(results) {
         </table>
       </div>
 
+      ${supplierAlertHTML}
       ${alertHTML}
     `;
 

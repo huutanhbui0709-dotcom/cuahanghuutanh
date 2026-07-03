@@ -1380,6 +1380,17 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
       console.error('Lỗi khi đọc file products.json:', err);
     }
 
+    // Đọc danh sách nhà cung cấp hiện có
+    let systemSuppliers = [];
+    try {
+      if (fs.existsSync(SUPPLIERS_FILE)) {
+        const raw = await fsp.readFile(SUPPLIERS_FILE, 'utf8');
+        systemSuppliers = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('Lỗi khi đọc file suppliers.json:', err);
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-3.5-flash',
@@ -1440,6 +1451,20 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
             if (!hasMatch) {
               prod.isNewSystemProduct = true;
             }
+          }
+        }
+
+        // Đối chiếu nhà cung cấp
+        if (parsed.sellerName && systemSuppliers.length > 0) {
+          const sellerLower = parsed.sellerName.toLowerCase().trim();
+          const supplierMatch = systemSuppliers.some(sup => {
+            const supName = (sup.name || '').toLowerCase().trim();
+            if (!supName) return false;
+            const sim = calculateSimilarity(sellerLower, supName);
+            return sim >= 0.8 || sellerLower.includes(supName) || supName.includes(sellerLower);
+          });
+          if (!supplierMatch) {
+            parsed.isNewSupplier = true;
           }
         }
 
