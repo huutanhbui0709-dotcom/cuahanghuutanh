@@ -6,6 +6,53 @@
 
 require('dotenv').config();
 
+// Monkey-patch ExcelJS để tránh crash khi Conditional Formatting trong template MISA bị lỗi
+try {
+  const CfRuleXform = require('exceljs/lib/xlsx/xform/sheet/cf/cf-rule-xform');
+
+  // Patch hàm render tổng
+  const _origRender = CfRuleXform.prototype.render;
+  CfRuleXform.prototype.render = function (xmlStream, model) {
+    if (model) {
+      if (!model.formulae) model.formulae = [];
+    }
+    try {
+      return _origRender.call(this, xmlStream, model);
+    } catch (e) {
+      console.warn('[ExcelJS Warning] Bỏ qua lỗi vẽ CfRuleXform.render:', e.message);
+    }
+  };
+
+  // Patch hàm renderExpression chi tiết
+  const _origRenderExpression = CfRuleXform.prototype.renderExpression;
+  CfRuleXform.prototype.renderExpression = function (xmlStream, model) {
+    if (model) {
+      if (!model.formulae) model.formulae = [];
+      if (model.formulae.length === 0) model.formulae.push('');
+    }
+    try {
+      return _origRenderExpression.call(this, xmlStream, model);
+    } catch (e) {
+      console.warn('[ExcelJS Warning] Bỏ qua lỗi renderExpression:', e.message);
+    }
+  };
+
+  // Patch hàm renderCellIs chi tiết
+  const _origRenderCellIs = CfRuleXform.prototype.renderCellIs;
+  CfRuleXform.prototype.renderCellIs = function (xmlStream, model) {
+    if (model) {
+      if (!model.formulae) model.formulae = [];
+    }
+    try {
+      return _origRenderCellIs.call(this, xmlStream, model);
+    } catch (e) {
+      console.warn('[ExcelJS Warning] Bỏ qua lỗi renderCellIs:', e.message);
+    }
+  };
+} catch (ignored) { }
+
+
+
 // Tự động dọn dẹp dấu nháy kép/đơn và khoảng trắng thừa của biến môi trường (phổ biến khi cấu hình Azure Portal)
 for (const key in process.env) {
   if (typeof process.env[key] === 'string') {
@@ -1597,7 +1644,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         rawVal = String(cell.value || '');
       }
       const val = rawVal.toLowerCase().trim();
-      
+
       if (val.includes('tên') && (val.includes('sản phẩm') || val.includes('hàng') || val.includes('vật tư'))) {
         colIndices.productName = colNumber;
       }
@@ -1763,10 +1810,10 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
           if (val === undefined || val === null) return 0;
           if (typeof val === 'number') return val;
           let str = String(val).replace(/[^0-9.,-]/g, '').trim();
-          
+
           const lastDot = str.lastIndexOf('.');
           const lastComma = str.lastIndexOf(',');
-          
+
           if (lastComma > lastDot) {
             // Định dạng kiểu VN: 80.000.000,00 -> xóa chấm, thay phẩy thành chấm
             str = str.replace(/\./g, '').replace(/,/g, '.');
@@ -1777,7 +1824,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
             // Chỉ chứa 1 loại ký tự phân cách nghìn
             str = str.replace(/[.,]/g, '');
           }
-          
+
           const num = parseFloat(str);
           return isNaN(num) ? 0 : num;
         };
@@ -1819,6 +1866,145 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Lỗi API export-inventory:', err);
     res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi xuất Excel: ' + err.message });
+  }
+});
+
+
+// API xuất danh sách sản phẩm mới ra file MISA eShop Nhap_khau_hang_hoa.xlsx (dùng template gốc, clone dòng mẫu 6)
+app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
+  try {
+    const newProducts = req.body;
+    if (!newProducts || !Array.isArray(newProducts) || newProducts.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Danh sách sản phẩm không hợp lệ.' });
+    }
+
+    const templatePath = path.join(__dirname, 'data', 'template', 'Nhap_khau_hang_hoa.xlsx');
+    if (!fs.existsSync(templatePath)) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy file mẫu Nhap_khau_hang_hoa.xlsx' });
+    }
+
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(templatePath);
+
+    // Dò tìm sheet 'Tep nhap khau' — PHẢI bắt đầu bằng "tep" để tránh khớp nhầm "Hướng dẫn nhập khẩu"
+    let worksheet = workbook.worksheets.find(ws => {
+      const n = ws.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+      return n.startsWith("tep nhap khau") || n.startsWith("tep_nhap_khau");
+    });
+    if (!worksheet) {
+      // Fallback: tìm sheet có tên chứa "nhap khau" nhưng KHÔNG chứa "huong dan"
+      worksheet = workbook.worksheets.find(ws => {
+        const n = ws.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+        return n.includes("nhap khau") && !n.includes("huong dan");
+      });
+    }
+    if (!worksheet) {
+      worksheet = workbook.getWorksheet(2) || workbook.getWorksheet(1);
+    }
+
+    // ===== HÀM SINH MÃ HÀNG HÓA (SKU) =====
+    // Viết hoa hoàn toàn, bỏ dấu tiếng Việt, bỏ tất cả khoảng trắng & ký tự đặc biệt
+    // Ví dụ: "Ống ruột gà âm tường Ø 20" → "ONGRUOTGA20"
+    function generateSku(str) {
+      if (!str) return 'SPMOI';
+      let sku = str.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')  // bỏ dấu tiếng Việt
+        .replace(/[đĐ]/g, 'd')            // chuyển đ/Đ thành d
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '');        // chỉ giữ chữ cái và số
+      // Giới hạn tối đa 20 ký tự theo yêu cầu MISA
+      if (sku.length > 20) sku = sku.substring(0, 20);
+      return sku || 'SPMOI';
+    }
+
+    // ===== ĐỌC DỮ LIỆU DÒNG MẪU SỐ 6 (chứa đầy đủ các cột mặc định phía sau) =====
+    const sourceRow = worksheet.getRow(6);
+    // Lưu toàn bộ giá trị dòng mẫu 6 vào map {colIndex: value} để clone chính xác
+    const sourceMap = {};
+    const maxCol = worksheet.columnCount || 58;
+    for (let c = 1; c <= maxCol; c++) {
+      const val = sourceRow.getCell(c).value;
+      if (val !== null && val !== undefined) {
+        sourceMap[c] = val;
+      }
+    }
+    // Xóa cột E (index 5 = Mã vạch) khỏi sourceMap — không cần điền
+    delete sourceMap[5];
+
+    // Lưu số dòng ban đầu của template để dọn dẹp dòng thừa sau cùng
+    const originalRowCount = worksheet.rowCount;
+
+    // ===== GHI DỮ LIỆU SẢN PHẨM MỚI =====
+    let currentLine = 6; // Bắt đầu ghi từ dòng 6 (ghi đè lên dòng mẫu)
+
+    for (let i = 0; i < newProducts.length; i++) {
+      const p = newProducts[i];
+      const row = worksheet.getRow(currentLine);
+
+      // Bước 1: Xóa sạch TOÀN BỘ ô của dòng này trước (tránh sót dữ liệu cũ từ template)
+      for (let c = 1; c <= maxCol; c++) {
+        row.getCell(c).value = null;
+      }
+
+      // Bước 2: Copy từng ô từ dòng mẫu 6 (chỉ copy những ô có giá trị)
+      for (const [col, val] of Object.entries(sourceMap)) {
+        row.getCell(Number(col)).value = val;
+      }
+
+      // Bước 3: Xử lý đơn giá — BẮT BUỘC ép kiểu số thuần túy
+      let priceVal = 0;
+      if (p.price !== undefined && p.price !== null) {
+        let raw = String(p.price).replace(/[^\d.,-]/g, '');
+        const lastComma = raw.lastIndexOf(',');
+        const lastDot = raw.lastIndexOf('.');
+        if (lastComma > lastDot) {
+          raw = raw.replace(/\./g, '').replace(/,/g, '.');
+        } else {
+          raw = raw.replace(/,/g, '');
+        }
+        priceVal = Number(raw) || parseFloat(raw);
+        if (isNaN(priceVal)) priceVal = 0;
+      }
+
+      // Bước 4: Ghi đè các thông tin sản phẩm mới vào đúng cột tĩnh (C=3, D=4, G=7, H=8, I=9)
+      row.getCell(3).value = 'Hàng hóa không có thuộc tính';
+      row.getCell(4).value = generateSku(p.name);
+      row.getCell(5).value = null; // Đảm bảo cột E (Mã vạch) luôn trống
+      row.getCell(7).value = p.name || '';
+      row.getCell(8).value = Math.round(priceVal);
+      row.getCell(9).value = p.unit || '';
+
+      row.commit();
+      currentLine++;
+    }
+
+    // ===== DỌN DẸP CÁC DÒNG MẪU THỪA CÒN SÓT LẠI Ở TEMPLATE GỐC =====
+    for (let r = currentLine; r <= originalRowCount; r++) {
+      const row = worksheet.getRow(r);
+      // Xóa trắng giá trị từng ô (không xóa dòng để tránh lỗi merge cell)
+      const colCount = worksheet.columnCount || 20;
+      for (let c = 1; c <= colCount; c++) {
+        row.getCell(c).value = null;
+      }
+      row.commit();
+    }
+
+    // ===== TRẢ FILE VỀ CLIENT =====
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Danh_sach_hang_hoa_moi_MISA.xlsx');
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error('Lỗi API export-new-products đầy đủ:', err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        ok: false,
+        message: 'Lỗi máy chủ khi xuất Excel hàng hóa mới: ' + err.message,
+        stack: err.stack
+      });
+    }
   }
 });
 

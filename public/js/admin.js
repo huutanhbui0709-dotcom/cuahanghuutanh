@@ -1264,7 +1264,6 @@ function clearInvoiceSelection() {
   document.getElementById('invoiceFilesList').innerHTML = '';
   document.getElementById('btnProcessInvoices').setAttribute('disabled', 'true');
   document.getElementById('btnClearInvoices').style.display = 'none';
-  updateExportInventoryStatus();
 }
 
 async function processInvoices() {
@@ -1308,8 +1307,7 @@ async function processInvoices() {
     }
 
     renderInvoiceResults(data.results);
-    parsedInvoicesList = data.results.filter(r => r.ok).map(r => r.data);
-    updateExportInventoryStatus();
+    parsedInvoicesList = data.results.map(r => r.ok ? r.data : null);
     showToast('<i class="fa-solid fa-check"></i> Đã xử lý xong toàn bộ hóa đơn PDF!', 'success');
   } catch (err) {
     console.error(err);
@@ -1396,13 +1394,18 @@ function renderInvoiceResults(results) {
     let alertHTML = '';
     if (newProducts.length > 0) {
       alertHTML = `
-        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 16px;">
-          <strong style="color: #b45309; font-size: 0.9rem; display: block; margin-bottom: 4px;">
-            <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
-          </strong>
-          <ul style="margin: 0 0 0 16px; padding: 0; font-size: 0.85rem; color: #78350f;">
-            ${newProducts.map(p => `<li>${p.name} (ĐVT: ${p.unit || 'N/A'})</li>`).join('')}
-          </ul>
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <strong style="color: #b45309; font-size: 0.9rem; display: block; margin-bottom: 4px;">
+              <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
+            </strong>
+            <ul style="margin: 0 0 0 16px; padding: 0; font-size: 0.85rem; color: #78350f;">
+              ${newProducts.map(p => `<li>${p.name} (ĐVT: ${p.unit || 'N/A'})</li>`).join('')}
+            </ul>
+          </div>
+          <button class="btn btn-warning btn-sm btn-export-misa" onclick="exportNewProductsExcel(${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
+            <i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (MISA)
+          </button>
         </div>
       `;
     }
@@ -1561,7 +1564,7 @@ async function importSuppliersExcel(event) {
 
   const btn = document.getElementById('btnImportSuppliers');
   const spinner = document.getElementById('supplierImportSpinner');
-  
+
   if (btn) btn.style.display = 'none';
   if (spinner) spinner.style.display = 'inline-block';
 
@@ -1573,7 +1576,7 @@ async function importSuppliersExcel(event) {
       method: 'POST',
       body: formData
     });
-    
+
     const result = await res.json();
     if (result.ok) {
       showToast(`<i class="fa-solid fa-circle-check"></i> Import hoàn tất! +${result.added} mới, ${result.updated} cập nhật`, 'success');
@@ -1656,7 +1659,7 @@ async function toggleGeminiKeySource() {
   const source = document.querySelector('input[name="geminiKeySource"]:checked').value;
   const container = document.getElementById('customApiKeyContainer');
   const hint = document.getElementById('geminiKeyHint');
-  
+
   if (source === 'custom') {
     if (container) container.style.display = 'flex';
     if (hint) hint.innerHTML = 'Hệ thống sẽ sử dụng Key cá nhân do bạn nhập ở trên.';
@@ -1681,14 +1684,14 @@ async function loadGeminiApiKeyToInput() {
   try {
     const res = await adminFetch('/api/settings');
     const settings = await res.json();
-    
+
     // Đánh dấu nguồn key hiện tại
     const source = settings.geminiKeySource || 'env';
     const radio = document.querySelector(`input[name="geminiKeySource"][value="${source}"]`);
     if (radio) {
       radio.checked = true;
     }
-    
+
     const input = document.getElementById('inputGeminiApiKey');
     if (input) {
       input.value = settings.geminiApiKey || '';
@@ -1729,6 +1732,66 @@ async function saveGeminiApiKey() {
   } catch (err) {
     console.error(err);
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối mạng.', 'error');
+  }
+}
+
+// ==============================
+// EXPORT NEW PRODUCTS TO MISA TEMPLATE
+// ==============================
+async function exportNewProductsExcel(index) {
+  const inv = parsedInvoicesList[index];
+  if (!inv || !inv.products) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
+    return;
+  }
+
+  const newProducts = inv.products.filter(p => p.isNewSystemProduct);
+  if (newProducts.length === 0) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không có sản phẩm mới nào để xuất.', 'error');
+    return;
+  }
+
+  const btn = document.querySelector(`#invoice-content-${index} .btn-export-misa`);
+  let originalHTML = '';
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.setAttribute('disabled', 'true');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+  }
+
+  try {
+    const res = await adminFetch('/api/tools/export-new-products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newProducts)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Lỗi xuất file từ máy chủ.');
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Danh_sach_hang_hoa_moi.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    showToast('<i class="fa-solid fa-circle-check"></i> Đã xuất danh sách hàng hóa mới MISA thành công!', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.removeAttribute('disabled');
+      btn.innerHTML = originalHTML;
+    }
   }
 }
 
