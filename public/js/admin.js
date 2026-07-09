@@ -1376,7 +1376,15 @@ function renderInvoiceResults(results) {
     // Tạo HTML bảng sản phẩm
     let tableRows = '';
     const products = inv.products || [];
+    let totalAmount = 0;
+    let totalAmountWithTax = 0;
     products.forEach(p => {
+      const amount = Number(p.amount || 0);
+      const taxRate = p.taxPercent !== undefined ? Number(p.taxPercent) : 0;
+      const taxAmount = amount * taxRate / 100;
+      totalAmount += amount;
+      totalAmountWithTax += (amount + taxAmount);
+
       tableRows += `
         <tr>
           <td>${p.name || ''}</td>
@@ -1406,19 +1414,41 @@ function renderInvoiceResults(results) {
     const newProducts = products.filter(p => p.isNewSystemProduct);
     let alertHTML = '';
     if (newProducts.length > 0) {
+      const tableRowsHTML = newProducts.map(p => `
+        <tr>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #78350f;">${p.name}</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #78350f; font-weight: 500; width: 80px;">${p.unit || 'N/A'}</td>
+        </tr>
+      `).join('');
+
       alertHTML = `
-        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <strong style="color: #b45309; font-size: 0.9rem; display: block; margin-bottom: 4px;">
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 6px; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+            <strong style="color: #b45309; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
               <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
             </strong>
-            <ul style="margin: 0 0 0 16px; padding: 0; font-size: 0.85rem; color: #78350f;">
-              ${newProducts.map(p => `<li>${p.name} (ĐVT: ${p.unit || 'N/A'})</li>`).join('')}
-            </ul>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-warning btn-sm btn-copy-new-products" onclick="copyNewProductsToClipboard(this, ${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
+                <i class="fa-solid fa-copy"></i> Copy danh sách
+              </button>
+              <button class="btn btn-warning btn-sm btn-export-misa" onclick="exportNewProductsExcel(${index})" style="background: #d97706; color: white; border: none; font-weight: 600;">
+                <i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (MISA)
+              </button>
+            </div>
           </div>
-          <button class="btn btn-warning btn-sm btn-export-misa" onclick="exportNewProductsExcel(${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
-            <i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (MISA)
-          </button>
+          <div style="max-height: 200px; overflow-y: auto; background: white; border: 1px solid #fef3c7; border-radius: 4px;">
+            <table id="new-products-table-${index}" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: #fffbeb;">
+                  <th style="padding: 8px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #b45309; font-weight: 600;">Tên sản phẩm</th>
+                  <th style="padding: 8px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #b45309; font-weight: 600;">ĐVT</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHTML}
+              </tbody>
+            </table>
+          </div>
         </div>
       `;
     }
@@ -1464,6 +1494,11 @@ function renderInvoiceResults(results) {
             ${tableRows || '<tr><td colspan="6" style="text-align:center;">Không có sản phẩm nào.</td></tr>'}
           </tbody>
         </table>
+      </div>
+
+      <div style="margin-top: 14px; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 24px; font-size: 0.95rem; line-height: 1.6; color: var(--text); border-top: 1px dashed var(--border); padding-top: 12px;">
+        <div><strong>Tổng thành tiền (chưa thuế):</strong> <span style="font-weight: 600; color: #b45309; margin-left: 4px;">${totalAmount.toLocaleString('vi-VN')}₫</span></div>
+        <div><strong>Tổng thành tiền sau thuế:</strong> <span style="font-weight: 700; color: #16a34a; font-size: 1.05rem; margin-left: 4px;">${Math.round(totalAmountWithTax).toLocaleString('vi-VN')}₫</span></div>
       </div>
 
       ${supplierAlertHTML}
@@ -1535,6 +1570,37 @@ function copyInvoiceTableToClipboard(btn, index) {
       btn.classList.remove('btn-success');
       btn.classList.add('btn-outline');
       btn.style.color = 'black';
+    }, 2000);
+  }).catch(err => {
+    console.error('Không thể copy:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Không thể sao chép dữ liệu.', 'error');
+  });
+}
+
+function copyNewProductsToClipboard(btn, index) {
+  const table = document.getElementById(`new-products-table-${index}`);
+  if (!table) return;
+
+  const rows = table.querySelectorAll('tbody tr');
+  let tsvContent = "Tên sản phẩm\tĐVT\n";
+
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('td');
+    if (cols.length >= 2) {
+      const name = cols[0].innerText.trim();
+      const unit = cols[1].innerText.trim();
+      tsvContent += `${name}\t${unit}\n`;
+    }
+  });
+
+  navigator.clipboard.writeText(tsvContent).then(() => {
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã copy!';
+    btn.style.background = '#16a34a';
+    showToast('<i class="fa-solid fa-check"></i> Đã sao chép danh sách sản phẩm mới vào Clipboard!', 'success');
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.style.background = '#f59e0b';
     }, 2000);
   }).catch(err => {
     console.error('Không thể copy:', err);
