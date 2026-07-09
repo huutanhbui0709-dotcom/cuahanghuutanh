@@ -400,11 +400,14 @@ function renderAdminTable() {
   const q = (document.getElementById('adminSearch')?.value || '').toLowerCase();
   const typeFilter = document.getElementById('adminTypeFilter')?.value || '';
   const statusFilter = document.getElementById('adminStatusFilter')?.value || '';
+  const bestSellerFilter = document.getElementById('adminBestSellerFilter')?.value || '';
 
   let list = products.filter(p => {
     if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
     if (typeFilter && p.loai !== typeFilter) return false;
     if (statusFilter && (p.trangthai || 'Đang theo dõi') !== statusFilter) return false;
+    if (bestSellerFilter === 'yes' && !p.isBestSeller) return false;
+    if (bestSellerFilter === 'no' && p.isBestSeller) return false;
     return true;
   });
 
@@ -1872,6 +1875,67 @@ async function exportNewProductsExcel(index) {
       btn.removeAttribute('disabled');
       btn.innerHTML = originalHTML;
     }
+  }
+}
+
+async function downloadAllImagesZip(btn) {
+  let originalHTML = '';
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.setAttribute('disabled', 'true');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang nén file...';
+  }
+
+  try {
+    const res = await adminFetch('/api/admin/tools/download-images-zip', {
+      method: 'GET'
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Lỗi nén tệp tin từ máy chủ.');
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'public_img.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    showToast('<i class="fa-solid fa-circle-check"></i> Đã nén và tải về file ZIP hình ảnh thành công!', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.removeAttribute('disabled');
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+
+function switchToolsTab(tabName, btn) {
+  document.querySelectorAll('.tools-tab-btn').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-outline');
+    b.style.color = 'black';
+  });
+  if (btn) {
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-primary');
+    btn.style.color = '';
+  }
+
+  document.querySelectorAll('.tools-tab-content').forEach(content => {
+    content.style.display = 'none';
+  });
+  const activeContent = document.getElementById(`tools-tab-${tabName}`);
+  if (activeContent) {
+    activeContent.style.display = 'block';
   }
 }
 

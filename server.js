@@ -2032,6 +2032,26 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
   }
 });
 
+app.get('/api/admin/tools/download-images-zip', requireAdmin, (req, res) => {
+  try {
+    const AdmZip = require('adm-zip');
+    const zip = new AdmZip();
+
+    if (fs.existsSync(IMG_DIR)) {
+      zip.addLocalFolder(IMG_DIR);
+      const zipBuffer = zip.toBuffer();
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename=public_img.zip');
+      res.send(zipBuffer);
+    } else {
+      res.status(404).json({ ok: false, message: 'Thư mục hình ảnh không tồn tại.' });
+    }
+  } catch (err) {
+    console.error('Lỗi khi nén ảnh zip:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi tạo file ZIP: ' + err.message });
+  }
+});
+
 // ---------------------------------------------------------------------
 if (!IS_VERCEL) {
   app.listen(PORT, () => {

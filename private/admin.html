@@ -145,6 +145,12 @@
                   <option value="Đang theo dõi">Đang theo dõi</option>
                   <option value="Ngừng theo dõi">Ngừng theo dõi</option>
                 </select>
+                <select class="filter-select" id="adminBestSellerFilter" onchange="adminPage = 1; renderAdminTable()"
+                  style="padding: 7px 12px; font-size: 0.85rem;">
+                  <option value="">Tất cả nổi bật</option>
+                  <option value="yes">Bán chạy</option>
+                  <option value="no">Không bán chạy</option>
+                </select>
                 <button class="btn btn-primary btn-sm" onclick="openProductModal()">
                   <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                 </button>
@@ -424,71 +430,102 @@
 
         <!-- TOOLS -->
         <div class="admin-tab" id="tab-tools">
-          <!-- CẤU HÌNH API KEY -->
-          <div class="admin-card" style="margin-bottom: 20px;">
-            <div class="admin-card-title"><i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cấu hình Gemini API Key</div>
-            
-            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0;">
-                <input type="radio" name="geminiKeySource" value="env" checked onchange="toggleGeminiKeySource()" />
-                Sử dụng API Key hệ thống (Cấu hình trên Azure / file .env)
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0 0 10px 0;">
-                <input type="radio" name="geminiKeySource" value="custom" onchange="toggleGeminiKeySource()" />
-                Sử dụng API Key cá nhân nhập trực tiếp
-              </label>
-            </div>
-
-            <div id="customApiKeyContainer" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap;">
-              <input type="password" id="inputGeminiApiKey" placeholder="Nhập Gemini API Key cá nhân của bạn..." style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem;" />
-              <button class="btn btn-primary" onclick="saveGeminiApiKey()"><i class="fa-solid fa-floppy-disk"></i> Lưu Key</button>
-            </div>
-            
-            <p id="geminiKeyHint" style="font-size: .8rem; color: var(--muted); margin-top: 8px; margin-bottom: 0;">
-              Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.
-            </p>
+          <!-- TOOLS SUBTABS -->
+          <div class="tools-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px; flex-wrap: wrap;">
+            <button class="btn btn-sm tools-tab-btn btn-primary" onclick="switchToolsTab('invoice', this)">
+              <i class="fa-solid fa-file-pdf"></i> Phân tích hóa đơn PDF
+            </button>
+            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;" onclick="switchToolsTab('gemini-key', this)">
+              <i class="fa-solid fa-key"></i> Cấu hình Gemini Key
+            </button>
+            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;" onclick="switchToolsTab('zip-images', this)">
+              <i class="fa-solid fa-file-zipper"></i> Sao lưu hình ảnh
+            </button>
           </div>
 
-          <div class="admin-card">
-            <div class="admin-card-title">
-              <i class="fa-solid fa-file-pdf"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF)
-            </div>
-            <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
-              Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF cùng lúc.
-            </p>
-            <div class="upload-zone" id="invoiceUploadZone" onclick="document.getElementById('invoiceFileInput').click()"
-              ondragover="handleInvoiceDragOver(event)" ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
-              <div class="upload-zone-icon"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
-              <div class="upload-zone-text" id="invoiceUploadText">
-                Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file
+          <!-- PHÂN TÍCH HÓA ĐƠN PDF (Ưu tiên / Mặc định hiển thị) -->
+          <div id="tools-tab-invoice" class="tools-tab-content">
+            <div class="admin-card">
+              <div class="admin-card-title">
+                <i class="fa-solid fa-file-pdf"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF)
               </div>
-              <div class="upload-zone-hint">
-                Chỉ chấp nhận file định dạng .pdf (Dung lượng < 5MB/file)
+              <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
+                Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF cùng lúc.
+              </p>
+              <div class="upload-zone" id="invoiceUploadZone" onclick="document.getElementById('invoiceFileInput').click()"
+                ondragover="handleInvoiceDragOver(event)" ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
+                <div class="upload-zone-icon"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
+                <div class="upload-zone-text" id="invoiceUploadText">
+                  Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file
+                </div>
+                <div class="upload-zone-hint">
+                  Chỉ chấp nhận file định dạng .pdf (Dung lượng < 5MB/file)
+                </div>
+              </div>
+              <input type="file" id="invoiceFileInput" multiple accept=".pdf" style="display: none"
+                onchange="handleInvoiceFilesSelect(event)" />
+              <div id="invoiceFilesList" style="margin-top: 12px; font-size: 0.9rem; color: var(--muted); display: none;">
+                <!-- Liệt kê danh sách file đã chọn -->
+              </div>
+              <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" id="btnProcessInvoices" onclick="processInvoices()">
+                  <i class="fa-solid fa-play"></i> Xử lý hóa đơn
+                </button>
+                <button class="btn btn-outline" id="btnClearInvoices" onclick="clearInvoiceSelection()" style="display: none;">
+                  Xoá lựa chọn
+                </button>
+              </div>
+              <div id="invoiceProcessingStatus" style="margin-top: 16px; display: none;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
+                  <span id="invoiceStatusText">Đang gửi dữ liệu hóa đơn và xử lý bằng AI...</span>
+                </div>
               </div>
             </div>
-            <input type="file" id="invoiceFileInput" multiple accept=".pdf" style="display: none"
-              onchange="handleInvoiceFilesSelect(event)" />
-            <div id="invoiceFilesList" style="margin-top: 12px; font-size: 0.9rem; color: var(--muted); display: none;">
-              <!-- Liệt kê danh sách file đã chọn -->
-            </div>
-            <div style="margin-top: 16px; display: flex; gap: 10px;">
-              <button class="btn btn-primary" id="btnProcessInvoices" onclick="processInvoices()">
-                <i class="fa-solid fa-play"></i> Xử lý hóa đơn
-              </button>
-              <button class="btn btn-outline" id="btnClearInvoices" onclick="clearInvoiceSelection()" style="display: none;">
-                Xoá lựa chọn
-              </button>
-            </div>
-            <div id="invoiceProcessingStatus" style="margin-top: 16px; display: none;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
-                <span id="invoiceStatusText">Đang gửi dữ liệu hóa đơn và xử lý bằng AI...</span>
+
+            <!-- Kết quả bốc tách -->
+            <div id="invoiceResultsContainer" style="margin-top: 24px;"></div>
+          </div>
+
+          <!-- CẤU HÌNH API KEY (Ẩn mặc định) -->
+          <div id="tools-tab-gemini-key" class="tools-tab-content" style="display: none;">
+            <div class="admin-card" style="margin-bottom: 20px;">
+              <div class="admin-card-title"><i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cấu hình Gemini API Key</div>
+              
+              <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0;">
+                  <input type="radio" name="geminiKeySource" value="env" checked onchange="toggleGeminiKeySource()" />
+                  Sử dụng API Key hệ thống (Cấu hình trên Azure / file .env)
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0 0 10px 0;">
+                  <input type="radio" name="geminiKeySource" value="custom" onchange="toggleGeminiKeySource()" />
+                  Sử dụng API Key cá nhân nhập trực tiếp
+                </label>
               </div>
+
+              <div id="customApiKeyContainer" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="password" id="inputGeminiApiKey" placeholder="Nhập Gemini API Key cá nhân của bạn..." style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem;" />
+                <button class="btn btn-primary" onclick="saveGeminiApiKey()"><i class="fa-solid fa-floppy-disk"></i> Lưu Key</button>
+              </div>
+              
+              <p id="geminiKeyHint" style="font-size: .8rem; color: var(--muted); margin-top: 8px; margin-bottom: 0;">
+                Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.
+              </p>
             </div>
           </div>
 
-          <!-- Kết quả bốc tách -->
-          <div id="invoiceResultsContainer" style="margin-top: 24px;"></div>
+          <!-- SAO LƯU HÌNH ẢNH (Ẩn mặc định) -->
+          <div id="tools-tab-zip-images" class="tools-tab-content" style="display: none;">
+            <div class="admin-card" style="margin-bottom: 20px;">
+              <div class="admin-card-title"><i class="fa-solid fa-file-zipper" style="color: #3b82f6;"></i> Sao lưu toàn bộ hình ảnh (.zip)</div>
+              <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
+                Tính năng nén toàn bộ hình ảnh sản phẩm và ảnh slides slideshow trong thư mục <code>/data/public_img</code> thành định dạng tệp tin <code>.zip</code> để bạn tải về làm bản sao lưu trên máy tính.
+              </p>
+              <button class="btn btn-primary" onclick="downloadAllImagesZip(this)">
+                <i class="fa-solid fa-download"></i> Nén và tải file ZIP
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
