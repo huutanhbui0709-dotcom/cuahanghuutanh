@@ -1767,9 +1767,6 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         console.error('Lỗi tính Lần N nhập kho:', e);
       }
 
-      const monthStr = inv.invoiceDate ? String(inv.invoiceDate.month).padStart(2, '0') : 'N/A';
-      const descriptionText = `Nhập kho tháng ${monthStr} từ nhà cung cấp ${supplierName} Lần ${orderCountInMonth}`;
-
       // Định dạng ngày chứng từ DD/MM/YYYY
       let dateStr = '';
       if (inv.invoiceDate) {
@@ -1778,6 +1775,8 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         const y = inv.invoiceDate.year || '';
         if (d && m && y) dateStr = `${d}/${m}/${y}`;
       }
+
+      const descriptionText = `Nhập kho hàng hóa mới từ hóa đơn của NCC ${supplierCode} - Ký hiệu ${inv.serial || ''} ngày ${dateStr}`;
 
       const products = inv.products || [];
       for (let pIdx = 0; pIdx < products.length; pIdx++) {
