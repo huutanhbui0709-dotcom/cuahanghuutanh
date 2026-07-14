@@ -492,12 +492,34 @@ app.use(async (req, res, next) => {
 
 app.use(express.json({ limit: '2mb' }));
 
+// Hàm trích xuất IP sạch từ request (xử lý trường hợp Azure proxy gửi IP:PORT)
+function extractCleanIp(req) {
+  // Ưu tiên x-forwarded-for (IP thật của client qua reverse proxy)
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) {
+    return xff.split(',')[0].trim();
+  }
+  // Fallback: req.ip có thể chứa dạng "IP:PORT" trên Azure Linux
+  if (req.ip) {
+    // IPv6 mapped IPv4: "::ffff:1.2.3.4" → giữ nguyên
+    // Dạng "1.2.3.4:12345" → bỏ port
+    const ip = req.ip;
+    if (ip.includes(':') && !ip.includes('::')) {
+      // Dạng IPv4 có port: "1.2.3.4:12345"
+      return ip.split(':')[0];
+    }
+    return ip;
+  }
+  return 'unknown-ip';
+}
+
 // Giới hạn số lần thử đăng nhập admin để chống dò mật khẩu
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => extractCleanIp(req),
   message: { ok: false, message: 'Bạn thử đăng nhập quá nhiều lần. Vui lòng thử lại sau ít phút.' },
 });
 
