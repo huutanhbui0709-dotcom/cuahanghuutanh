@@ -192,18 +192,18 @@
   <!-- Widget chat ẩn – FB SDK tự render thành iframe nổi -->
   <div id="fb-customer-chat" class="fb-customerchat"></div>
   <script>
-    // Gán page_id trước khi SDK load để SDK tự render widget chat
-    (function () {
-      var chatbox = document.getElementById('fb-customer-chat');
-      chatbox.setAttribute('page_id', '283752424817098'); // Fanpage: cuahanghuutanh
-      chatbox.setAttribute('attribution', 'biz_inbox');
-      chatbox.setAttribute('locale', 'vi_VN');
-    })();
+      // Gán page_id trước khi SDK load để SDK tự render widget chat
+      (function () {
+        var chatbox = document.getElementById('fb-customer-chat');
+        chatbox.setAttribute('page_id', '283752424817098'); // Fanpage: cuahanghuutanh
+        chatbox.setAttribute('attribution', 'biz_inbox');
+        chatbox.setAttribute('locale', 'vi_VN');
+      })();
 
     window.fbAsyncInit = function () {
       FB.init({
-        xfbml   : true,   // cho phép SDK render fb-customerchat
-        version : 'v19.0'
+        xfbml: true,   // cho phép SDK render fb-customerchat
+        version: 'v19.0'
       });
     };
 
@@ -230,7 +230,13 @@
             HỮU TÁNH</span>
         </div>
       </a>
-      <div class="flex-shrink-0">
+      <div class="flex-shrink-0 flex items-center gap-2">
+        <button
+          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base border border-amber-400/30 hover:border-amber-400/60 shadow-lg"
+          onclick="toggleLookupView()" id="lookupBtn">
+          <span><i class="fa-solid fa-receipt" style="color: rgb(255, 212, 59);"></i></span>
+          <span class="max-sm:hidden">Tra cứu đơn</span>
+        </button>
         <button
           class="relative bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20"
           onclick="openCart()" id="cartBtn">
@@ -343,6 +349,35 @@
     </div>
   </div>
 
+  <!-- ================= LOOKUP VIEW ================= -->
+  <div id="view-lookup" class="max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 flex-1" style="display: none;">
+    <!-- Box tra cứu -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-6">
+      <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-amber-500"></i> Tra cứu đơn hàng của bạn
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-500 mb-4">Nhập mã đơn hàng (ví dụ: DH12345678) được cung cấp khi đặt hàng
+        thành công để kiểm tra trạng thái và chi tiết sản phẩm.</p>
+      <div class="flex flex-col xs:flex-row gap-3">
+        <div class="relative flex-1">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i
+              class="fa-solid fa-hashtag"></i></span>
+          <input type="text" id="lookupInput" placeholder="Nhập mã đơn hàng..."
+            class="w-full pl-9 pr-3 py-3 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm font-bold rounded-xl border border-slate-250 focus:outline-none focus:border-amber-500 focus:bg-white transition" />
+        </div>
+        <button onclick="performOrderLookup()"
+          class="py-3 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2">
+          <span>Tìm kiếm</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Kết quả tra cứu (Sẽ hiện động) -->
+    <div id="lookupResult" class="hidden animate-fadeUp">
+      <!-- Sẽ được điền động qua shop.js -->
+    </div>
+  </div>
+
   <!-- ======= PRODUCT DETAIL MODAL ======= -->
   <div class="modal-overlay center" id="productDetailModal" onclick="closeProductDetailOnOutsideClick(event)">
     <div
@@ -394,15 +429,19 @@
       <!-- Modal Body -->
       <div class="flex-1 overflow-y-auto px-4 py-3" id="orderModalBody">
         <!-- Warning Alert Box -->
-        <div id="orderModalWarning" class="hidden mb-4 p-4 bg-amber-50 border border-amber-250 rounded-xl flex flex-col gap-2.5">
+        <div id="orderModalWarning"
+          class="hidden mb-4 p-4 bg-amber-50 border border-amber-250 rounded-xl flex flex-col gap-2.5">
           <div class="flex items-center gap-2 text-amber-600">
             <span class="text-lg"><i class="fa-solid fa-triangle-exclamation"></i></span>
             <span class="text-sm font-bold">Trùng lặp đơn hàng</span>
           </div>
           <p id="orderModalWarningText" class="text-xs text-slate-600 font-bold leading-relaxed"></p>
           <div class="flex items-center justify-end gap-2 mt-1">
-            <button onclick="dismissOrderWarning()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs transition">Hủy</button>
-            <button onclick="submitOrder(true)" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-black rounded-lg text-xs transition">Tiếp tục đặt</button>
+            <button onclick="dismissOrderWarning()"
+              class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs transition">Hủy</button>
+            <button onclick="submitOrder(true)"
+              class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-black rounded-lg text-xs transition">Tiếp
+              tục đặt</button>
           </div>
         </div>
 
@@ -410,8 +449,7 @@
           <div class="grid grid-cols-1 xs:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">👤 Họ tên *</label>
-              <input type="text" id="orderName" placeholder="Nguyễn Văn A"
-                required minlength="2" maxlength="50"
+              <input type="text" id="orderName" placeholder="Nguyễn Văn A" required minlength="2" maxlength="50"
                 class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
               <span id="orderNameError" class="text-[11px] text-red-500 font-semibold mt-0.5 hidden"></span>
             </div>
@@ -419,8 +457,8 @@
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-solid fa-phone"></i> Số điện thoại
                 *</label>
-              <input type="tel" id="orderPhone" placeholder="0901234567"
-                required minlength="9" maxlength="15" pattern="^[0-9]{9,15}$"
+              <input type="tel" id="orderPhone" placeholder="0901234567" required minlength="9" maxlength="15"
+                pattern="^[0-9]{9,15}$"
                 class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
               <span id="orderPhoneError" class="text-[11px] text-red-500 font-semibold mt-0.5 hidden"></span>
             </div>
@@ -429,16 +467,15 @@
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-solid fa-location-dot"></i> Địa chỉ
               giao hàng *</label>
-            <input type="text" id="orderAddress" placeholder="123 Nguyễn Trãi, Q.1, TP.HCM"
-              required minlength="5" maxlength="200"
+            <input type="text" id="orderAddress" placeholder="123 Nguyễn Trãi, Q.1, TP.HCM" required minlength="5"
+              maxlength="200"
               class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
             <span id="orderAddressError" class="text-[11px] text-red-500 font-semibold mt-0.5 hidden"></span>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">💬 Ghi chú</label>
-            <input type="text" id="orderNote" placeholder="Ghi chú thêm (nếu có)..."
-              maxlength="300"
+            <input type="text" id="orderNote" placeholder="Ghi chú thêm (nếu có)..." maxlength="300"
               class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-amber-500 text-slate-800 text-sm font-medium placeholder-slate-400 transition" />
           </div>
         </div>
@@ -473,34 +510,48 @@
 
   <!-- ======= ORDER SUCCESS MODAL ======= -->
   <div class="modal-overlay center" id="orderSuccessModal" style="display: none;">
-    <div class="modal !bg-white shadow-2xl flex flex-col w-full max-w-[420px] rounded-2xl overflow-hidden mx-4 my-auto p-6 relative" onclick="event.stopPropagation()">
+    <div
+      class="modal !bg-white shadow-2xl flex flex-col w-full max-w-[420px] rounded-2xl overflow-hidden mx-4 my-auto p-6 relative"
+      onclick="event.stopPropagation()">
       <div class="flex flex-col items-center text-center">
         <!-- Icon Success Animation -->
-        <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-3xl mb-4 animate-bounce">
+        <div
+          class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-3xl mb-4 animate-bounce">
           <i class="fa-solid fa-circle-check"></i>
         </div>
         <h3 class="text-xl font-bold text-slate-800 mb-2">Đặt Hàng Thành Công!</h3>
         <p class="text-sm text-slate-500 mb-6">Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đã được tiếp nhận và xử lý.</p>
-        
+
         <!-- Mã Đơn Hàng Box -->
         <div class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 flex flex-col gap-1.5">
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Mã đơn hàng của bạn</span>
-          <div class="flex items-center justify-between gap-3 bg-white border border-slate-100 rounded-lg py-2 px-3 shadow-inner">
+          <div
+            class="flex items-center justify-between gap-3 bg-white border border-slate-100 rounded-lg py-2 px-3 shadow-inner">
             <span class="font-mono font-bold text-slate-700 text-base select-all truncate" id="successOrderId">-</span>
-            <button onclick="copySuccessOrderId()" class="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1 transition focus:outline-none" id="btnCopySuccessId">
+            <button onclick="copySuccessOrderId()"
+              class="text-blue-600 hover:text-blue-800 text-sm font-bold flex items-center gap-1 transition focus:outline-none"
+              id="btnCopySuccessId">
               <i class="fa-regular fa-copy"></i> Sao chép
             </button>
           </div>
         </div>
 
-        <!-- Nút Đóng -->
-        <button onclick="closeOrderSuccessModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white font-bold text-sm rounded-xl shadow-md transition">
-          Đóng
-        </button>
+        <!-- Nút Thao tác -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full">
+          <button
+            onclick="openLookupWithOrderId(document.getElementById('successOrderId').textContent); closeOrderSuccessModal();"
+            class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-900 font-extrabold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-file-invoice"></i> Xem chi tiết
+          </button>
+          <button onclick="closeOrderSuccessModal()"
+            class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-sm rounded-xl transition">
+            Đóng
+          </button>
+        </div>
       </div>
     </div>
   </div>
-  
+
   <!-- ======= FOOTER ======= -->
   <footer class="bg-slate-900 text-white mt-16 border-t-4 border-amber-400 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -566,13 +617,16 @@
       transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s;
       box-shadow: 0 4px 18px rgba(6, 127, 181, 0.45);
     }
+
     #fbChatWrapper:hover {
       box-shadow: 0 6px 24px rgba(164, 63, 241, 0.5);
     }
+
     #fbChatWrapper.fb--dragging {
       cursor: grabbing;
       box-shadow: 0 8px 28px rgba(6, 127, 181, 0.55);
     }
+
     #fbChatInner {
       width: 100%;
       height: 100%;
@@ -584,9 +638,21 @@
       pointer-events: none;
       transition: transform 0.15s ease;
     }
-    #fbChatWrapper:hover #fbChatInner { transform: scale(1.08); }
-    #fbChatWrapper.fb--dragging #fbChatInner { transform: scale(1.13); }
-    #fbChatInner svg { width: 30px; height: 30px; fill: #fff; }
+
+    #fbChatWrapper:hover #fbChatInner {
+      transform: scale(1.08);
+    }
+
+    #fbChatWrapper.fb--dragging #fbChatInner {
+      transform: scale(1.13);
+    }
+
+    #fbChatInner svg {
+      width: 30px;
+      height: 30px;
+      fill: #fff;
+    }
+
     #fbChatWrapper::after {
       content: 'Chat Messenger';
       position: absolute;
@@ -604,13 +670,17 @@
       pointer-events: none;
       transition: opacity 0.2s;
     }
-    #fbChatWrapper:hover:not(.fb--dragging)::after { opacity: 1; }
+
+    #fbChatWrapper:hover:not(.fb--dragging)::after {
+      opacity: 1;
+    }
   </style>
 
   <div id="fbChatWrapper" title="Chat voi chung toi qua Messenger">
     <div id="fbChatInner">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.477 2 2 6.145 2 11.259c0 2.913 1.454 5.512 3.726 7.21V21l2.699-1.484C9.356 19.836 10.658 20 12 20c5.523 0 10-4.145 10-9.259C22 6.144 17.523 2 12 2zm1.078 12.472-2.548-2.718-4.97 2.718 5.467-5.804 2.612 2.718 4.907-2.718-5.468 5.804z"/>
+        <path
+          d="M12 2C6.477 2 2 6.145 2 11.259c0 2.913 1.454 5.512 3.726 7.21V21l2.699-1.484C9.356 19.836 10.658 20 12 20c5.523 0 10-4.145 10-9.259C22 6.144 17.523 2 12 2zm1.078 12.472-2.548-2.718-4.97 2.718 5.467-5.804 2.612 2.718 4.907-2.718-5.468 5.804z" />
       </svg>
     </div>
   </div>
@@ -623,19 +693,19 @@
     (function () {
       'use strict';
 
-      var fbEl       = document.getElementById('fbChatWrapper');
+      var fbEl = document.getElementById('fbChatWrapper');
       var fbCurrentX = 0;   /* offset X hien tai (px), so voi CSS anchor    */
       var fbCurrentY = 0;   /* offset Y hien tai – luon reset ve 0 khi snap  */
-      var fbStartX   = 0;   /* = pageX - fbCurrentX luc nhan xuong           */
-      var fbStartY   = 0;   /* = pageY - fbCurrentY luc nhan xuong           */
-      var fbIsClick  = true;
+      var fbStartX = 0;   /* = pageX - fbCurrentX luc nhan xuong           */
+      var fbStartY = 0;   /* = pageY - fbCurrentY luc nhan xuong           */
+      var fbIsClick = true;
       var fbIsDragging = false;
       var fbDownTime = 0;   /* timestamp luc nhan xuong (ms)                 */
 
       /* ── Snap ve men trai hoac phai ──────────────────────────────────── */
       function fbSnapToEdge() {
         var rect = fbEl.getBoundingClientRect();
-        var ww   = window.innerWidth;
+        var ww = window.innerWidth;
         var midX = rect.left + rect.width / 2;
 
         if (midX < ww / 2) {
@@ -651,7 +721,7 @@
         fbCurrentY = 0; /* Ep Y = 0: nut luon ve bottom:95px, khong de nut vang */
 
         fbEl.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
-        fbEl.style.transform  = 'translate3d(' + fbCurrentX + 'px,' + fbCurrentY + 'px,0)';
+        fbEl.style.transform = 'translate3d(' + fbCurrentX + 'px,' + fbCurrentY + 'px,0)';
       }
 
       /* ── Mo khung chat Messenger ─────────────────────────────────────── */
@@ -662,8 +732,8 @@
       /* ── pointerDown (mousedown / touchstart) ────────────────────────── */
       function fbPointerDown(e) {
         fbIsDragging = true;
-        fbIsClick    = true;
-        fbDownTime   = Date.now();
+        fbIsClick = true;
+        fbDownTime = Date.now();
 
         var pageX = e.touches ? e.touches[0].pageX : e.pageX;
         var pageY = e.touches ? e.touches[0].pageY : e.pageY;
@@ -718,13 +788,13 @@
       }
 
       /* ── Dang ky su kien cho ca PC lan Mobile ────────────────────────── */
-      fbEl.addEventListener('mousedown',  fbPointerDown);
-      document.addEventListener('mousemove',  fbPointerMove);
-      document.addEventListener('mouseup',    fbPointerUp);
+      fbEl.addEventListener('mousedown', fbPointerDown);
+      document.addEventListener('mousemove', fbPointerMove);
+      document.addEventListener('mouseup', fbPointerUp);
 
       fbEl.addEventListener('touchstart', fbPointerDown, { passive: true });
-      document.addEventListener('touchmove',  fbPointerMove, { passive: false });
-      document.addEventListener('touchend',   fbPointerUp);
+      document.addEventListener('touchmove', fbPointerMove, { passive: false });
+      document.addEventListener('touchend', fbPointerUp);
 
       /* Ngan context menu khi nhan giu tren mobile */
       fbEl.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -736,4 +806,4 @@
   <script src="js/shop.js"></script>
 </body>
 
-</html>
+</html>

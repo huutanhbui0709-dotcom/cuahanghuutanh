@@ -688,6 +688,32 @@ app.get('/api/slides', async (req, res) => {
   }
 });
 
+// API tra cứu đơn hàng bằng ID (không cần đăng nhập quản trị)
+app.get('/api/orders/:id', (req, res) => {
+  const orderId = String(req.params.id || '').trim().toUpperCase();
+  const order = orders.find(o => o.id.toUpperCase() === orderId);
+  if (!order) {
+    return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng nào có mã này.' });
+  }
+  
+  // Gắn thêm thông tin ảnh sản phẩm vào từng item của đơn hàng để hiển thị
+  const enrichedItems = order.items.map(item => {
+    const p = products.find(prod => prod.ma === item.ma);
+    return {
+      ...item,
+      image: p ? (p.image || '/img/placeholder.png') : '/img/placeholder.png'
+    };
+  });
+
+  res.json({
+    ok: true,
+    order: {
+      ...order,
+      items: enrichedItems
+    }
+  });
+});
+
 app.post('/api/orders', async (req, res) => {
   // Cơ chế chống Spam đặt hàng theo Device ID + IP + Fingerprint (khóa 1 tiếng nếu spam >= 5 lần trong 5 phút)
   const deviceId = req.headers['x-device-id'] || 'unknown-device';

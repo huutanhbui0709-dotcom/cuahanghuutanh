@@ -237,7 +237,7 @@ function renderShop() {
         <!-- Hover Overlay -->
         <div class="absolute inset-0 bg-slate-950/10 opacity-0 group-hover/img:opacity-100 transition duration-200 flex items-center justify-center">
           <span class="w-10 h-10 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-md transform scale-90 group-hover/img:scale-100 transition duration-200">
-            <i class="fa-solid fa-magnifying-glass-plus text-sm"></i>
+            <i class="fa-solid fa-receipt" style="color: rgb(255, 212, 59);"></i>
           </span>
         </div>
       </div>
@@ -692,10 +692,10 @@ async function submitOrder(force = false) {
     saveCart();
     closeOrderModal();
     ['orderName', 'orderPhone', 'orderAddress', 'orderNote'].forEach(id => document.getElementById(id).value = '');
-    
+
     // Hiển thị Popup đặt hàng thành công
     showOrderSuccessModal(data.order.id);
-    
+
     btn.disabled = false;
     btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
   } catch (err) {
@@ -730,7 +730,7 @@ async function copySuccessOrderId() {
   const orderIdSpan = document.getElementById('successOrderId');
   const btn = document.getElementById('btnCopySuccessId');
   if (!orderIdSpan) return;
-  
+
   try {
     await navigator.clipboard.writeText(orderIdSpan.textContent);
     showToast('<i class="fa-solid fa-check"></i> Đã sao chép mã đơn hàng!', 'success');
@@ -1355,6 +1355,199 @@ function scrollToTop() {
   };
 
   requestAnimationFrame(animation);
+}
+
+// ==============================
+// ORDER LOOKUP CONTROLLER
+// ==============================
+let isLookupView = false;
+
+function toggleLookupView() {
+  const shopView = document.getElementById('view-shop');
+  const lookupView = document.getElementById('view-lookup');
+  const lookupBtn = document.getElementById('lookupBtn');
+
+  if (!shopView || !lookupView) return;
+
+  isLookupView = !isLookupView;
+
+  if (isLookupView) {
+    // Chuyển sang trang tra cứu
+    shopView.style.display = 'none';
+    lookupView.style.display = 'block';
+    if (lookupBtn) {
+      lookupBtn.innerHTML = '<span><i class="fa-solid fa-store"></i></span><span class="max-sm:hidden">Trang chủ cửa hàng</span>';
+      lookupBtn.className = "bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20";
+    }
+    // Auto-focus input
+    const input = document.getElementById('lookupInput');
+    if (input) input.focus();
+  } else {
+    // Quay lại trang cửa hàng
+    shopView.style.display = 'block';
+    lookupView.style.display = 'none';
+    if (lookupBtn) {
+      lookupBtn.innerHTML = '<span><i class="fa-solid fa-receipt" style="color: rgb(255, 212, 59);"></i></span><span class="max-sm:hidden">Tra cứu đơn</span>';
+      lookupBtn.className = "bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base border border-amber-400/30 hover:border-amber-400/60 shadow-lg";
+    }
+  }
+}
+
+// Mở trực tiếp tra cứu đơn bằng ID (ví dụ click từ popup thành công)
+function openLookupWithOrderId(orderId) {
+  const shopView = document.getElementById('view-shop');
+  const lookupView = document.getElementById('view-lookup');
+  const lookupBtn = document.getElementById('lookupBtn');
+  const lookupInput = document.getElementById('lookupInput');
+
+  if (!shopView || !lookupView) return;
+
+  isLookupView = true;
+  shopView.style.display = 'none';
+  lookupView.style.display = 'block';
+  if (lookupBtn) {
+    lookupBtn.innerHTML = '<span><i class="fa-solid fa-store"></i></span><span class="max-sm:hidden">Trang chủ cửa hàng</span>';
+    lookupBtn.className = "bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20";
+  }
+
+  if (lookupInput) {
+    lookupInput.value = orderId;
+  }
+
+  performOrderLookup();
+}
+
+async function performOrderLookup() {
+  const input = document.getElementById('lookupInput');
+  const resultDiv = document.getElementById('lookupResult');
+  if (!input || !resultDiv) return;
+
+  const orderId = input.value.trim();
+  if (!orderId) {
+    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập mã đơn hàng', 'error');
+    return;
+  }
+
+  resultDiv.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 flex items-center justify-center">
+      <div class="flex items-center gap-3 text-slate-500">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-amber-500"></i>
+        <span class="font-bold text-sm">Đang tìm kiếm thông tin đơn hàng...</span>
+      </div>
+    </div>
+  `;
+  resultDiv.classList.remove('hidden');
+
+  try {
+    const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      resultDiv.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+          <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <h4 class="font-bold text-slate-800 text-base mb-1">Không tìm thấy đơn hàng</h4>
+          <p class="text-xs text-slate-500">${data.message || 'Vui lòng kiểm tra lại mã đơn hàng.'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    const order = data.order;
+
+    // Bản đồ màu sắc trạng thái
+    let statusClass = 'bg-amber-100 text-amber-800';
+    if (order.status === 'Đã xác nhận') statusClass = 'bg-emerald-100 text-emerald-800';
+    if (order.status === 'Đã huỷ') statusClass = 'bg-red-100 text-red-800';
+
+    // HTML danh sách sản phẩm kèm ảnh
+    const itemsHtml = order.items.map(item => `
+      <div class="flex gap-3 py-3 border-b border-slate-100 last:border-0 items-start">
+        <div class="w-14 h-14 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+          <img src="${item.image}" alt="${item.ten}" class="w-full h-full object-cover" onerror="this.src='/img/placeholder.png'">
+        </div>
+        <div class="flex-1 min-w-0">
+          <h5 class="text-sm font-bold text-slate-700 truncate">${item.ten}</h5>
+          <span class="text-[11px] font-mono text-slate-400 block">${item.ma}</span>
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-xs text-slate-500 font-semibold">${item.qty} ${item.donvi}</span>
+            <span class="text-xs font-bold text-blue-600">${formatPrice(item.gia)}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    resultDiv.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Header thông tin chung -->
+        <div class="bg-slate-900 text-white p-4 sm:p-5 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3">
+          <div>
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Mã đơn hàng</span>
+            <span class="text-lg font-black text-amber-400 font-mono">${order.id}</span>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-bold ${statusClass}">${order.status}</span>
+        </div>
+
+        <!-- Body -->
+        <div class="p-4 sm:p-6 space-y-5">
+          <!-- Thông tin khách -->
+          <div class="border-b border-slate-100 pb-4">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin khách hàng</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+              <div>
+                <span class="text-slate-400 block">Họ và tên</span>
+                <span class="font-bold text-slate-700">${order.customer}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block">Số điện thoại</span>
+                <span class="font-bold text-slate-700">${order.phone}</span>
+              </div>
+              <div class="sm:col-span-2">
+                <span class="text-slate-400 block">Địa chỉ nhận hàng</span>
+                <span class="font-bold text-slate-700">${order.address}</span>
+              </div>
+              ${order.note ? `
+                <div class="sm:col-span-2">
+                  <span class="text-slate-400 block">Ghi chú từ khách hàng</span>
+                  <span class="font-semibold text-amber-600">${order.note}</span>
+                </div>
+              ` : ''}
+              <div>
+                <span class="text-slate-400 block">Thời gian đặt</span>
+                <span class="font-medium text-slate-600">${order.createdAt}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chi tiết sản phẩm -->
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Sản phẩm đã đặt</h4>
+            <div class="border border-slate-100 rounded-xl px-4 py-2 bg-slate-50/50 max-h-[300px] overflow-y-auto">
+              ${itemsHtml}
+            </div>
+          </div>
+
+          <!-- Tổng tiền -->
+          <div class="bg-amber-50/50 rounded-xl p-4 flex justify-between items-center border border-amber-100">
+            <span class="text-sm font-bold text-slate-600">Tổng thanh toán:</span>
+            <span class="text-lg sm:text-xl font-black text-amber-600">${formatPrice(order.total)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+        <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h4 class="font-bold text-slate-800 text-base mb-1">Lỗi kết nối</h4>
+        <p class="text-xs text-slate-500">Đã xảy ra sự cố khi kết nối tới máy chủ. Vui lòng thử lại sau.</p>
+      </div>
+    `;
+  }
 }
 
 
