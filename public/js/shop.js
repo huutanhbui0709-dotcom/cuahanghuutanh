@@ -692,13 +692,57 @@ async function submitOrder(force = false) {
     saveCart();
     closeOrderModal();
     ['orderName', 'orderPhone', 'orderAddress', 'orderNote'].forEach(id => document.getElementById(id).value = '');
-    showToast(`<i class="fa-solid fa-party-horn"></i> Đặt hàng thành công! Mã đơn: ${data.order.id}`, 'success');
+    
+    // Hiển thị Popup đặt hàng thành công
+    showOrderSuccessModal(data.order.id);
+    
     btn.disabled = false;
     btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
     btn.disabled = false;
     btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
+  }
+}
+
+// ==============================
+// ORDER SUCCESS POPUP
+// ==============================
+function showOrderSuccessModal(orderId) {
+  const modal = document.getElementById('orderSuccessModal');
+  const orderIdSpan = document.getElementById('successOrderId');
+  if (modal && orderIdSpan) {
+    orderIdSpan.textContent = orderId;
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+  }
+}
+
+function closeOrderSuccessModal() {
+  const modal = document.getElementById('orderSuccessModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+  }
+}
+
+async function copySuccessOrderId() {
+  const orderIdSpan = document.getElementById('successOrderId');
+  const btn = document.getElementById('btnCopySuccessId');
+  if (!orderIdSpan) return;
+  
+  try {
+    await navigator.clipboard.writeText(orderIdSpan.textContent);
+    showToast('<i class="fa-solid fa-check"></i> Đã sao chép mã đơn hàng!', 'success');
+    if (btn) {
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã chép';
+      setTimeout(() => {
+        btn.innerHTML = originalHTML;
+      }, 2000);
+    }
+  } catch (err) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không thể sao chép', 'error');
   }
 }
 
