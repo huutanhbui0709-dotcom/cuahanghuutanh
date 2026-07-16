@@ -1,0 +1,22 @@
+name: Keep Azure App Alive
+
+# Chạy tự động mỗi 15 phút, đồng thời cho phép chạy thủ công từ tab Actions
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping website để giữ app luôn "thức"
+        run: |
+          echo "Đang ping https://cuahanghuutanh.azurewebsites.net/ lúc $(date)"
+          # -sSL: silent, show error, follow redirect
+          # -o /dev/null: bỏ qua nội dung response, chỉ quan tâm status code
+          # -w: in ra HTTP status code và thời gian phản hồi
+          # --max-time 60: timeout sau 60s nếu app đang cold start quá lâu
+          curl -sSL -o /dev/null -w "HTTP Status: %{http_code} | Thời gian phản hồi: %{time_total}s\n" \
+            --max-time 60 \
+            https://cuahanghuutanh.azurewebsites.net/
