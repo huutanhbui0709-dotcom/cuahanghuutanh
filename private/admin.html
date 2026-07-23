@@ -295,12 +295,14 @@
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 0.8rem; color: var(--muted); white-space: nowrap;">Từ:</span>
                   <input type="date" id="orderDateFrom" class="form-control"
-                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="orderPage=1; renderOrdersTable()" />
+                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;"
+                    onchange="orderPage=1; renderOrdersTable()" />
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 0.8rem; color: var(--muted); white-space: nowrap;">Đến:</span>
                   <input type="date" id="orderDateTo" class="form-control"
-                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;" onchange="orderPage=1; renderOrdersTable()" />
+                    style="width: 135px; padding: 7px 10px; font-size: 0.85rem;"
+                    onchange="orderPage=1; renderOrdersTable()" />
                 </div>
                 <select class="filter-select" id="orderStatusFilter" onchange="orderPage=1; renderOrdersTable()"
                   style="padding: 7px 12px; font-size: 0.85rem;">
@@ -313,10 +315,8 @@
                   style="color: var(--text); border-color: var(--border); padding: 8px 12px; height: 35px;">
                   <i class="fa-solid fa-rotate-left"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" id="deleteAllCancelledBtn"
-                  onclick="deleteAllCancelledOrders()"
-                  title="Xóa tất cả đơn hàng đã huỷ"
-                  style="display:none; padding: 8px 14px; height: 35px;">
+                <button class="btn btn-sm btn-danger" id="deleteAllCancelledBtn" onclick="deleteAllCancelledOrders()"
+                  title="Xóa tất cả đơn hàng đã huỷ" style="display:none; padding: 8px 14px; height: 35px;">
                   <i class="fa-solid fa-trash"></i> Xóa tất cả đã huỷ
                 </button>
               </div>
@@ -362,11 +362,14 @@
         <!-- SUPPLIERS -->
         <div class="admin-tab" id="tab-suppliers">
           <div class="admin-card">
-            <div class="admin-card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="admin-card-title"
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
               <span><i class="fa-solid fa-truck-field"></i> Quản lý Nhà cung cấp</span>
               <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="file" id="supplierExcelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="importSuppliersExcel(event)" />
-                <button class="btn btn-primary" onclick="document.getElementById('supplierExcelFileInput').click()" id="btnImportSuppliers">
+                <input type="file" id="supplierExcelFileInput" accept=".xlsx, .xls" style="display: none;"
+                  onchange="importSuppliersExcel(event)" />
+                <button class="btn btn-primary" onclick="document.getElementById('supplierExcelFileInput').click()"
+                  id="btnImportSuppliers">
                   <i class="fa-solid fa-file-import"></i> Import Excel
                 </button>
                 <div id="supplierImportSpinner" style="display: none; font-size: 0.85rem; color: var(--text);">
@@ -389,7 +392,8 @@
                 </thead>
                 <tbody id="suppliersTableBody">
                   <tr>
-                    <td colspan="4" style="text-align: center; color: var(--muted); padding: 20px 0;">Chưa có dữ liệu nhà cung cấp.</td>
+                    <td colspan="4" style="text-align: center; color: var(--muted); padding: 20px 0;">Chưa có dữ liệu
+                      nhà cung cấp.</td>
                   </tr>
                 </tbody>
               </table>
@@ -431,14 +435,17 @@
         <!-- TOOLS -->
         <div class="admin-tab" id="tab-tools">
           <!-- TOOLS SUBTABS -->
-          <div class="tools-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px; flex-wrap: wrap;">
+          <div class="tools-tabs"
+            style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px; flex-wrap: wrap;">
             <button class="btn btn-sm tools-tab-btn btn-primary" onclick="switchToolsTab('invoice', this)">
               <i class="fa-solid fa-file-pdf"></i> Phân tích hóa đơn PDF
             </button>
-            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;" onclick="switchToolsTab('gemini-key', this)">
+            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;"
+              onclick="switchToolsTab('gemini-key', this)">
               <i class="fa-solid fa-key"></i> Cấu hình Gemini Key
             </button>
-            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;" onclick="switchToolsTab('zip-images', this)">
+            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;"
+              onclick="switchToolsTab('zip-images', this)">
               <i class="fa-solid fa-file-zipper"></i> Sao lưu hình ảnh
             </button>
           </div>
@@ -452,155 +459,164 @@
               <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
                 Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF cùng lúc.
               </p>
-              <div class="upload-zone" id="invoiceUploadZone" onclick="document.getElementById('invoiceFileInput').click()"
-                ondragover="handleInvoiceDragOver(event)" ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
+              <div class="upload-zone" id="invoiceUploadZone"
+                onclick="document.getElementById('invoiceFileInput').click()" ondragover="handleInvoiceDragOver(event)"
+                ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
                 <div class="upload-zone-icon"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
                 <div class="upload-zone-text" id="invoiceUploadText">
                   Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file
                 </div>
                 <div class="upload-zone-hint">
-                  Chỉ chấp nhận file định dạng .pdf (Dung lượng < 5MB/file)
+                  Chỉ chấp nhận file định dạng .pdf (Dung lượng < 5MB/file) </div>
+                </div>
+                <input type="file" id="invoiceFileInput" multiple accept=".pdf" style="display: none"
+                  onchange="handleInvoiceFilesSelect(event)" />
+                <div id="invoiceFilesList"
+                  style="margin-top: 12px; font-size: 0.9rem; color: var(--muted); display: none;">
+                  <!-- Liệt kê danh sách file đã chọn -->
+                </div>
+                <div style="margin-top: 16px; display: flex; gap: 10px;">
+                  <button class="btn btn-primary" id="btnProcessInvoices" onclick="processInvoices()">
+                    <i class="fa-solid fa-play"></i> Xử lý hóa đơn
+                  </button>
+                  <button class="btn btn-outline" id="btnClearInvoices" onclick="clearInvoiceSelection()"
+                    style="display: none;">
+                    Xoá lựa chọn
+                  </button>
+                </div>
+                <div id="invoiceProcessingStatus" style="margin-top: 16px; display: none;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
+                    <span id="invoiceStatusText">Đang gửi dữ liệu hóa đơn và xử lý bằng AI...</span>
+                  </div>
                 </div>
               </div>
-              <input type="file" id="invoiceFileInput" multiple accept=".pdf" style="display: none"
-                onchange="handleInvoiceFilesSelect(event)" />
-              <div id="invoiceFilesList" style="margin-top: 12px; font-size: 0.9rem; color: var(--muted); display: none;">
-                <!-- Liệt kê danh sách file đã chọn -->
-              </div>
-              <div style="margin-top: 16px; display: flex; gap: 10px;">
-                <button class="btn btn-primary" id="btnProcessInvoices" onclick="processInvoices()">
-                  <i class="fa-solid fa-play"></i> Xử lý hóa đơn
-                </button>
-                <button class="btn btn-outline" id="btnClearInvoices" onclick="clearInvoiceSelection()" style="display: none;">
-                  Xoá lựa chọn
-                </button>
-              </div>
-              <div id="invoiceProcessingStatus" style="margin-top: 16px; display: none;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
-                  <span id="invoiceStatusText">Đang gửi dữ liệu hóa đơn và xử lý bằng AI...</span>
+
+              <!-- Kết quả bốc tách -->
+              <div id="invoiceResultsContainer" style="margin-top: 24px;"></div>
+            </div>
+
+            <!-- CẤU HÌNH API KEY (Ẩn mặc định) -->
+            <div id="tools-tab-gemini-key" class="tools-tab-content" style="display: none;">
+              <div class="admin-card" style="margin-bottom: 20px;">
+                <div class="admin-card-title"><i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cấu hình Gemini
+                  API Key</div>
+
+                <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                  <label
+                    style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0;">
+                    <input type="radio" name="geminiKeySource" value="env" checked onchange="toggleGeminiKeySource()" />
+                    Sử dụng API Key hệ thống (Cấu hình trên Azure / file .env)
+                  </label>
+                  <label
+                    style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0 0 10px 0;">
+                    <input type="radio" name="geminiKeySource" value="custom" onchange="toggleGeminiKeySource()" />
+                    Sử dụng API Key cá nhân nhập trực tiếp
+                  </label>
                 </div>
+
+                <div id="customApiKeyContainer" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <input type="password" id="inputGeminiApiKey" placeholder="Nhập Gemini API Key cá nhân của bạn..."
+                    style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem;" />
+                  <button class="btn btn-primary" onclick="saveGeminiApiKey()"><i class="fa-solid fa-floppy-disk"></i>
+                    Lưu Key</button>
+                </div>
+
+                <p id="geminiKeyHint" style="font-size: .8rem; color: var(--muted); margin-top: 8px; margin-bottom: 0;">
+                  Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.
+                </p>
               </div>
             </div>
 
-            <!-- Kết quả bốc tách -->
-            <div id="invoiceResultsContainer" style="margin-top: 24px;"></div>
-          </div>
-
-          <!-- CẤU HÌNH API KEY (Ẩn mặc định) -->
-          <div id="tools-tab-gemini-key" class="tools-tab-content" style="display: none;">
-            <div class="admin-card" style="margin-bottom: 20px;">
-              <div class="admin-card-title"><i class="fa-solid fa-key" style="color: #f59e0b;"></i> Cấu hình Gemini API Key</div>
-              
-              <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0;">
-                  <input type="radio" name="geminiKeySource" value="env" checked onchange="toggleGeminiKeySource()" />
-                  Sử dụng API Key hệ thống (Cấu hình trên Azure / file .env)
-                </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 500; color: black; cursor: pointer; margin: 0 0 10px 0;">
-                  <input type="radio" name="geminiKeySource" value="custom" onchange="toggleGeminiKeySource()" />
-                  Sử dụng API Key cá nhân nhập trực tiếp
-                </label>
+            <!-- SAO LƯU HÌNH ẢNH (Ẩn mặc định) -->
+            <div id="tools-tab-zip-images" class="tools-tab-content" style="display: none;">
+              <div class="admin-card" style="margin-bottom: 20px;">
+                <div class="admin-card-title"><i class="fa-solid fa-file-zipper" style="color: #3b82f6;"></i> Sao lưu
+                  toàn bộ hình ảnh (.zip)</div>
+                <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
+                  Tính năng nén toàn bộ hình ảnh sản phẩm và ảnh slides slideshow thành định dạng tệp tin
+                  <code>.zip</code>
+                </p>
+                <button class="btn btn-primary" onclick="downloadAllImagesZip(this)">
+                  <i class="fa-solid fa-download"></i> Nén và tải file ZIP
+                </button>
               </div>
-
-              <div id="customApiKeyContainer" style="display: none; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="password" id="inputGeminiApiKey" placeholder="Nhập Gemini API Key cá nhân của bạn..." style="flex: 1; min-width: 250px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.9rem;" />
-                <button class="btn btn-primary" onclick="saveGeminiApiKey()"><i class="fa-solid fa-floppy-disk"></i> Lưu Key</button>
-              </div>
-              
-              <p id="geminiKeyHint" style="font-size: .8rem; color: var(--muted); margin-top: 8px; margin-bottom: 0;">
-                Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.
-              </p>
-            </div>
-          </div>
-
-          <!-- SAO LƯU HÌNH ẢNH (Ẩn mặc định) -->
-          <div id="tools-tab-zip-images" class="tools-tab-content" style="display: none;">
-            <div class="admin-card" style="margin-bottom: 20px;">
-              <div class="admin-card-title"><i class="fa-solid fa-file-zipper" style="color: #3b82f6;"></i> Sao lưu toàn bộ hình ảnh (.zip)</div>
-              <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
-                Tính năng nén toàn bộ hình ảnh sản phẩm và ảnh slides slideshow trong thư mục <code>/data/public_img</code> thành định dạng tệp tin <code>.zip</code> để bạn tải về làm bản sao lưu trên máy tính.
-              </p>
-              <button class="btn btn-primary" onclick="downloadAllImagesZip(this)">
-                <i class="fa-solid fa-download"></i> Nén và tải file ZIP
-              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ======= PRODUCT ADD/EDIT MODAL ======= -->
-  <div class="modal-overlay center" id="productModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="productModalTitle">+ Thêm sản phẩm</h3>
-        <button class="modal-close" onclick="closeModal('productModal')">
-          ✕
-        </button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="pf_originalMa" />
-        <div class="form-group">
-          <label>Mã sản phẩm *</label>
-          <input class="form-control" id="pf_ma" placeholder="SP000001" />
+    <!-- ======= PRODUCT ADD/EDIT MODAL ======= -->
+    <div class="modal-overlay center" id="productModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="productModalTitle">+ Thêm sản phẩm</h3>
+          <button class="modal-close" onclick="closeModal('productModal')">
+            ✕
+          </button>
         </div>
-        <div class="form-group">
-          <label>Tên sản phẩm *</label>
-          <input class="form-control" id="pf_ten" placeholder="Ống nước PVC 21" />
-        </div>
-        <div class="form-group">
-          <label>Ảnh sản phẩm</label>
-          <input class="form-control" type="file" id="pf_image" accept="image/*"
-            onchange="previewProductImage(event)" />
-          <div id="pf_image_preview" style="margin-top: 8px; max-width: 100px; display: none;">
-            <img id="pf_image_img" src="" style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
+        <div class="modal-body">
+          <input type="hidden" id="pf_originalMa" />
+          <div class="form-group">
+            <label>Mã sản phẩm *</label>
+            <input class="form-control" id="pf_ma" placeholder="SP000001" />
+          </div>
+          <div class="form-group">
+            <label>Tên sản phẩm *</label>
+            <input class="form-control" id="pf_ten" placeholder="Ống nước PVC 21" />
+          </div>
+          <div class="form-group">
+            <label>Ảnh sản phẩm</label>
+            <input class="form-control" type="file" id="pf_image" accept="image/*"
+              onchange="previewProductImage(event)" />
+            <div id="pf_image_preview" style="margin-top: 8px; max-width: 100px; display: none;">
+              <img id="pf_image_img" src="" style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Giá bán</label>
+            <input class="form-control" id="pf_gia" type="number" min="0" placeholder="50000" />
+          </div>
+          <div class="form-group">
+            <label>Đơn vị tính</label>
+            <input class="form-control" id="pf_donvi" placeholder="Cái, Mét, Bộ..." />
+          </div>
+          <div class="form-group">
+            <label>Loại hàng hóa</label>
+            <input class="form-control" id="pf_loai" placeholder="Hàng hóa thường / dịch vụ..." />
+          </div>
+          <div class="form-group">
+            <label>Trạng thái</label>
+            <select class="form-control" id="pf_trangthai">
+              <option value="Đang theo dõi">Đang theo dõi</option>
+              <option value="Ngừng theo dõi">Ngừng theo dõi</option>
+            </select>
           </div>
         </div>
-        <div class="form-group">
-          <label>Giá bán</label>
-          <input class="form-control" id="pf_gia" type="number" min="0" placeholder="50000" />
+        <div class="modal-footer">
+          <button class="btn btn-success" style="width: 100%; padding: 12px" onclick="saveProductForm()">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu sản phẩm
+          </button>
         </div>
-        <div class="form-group">
-          <label>Đơn vị tính</label>
-          <input class="form-control" id="pf_donvi" placeholder="Cái, Mét, Bộ..." />
-        </div>
-        <div class="form-group">
-          <label>Loại hàng hóa</label>
-          <input class="form-control" id="pf_loai" placeholder="Hàng hóa thường / dịch vụ..." />
-        </div>
-        <div class="form-group">
-          <label>Trạng thái</label>
-          <select class="form-control" id="pf_trangthai">
-            <option value="Đang theo dõi">Đang theo dõi</option>
-            <option value="Ngừng theo dõi">Ngừng theo dõi</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success" style="width: 100%; padding: 12px" onclick="saveProductForm()">
-          <i class="fa-solid fa-floppy-disk"></i> Lưu sản phẩm
-        </button>
       </div>
     </div>
-  </div>
 
-  <!-- ======= ORDER DETAIL MODAL ======= -->
-  <div class="modal-overlay center" id="orderDetailModal">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-clipboard-list"></i> Chi tiết đơn hàng</h3>
-        <button class="modal-close" onclick="closeModal('orderDetailModal')">
-          ✕
-        </button>
+    <!-- ======= ORDER DETAIL MODAL ======= -->
+    <div class="modal-overlay center" id="orderDetailModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-clipboard-list"></i> Chi tiết đơn hàng</h3>
+          <button class="modal-close" onclick="closeModal('orderDetailModal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body" id="orderDetailBody"></div>
       </div>
-      <div class="modal-body" id="orderDetailBody"></div>
     </div>
-  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/admin.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 
 </html>

@@ -73,6 +73,7 @@ const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
+const { sql } = require('@vercel/postgres');
 
 const IS_VERCEL = !!process.env.VERCEL;
 
@@ -81,8 +82,9 @@ const IS_VERCEL = !!process.env.VERCEL;
 const BUNDLED_DATA_DIR = path.join(__dirname, 'data');
 let defaultDataDir = BUNDLED_DATA_DIR;
 
-// Kiểm tra xem có đang chạy thực tế trên Azure Web App không
-if (process.env.WEBSITE_SITE_NAME) {
+if (IS_VERCEL) {
+  defaultDataDir = '/tmp/data';
+} else if (process.env.WEBSITE_SITE_NAME) {
   // Trên Azure Linux, biến process.env.HOME luôn luôn là '/home'
   // Thư mục '/home/site/' là vùng ĐỘC LẬP, vĩnh viễn không bị GitHub Actions đè dữ liệu
   defaultDataDir = path.join('/home', 'site', 'cuahang_data_benvung');
@@ -232,6 +234,9 @@ async function readJSONAsync(file, fallback) {
 function makeQueuedWriter(filePath, blobPath) {
   let queue = Promise.resolve();
   return function write(data) {
+    if (IS_VERCEL) {
+      return Promise.resolve();
+    }
     queue = queue
       .catch(() => { }) // không để lỗi trước đó chặn lần ghi sau
       .then(async () => {
@@ -311,6 +316,46 @@ async function seedImagesFromPublic() {
 let isInitialized = false;
 let initPromise = null;
 
+async function initDbSchema() {
+  if (!IS_VERCEL) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS orders (
+        id VARCHAR(100) PRIMARY KEY,
+        created_at VARCHAR(100),
+        customer VARCHAR(100),
+        phone VARCHAR(100),
+        address TEXT,
+        note TEXT,
+        items JSONB,
+        total NUMERIC,
+        status VARCHAR(50),
+        device_id VARCHAR(100),
+        visitor_id VARCHAR(100)
+      );
+    `;
+    await sql`
+      CREATE TABLE IF NOT EXISTS visitor_activity (
+        visitor_id VARCHAR(100) PRIMARY KEY,
+        device_id VARCHAR(100),
+        ip VARCHAR(100),
+        fingerprint VARCHAR(100),
+        lock_until BIGINT DEFAULT 0,
+        attempts JSONB DEFAULT '[]'::jsonb,
+        count INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'Normal',
+        last_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    console.log('✅ Vercel DB tables initialized successfully.');
+  } catch (err) {
+    console.error('❌ Lỗi tạo table trong Vercel DB:', err);
+  }
+}
+
+let isInitialized = false;
+let initPromise = null;
+
 async function initializeData() {
   try {
     // 1. Đảm bảo thư mục tồn tại bất đồng bộ
@@ -329,7 +374,7 @@ async function initializeData() {
       console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
     }
 
-    if (!(await existsAsync(ORDERS_FILE))) {
+    if (!IS_VERCEL && !(await existsAsync(ORDERS_FILE))) {
       const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
       const seed = (await existsAsync(seedOrders))
         ? await fsp.readFile(seedOrders, 'utf8')
@@ -354,10 +399,10 @@ async function initializeData() {
       console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
     }
 
-    if (!(await existsAsync(SPAM_DEVICES_FILE))) {
+    if (!IS_VERCEL && !(await existsAsync(SPAM_DEVICES_FILE))) {
       await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
       console.log('🛡️ Đã tạo/khởi tạo lại spam_devices.json tại:', SPAM_DEVICES_FILE);
-    } else {
+    } else if (!IS_VERCEL) {
       try {
         const spamStats = await fsp.stat(SPAM_DEVICES_FILE);
         if (spamStats.size === 0) {
@@ -373,25 +418,74 @@ async function initializeData() {
 
     // 4. Load dữ liệu lên Cache RAM bất đồng bộ
     products = await readJSONAsync(PRODUCTS_FILE, []);
-    orders = await readJSONAsync(ORDERS_FILE, []);
     settings = await readJSONAsync(SETTINGS_FILE, {
       address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
       phone: "0945 592 209",
       email: "diennuochuutanh@gmail.com",
       mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
     });
-    spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
     suppliers = await readJSONAsync(SUPPLIERS_FILE, []);
 
     // 5. Cập nhật danh sách thiết bị bị khóa
     blockedDevices.clear();
-    spamDevices.forEach(entry => {
-      if (entry.lockUntil && entry.lockUntil > Date.now()) {
-        if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
-        if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
-        if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+
+    if (IS_VERCEL) {
+      await initDbSchema();
+      try {
+        const { rows } = await sql`SELECT * FROM orders`;
+        orders = rows.map(r => ({
+          id: r.id,
+          createdAt: r.created_at,
+          customer: r.customer,
+          phone: r.phone,
+          address: r.address,
+          note: r.note,
+          items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
+          total: Number(r.total),
+          status: r.status,
+          deviceId: r.device_id,
+          visitorId: r.visitor_id
+        }));
+        console.log(`✅ Loaded ${orders.length} orders from Vercel DB.`);
+      } catch (err) {
+        console.error('❌ Lỗi load orders từ Vercel DB:', err);
+        orders = [];
       }
-    });
+
+      try {
+        const { rows } = await sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`;
+        spamDevices = rows.map(r => ({
+          deviceId: r.device_id,
+          fingerprint: r.fingerprint,
+          ip: r.ip,
+          count: r.count,
+          time: r.last_time,
+          status: r.status,
+          lockUntil: Number(r.lock_until)
+        }));
+        spamDevices.forEach(entry => {
+          if (entry.lockUntil && entry.lockUntil > Date.now()) {
+            if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
+            if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
+            if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+          }
+        });
+        console.log(`✅ Loaded ${spamDevices.length} blocked activities from Vercel DB.`);
+      } catch (err) {
+        console.error('❌ Lỗi load spamDevices từ Vercel DB:', err);
+        spamDevices = [];
+      }
+    } else {
+      orders = await readJSONAsync(ORDERS_FILE, []);
+      spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
+      spamDevices.forEach(entry => {
+        if (entry.lockUntil && entry.lockUntil > Date.now()) {
+          if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
+          if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
+          if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
+        }
+      });
+    }
 
     // 6. Đồng bộ dữ liệu với Vercel Blob nếu bật USE_BLOB
     if (USE_BLOB) {
@@ -719,12 +813,26 @@ app.post('/api/orders', async (req, res) => {
   const deviceId = req.headers['x-device-id'] || 'unknown-device';
   const ip = req.ip || 'unknown-ip';
   const fingerprint = req.headers['x-browser-fingerprint'] || 'unknown-fp';
+  const visitorId = req.headers['x-visitor-id'] || req.body.visitorId || req.headers['visitor-id'] || req.body.visitor_id || 'unknown-visitor';
   const now = Date.now();
 
+  let blockEntry = null;
+  if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+    try {
+      const { rows } = await sql`SELECT * FROM visitor_activity WHERE visitor_id = ${visitorId}`;
+      if (rows.length > 0) {
+        blockEntry = rows[0];
+      }
+    } catch (err) {
+      console.error('Lỗi truy vấn visitor_activity từ DB:', err);
+    }
+  }
+
+  const dbLockUntil = blockEntry ? Number(blockEntry.lock_until) : 0;
   const deviceLockUntil = blockedDevices.get(deviceId);
   const ipLockUntil = blockedDevices.get(ip);
   const fpLockUntil = blockedDevices.get(fingerprint);
-  const lockUntil = Math.max(deviceLockUntil || 0, ipLockUntil || 0, fpLockUntil || 0);
+  const lockUntil = Math.max(dbLockUntil, deviceLockUntil || 0, ipLockUntil || 0, fpLockUntil || 0);
 
   if (lockUntil && now < lockUntil) {
     const remainingMin = Math.ceil((lockUntil - now) / 60000);
@@ -742,7 +850,15 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  let attempts = deviceOrderAttempts.get(deviceId) || [];
+  let attempts = [];
+  if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+    if (blockEntry && blockEntry.attempts) {
+      attempts = typeof blockEntry.attempts === 'string' ? JSON.parse(blockEntry.attempts) : blockEntry.attempts;
+    }
+  } else {
+    attempts = deviceOrderAttempts.get(deviceId) || [];
+  }
+
   let ipAttempts = deviceOrderAttempts.get(ip) || [];
   let fpAttempts = deviceOrderAttempts.get(fingerprint) || [];
 
@@ -764,17 +880,21 @@ app.post('/api/orders', async (req, res) => {
   // 2. Cập nhật danh sách lần đặt hàng trong vòng 5 phút qua (300,000 ms)
   attempts = attempts.filter(t => t > now - 300000);
   attempts.push(now);
-  deviceOrderAttempts.set(deviceId, attempts);
 
-  ipAttempts = ipAttempts.filter(t => t > now - 300000);
-  ipAttempts.push(now);
-  deviceOrderAttempts.set(ip, ipAttempts);
+  if (!IS_VERCEL) {
+    deviceOrderAttempts.set(deviceId, attempts);
+    ipAttempts = ipAttempts.filter(t => t > now - 300000);
+    ipAttempts.push(now);
+    deviceOrderAttempts.set(ip, ipAttempts);
 
-  fpAttempts = fpAttempts.filter(t => t > now - 300000);
-  fpAttempts.push(now);
-  deviceOrderAttempts.set(fingerprint, fpAttempts);
+    fpAttempts = fpAttempts.filter(t => t > now - 300000);
+    fpAttempts.push(now);
+    deviceOrderAttempts.set(fingerprint, fpAttempts);
+  }
 
-  const currentCount = Math.max(attempts.length, ipAttempts.length, fpAttempts.length);
+  const currentCount = IS_VERCEL
+    ? attempts.length
+    : Math.max(attempts.length, ipAttempts.length, fpAttempts.length);
 
   if (currentCount >= 5) {
     const lockTime = now + 86400000; // Khóa 24 tiếng
@@ -782,34 +902,75 @@ app.post('/api/orders', async (req, res) => {
     blockedDevices.set(ip, lockTime);       // Khóa IP
     blockedDevices.set(fingerprint, lockTime); // Khóa Fingerprint
 
-    // Lưu / Cập nhật vào spam_devices.json
-    let entry = spamDevices.find(e => e.fingerprint === fingerprint || e.ip === ip || e.deviceId === deviceId);
-    if (!entry) {
-      entry = {
-        deviceId,
-        fingerprint,
-        ip,
-        count: 0,
-        time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-        status: 'Spam'
-      };
-      spamDevices.push(entry);
-    }
-    entry.count = currentCount;
-    entry.lockUntil = lockTime;
-    entry.time = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-    entry.status = 'Spam';
+    if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+      try {
+        await sql`
+          INSERT INTO visitor_activity (visitor_id, device_id, ip, fingerprint, lock_until, attempts, count, status, last_time)
+          VALUES (${visitorId}, ${deviceId}, ${ip}, ${fingerprint}, ${lockTime}, ${JSON.stringify(attempts)}, ${currentCount}, 'Spam', NOW())
+          ON CONFLICT (visitor_id) DO UPDATE SET
+            device_id = EXCLUDED.device_id,
+            ip = EXCLUDED.ip,
+            fingerprint = EXCLUDED.fingerprint,
+            lock_until = EXCLUDED.lock_until,
+            attempts = EXCLUDED.attempts,
+            count = EXCLUDED.count,
+            status = EXCLUDED.status,
+            last_time = NOW();
+        `;
+      } catch (err) {
+        console.error('Lỗi lưu log spam lên DB:', err);
+      }
+    } else if (!IS_VERCEL) {
+      // Lưu / Cập nhật vào spam_devices.json
+      let entry = spamDevices.find(e => e.fingerprint === fingerprint || e.ip === ip || e.deviceId === deviceId);
+      if (!entry) {
+        entry = {
+          deviceId,
+          fingerprint,
+          ip,
+          count: 0,
+          time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+          status: 'Spam'
+        };
+        spamDevices.push(entry);
+      }
+      entry.count = currentCount;
+      entry.lockUntil = lockTime;
+      entry.time = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+      entry.status = 'Spam';
 
-    try {
-      await saveSpamDevices(spamDevices);
-    } catch (err) {
-      console.error('Lỗi lưu log spam:', err);
+      try {
+        await saveSpamDevices(spamDevices);
+      } catch (err) {
+        console.error('Lỗi lưu log spam:', err);
+      }
     }
 
     return res.status(429).json({
       ok: false,
       message: 'Phát hiện hành vi spam đặt hàng liên tục. Thiết bị của bạn đã bị tạm khóa 24 giờ.'
     });
+  }
+
+  // Ghi nhận hoạt động thiết bị nếu hợp lệ
+  if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+    try {
+      await sql`
+        INSERT INTO visitor_activity (visitor_id, device_id, ip, fingerprint, lock_until, attempts, count, status, last_time)
+        VALUES (${visitorId}, ${deviceId}, ${ip}, ${fingerprint}, 0, ${JSON.stringify(attempts)}, ${currentCount}, 'Normal', NOW())
+        ON CONFLICT (visitor_id) DO UPDATE SET
+          device_id = EXCLUDED.device_id,
+          ip = EXCLUDED.ip,
+          fingerprint = EXCLUDED.fingerprint,
+          lock_until = EXCLUDED.lock_until,
+          attempts = EXCLUDED.attempts,
+          count = EXCLUDED.count,
+          status = EXCLUDED.status,
+          last_time = NOW();
+      `;
+    } catch (err) {
+      console.error('Lỗi cập nhật visitor activity:', err);
+    }
   }
 
   const cName = String(customer || '').trim().slice(0, 50);
@@ -857,11 +1018,19 @@ app.post('/api/orders', async (req, res) => {
     total,
     status: 'Chờ xác nhận',
     deviceId, // Lưu ID thiết bị
+    visitorId,
   };
 
   orders.unshift(order);
   try {
-    await saveOrders(orders);
+    if (IS_VERCEL) {
+      await sql`
+        INSERT INTO orders (id, created_at, customer, phone, address, note, items, total, status, device_id, visitor_id)
+        VALUES (${order.id}, ${order.createdAt}, ${order.customer}, ${order.phone}, ${order.address}, ${order.note}, ${JSON.stringify(order.items)}, ${order.total}, ${order.status}, ${order.deviceId}, ${visitorId})
+      `;
+    } else {
+      await saveOrders(orders);
+    }
     broadcastUpdate('orders_updated');
   } catch (err) {
     console.error('Lỗi lưu đơn hàng:', err);
@@ -938,7 +1107,11 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
 
   order.status = status;
   try {
-    await saveOrders(orders);
+    if (IS_VERCEL) {
+      await sql`UPDATE orders SET status = ${status} WHERE id = ${req.params.id}`;
+    } else {
+      await saveOrders(orders);
+    }
     broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
@@ -953,7 +1126,11 @@ app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   }
   orders.splice(idx, 1);
   try {
-    await saveOrders(orders);
+    if (IS_VERCEL) {
+      await sql`DELETE FROM orders WHERE id = ${req.params.id}`;
+    } else {
+      await saveOrders(orders);
+    }
     broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
@@ -970,7 +1147,11 @@ app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => 
     return res.json({ ok: true, deleted: 0, message: 'Không có đơn hàng đã huỷ nào.' });
   }
   try {
-    await saveOrders(orders);
+    if (IS_VERCEL) {
+      await sql`DELETE FROM orders WHERE status = 'Đã huỷ'`;
+    } else {
+      await saveOrders(orders);
+    }
     broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
