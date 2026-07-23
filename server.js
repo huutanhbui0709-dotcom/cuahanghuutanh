@@ -353,8 +353,6 @@ async function initDbSchema() {
   }
 }
 
-let isInitialized = false;
-let initPromise = null;
 
 async function initializeData() {
   try {
