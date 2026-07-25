@@ -1225,9 +1225,21 @@ app.patch('/api/products/bestseller', requireAdmin, async (req, res) => {
       return res.status(400).json({ ok: false, message: 'Thiếu thông tin mã sản phẩm (id).' });
     }
 
-    // Đọc file bất đồng bộ từ PRODUCTS_FILE
-    const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
-    const productsList = JSON.parse(raw || '[]');
+    let productsList;
+
+    if (IS_VERCEL) {
+      // Trên Vercel: products nằm trong Postgres (app_settings), không phải file
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+        productsList = rows.length > 0 ? JSON.parse(rows[0].value) : [];
+      } catch (err) {
+        console.error('Lỗi đọc products từ DB:', err);
+        return res.status(500).json({ ok: false, message: 'Lỗi đọc dữ liệu sản phẩm.' });
+      }
+    } else {
+      const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
+      productsList = JSON.parse(raw || '[]');
+    }
 
     const product = productsList.find(p => p.ma === id);
     if (!product) {
@@ -1242,9 +1254,9 @@ app.patch('/api/products/bestseller', requireAdmin, async (req, res) => {
       cachedProduct.isBestSeller = !!isBestSeller;
     }
 
-    // Lưu dữ liệu bất đồng bộ qua queue writer an toàn
+    // saveProducts tự biết ghi vào DB (Vercel) hay file (local)
     await saveProducts(productsList);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
 
     res.json({ ok: true, message: 'Cập nhật sản phẩm bán chạy thành công.' });
   } catch (err) {
@@ -1649,29 +1661,8 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
     }
 
     // Đọc danh sách sản phẩm hiện có
-    let systemProducts = [];
-    try {
-      if (fs.existsSync(PRODUCTS_FILE)) {
-        const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
-        systemProducts = JSON.parse(raw);
-      } else {
-        const raw = await fsp.readFile(path.join(__dirname, 'data', 'products.json'), 'utf8');
-        systemProducts = JSON.parse(raw);
-      }
-    } catch (err) {
-      console.error('Lỗi khi đọc file products.json:', err);
-    }
-
-    // Đọc danh sách nhà cung cấp hiện có
-    let systemSuppliers = [];
-    try {
-      if (fs.existsSync(SUPPLIERS_FILE)) {
-        const raw = await fsp.readFile(SUPPLIERS_FILE, 'utf8');
-        systemSuppliers = JSON.parse(raw);
-      }
-    } catch (err) {
-      console.error('Lỗi khi đọc file suppliers.json:', err);
-    }
+    const systemProducts = products;
+    const systemSuppliers = suppliers;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
@@ -1889,27 +1880,8 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
     await workbook.xlsx.readFile(templatePath);
     const worksheet = workbook.getWorksheet(1);
 
-    // Đọc danh sách nhà cung cấp hệ thống để đối chiếu
-    let suppliersList = [];
-    try {
-      if (fs.existsSync(SUPPLIERS_FILE)) {
-        const raw = await fsp.readFile(SUPPLIERS_FILE, 'utf8');
-        suppliersList = JSON.parse(raw);
-      }
-    } catch (err) {
-      console.error('Lỗi đọc file suppliers.json:', err);
-    }
-
-    // Đọc danh sách sản phẩm hệ thống để đối chiếu
-    let systemProducts = [];
-    try {
-      if (fs.existsSync(PRODUCTS_FILE)) {
-        const raw = await fsp.readFile(PRODUCTS_FILE, 'utf8');
-        systemProducts = JSON.parse(raw);
-      }
-    } catch (err) {
-      console.error('Lỗi đọc file products.json:', err);
-    }
+    const suppliersList = suppliers;
+    const systemProducts = products;
 
     const normalizeName = (str) => {
       if (!str) return '';
