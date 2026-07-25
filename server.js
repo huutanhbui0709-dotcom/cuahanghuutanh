@@ -339,6 +339,13 @@ async function initDbSchema() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `;
+    // Bảng theo dõi thời điểm cập nhật gần nhất của từng loại dữ liệu (dùng cho polling)
+    await sql`
+      CREATE TABLE IF NOT EXISTS last_updates (
+        topic VARCHAR(50) PRIMARY KEY,
+        updated_at BIGINT NOT NULL
+      );
+    `;
     console.log('✅ Vercel DB tables initialized successfully.');
   } catch (err) {
     console.error('❌ Lỗi tạo table trong Vercel DB:', err);
@@ -631,22 +638,39 @@ function timingSafeEqualStr(a, b) {
 // =====================================================================
 let sseClients = [];
 
-app.get('/api/updates/stream', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  // Nguyên nhân 1: Bắt buộc Azure/Nginx BYPASS cơ chế Buffering
-  // Nếu không có header này, Azure sẽ giữ toàn bộ response trong bộ đệm
-  // và client sẽ không nhận được sự kiện SSE nào cho đến khi kết nối đóng.
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.flushHeaders();
+app.get('/api/updates/poll', async (req, res) => {
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT topic, updated_at FROM last_updates`;
+      const result = {};
+      rows.forEach(r => { result[r.topic] = Number(r.updated_at); });
+      return res.json({ ok: true, updates: result, serverTime: Date.now() });
+    } catch (err) {
+      console.error('Lỗi đọc last_updates:', err);
+      return res.status(500).json({ ok: false });
+    }
+  }
 
-  sseClients.push(res);
-
-  req.on('close', () => {
-    sseClients = sseClients.filter(client => client !== res);
-  });
+  // Local: dùng cache RAM
+  res.json({ ok: true, updates: localUpdateTimestamps, serverTime: Date.now() });
 });
+
+// Giữ nguyên route SSE cũ CHỈ cho local dev (Vercel sẽ không dùng route này nữa)
+if (!IS_VERCEL) {
+  app.get('/api/updates/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    sseClients.push(res);
+
+    req.on('close', () => {
+      sseClients = sseClients.filter(client => client !== res);
+    });
+  });
+}
 
 // Nguyên nhân 2: Sửa cú pháp vòng lặp Heartbeat và bảo vệ null-check
 // Nguyên nhân 3: Gửi ping mỗi 3 phút (180 giây) để vượt qua giới hạn
@@ -664,15 +688,34 @@ setInterval(() => {
   }
 }, 180000); // Chạy mỗi 3 phút — dưới ngưỡng idle timeout 4 phút của Azure
 
-function broadcastUpdate(type, data = {}) {
-  const payload = JSON.stringify({ type, data });
-  sseClients.forEach(client => {
+// Cache RAM cho local (không cần DB); trên Vercel dùng bảng last_updates
+const localUpdateTimestamps = {};
+
+async function broadcastUpdate(type, data = {}) {
+  const now = Date.now();
+  // type dạng 'orders_updated' -> topic 'orders'
+  const topic = type.replace('_updated', '');
+
+  if (IS_VERCEL) {
     try {
-      client.write(`data: ${payload}\n\n`);
+      await sql`
+        INSERT INTO last_updates (topic, updated_at)
+        VALUES (${topic}, ${now})
+        ON CONFLICT (topic) DO UPDATE SET updated_at = ${now}
+      `;
     } catch (err) {
-      // connection is dead
+      console.error('Lỗi ghi last_updates:', err);
     }
-  });
+  } else {
+    localUpdateTimestamps[topic] = now;
+    // Vẫn giữ SSE cho môi trường local (server chạy liên tục, không có vấn đề timeout)
+    const payload = JSON.stringify({ type, data });
+    sseClients.forEach(client => {
+      try {
+        client.write(`data: ${payload}\n\n`);
+      } catch (err) { }
+    });
+  }
 }
 
 // ---------------------------------------------------------------------

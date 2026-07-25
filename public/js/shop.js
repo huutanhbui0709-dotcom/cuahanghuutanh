@@ -1166,39 +1166,45 @@ function closeFullScreenImage() {
 // ==============================
 // REALTIME UPDATES LISTENERS
 // ==============================
-function initRealtimeUpdates() {
-  let source = null;
+// ==============================
+// REALTIME UPDATES (POLLING)
+// ==============================
+let shopLastKnownUpdates = {};
 
-  function connect() {
-    if (source) {
-      source.close();
-    }
+async function pollShopUpdates() {
+  try {
+    const res = await fetch('/api/updates/poll');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
 
-    source = new EventSource('/api/updates/stream');
-
-    source.onmessage = async function (event) {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'products_updated') {
-          console.log('⚡ Nhận cập nhật sản phẩm realtime...');
+    for (const topic in data.updates) {
+      const newTs = data.updates[topic];
+      if (shopLastKnownUpdates[topic] === undefined) {
+        // Lần đầu: chỉ ghi nhận mốc thời gian, không trigger reload
+        shopLastKnownUpdates[topic] = newTs;
+        continue;
+      }
+      if (shopLastKnownUpdates[topic] !== newTs) {
+        shopLastKnownUpdates[topic] = newTs;
+        if (topic === 'products') {
+          console.log('⚡ Nhận cập nhật sản phẩm...');
           await loadProducts();
-        } else if (msg.type === 'settings_updated') {
-          console.log('⚡ Nhận cập nhật cấu hình realtime...');
+        } else if (topic === 'settings') {
+          console.log('⚡ Nhận cập nhật cấu hình...');
           await loadSettings();
         }
-      } catch (e) {
-        console.error('Lỗi giải mã thông điệp realtime:', e);
+        // topic === 'orders' bị bỏ qua có chủ đích — trang shop không cần theo dõi
       }
-    };
-
-    source.onerror = function () {
-      console.warn('Mất kết nối realtime, đang kết nối lại sau 5 giây...');
-      source.close();
-      setTimeout(connect, 5000);
-    };
+    }
+  } catch (err) {
+    console.warn('Lỗi khi poll cập nhật:', err);
   }
+}
 
-  connect();
+function initRealtimeUpdates() {
+  pollShopUpdates(); // lấy mốc thời gian ban đầu
+  setInterval(pollShopUpdates, 8000); // poll mỗi 8 giây — trang shop ít khẩn cấp hơn admin
 }
 
 function initSwipeToDelete() {

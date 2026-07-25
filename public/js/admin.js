@@ -1146,47 +1146,57 @@ checkAuth();
 // ==============================
 // REALTIME UPDATES LISTENERS
 // ==============================
-function initRealtimeUpdates() {
-  let source = null;
+// ==============================
+// REALTIME UPDATES (POLLING)
+// ==============================
+let lastKnownUpdates = {};
+let pollingTimer = null;
 
-  function connect() {
-    if (source) {
-      source.close();
-    }
+async function pollUpdates() {
+  try {
+    const res = await fetch('/api/updates/poll', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
 
-    source = new EventSource('/api/updates/stream');
-
-    source.onmessage = async function (event) {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'products_updated') {
-          console.log('⚡ Nhận cập nhật sản phẩm realtime...');
-          await loadProducts();
-          populateProductTypeFilter();
-          renderAdminTable();
-          renderDashboard();
-        } else if (msg.type === 'orders_updated') {
-          console.log('⚡ Nhận cập nhật đơn hàng realtime...');
-          await loadOrders();
-          renderAdminTable();
-          renderDashboard();
-        } else if (msg.type === 'settings_updated') {
-          console.log('⚡ Nhận cập nhật cấu hình realtime...');
-          await loadSettingsForm();
-        }
-      } catch (e) {
-        console.error('Lỗi giải mã thông điệp realtime:', e);
+    for (const topic in data.updates) {
+      const newTs = data.updates[topic];
+      if (lastKnownUpdates[topic] === undefined) {
+        // Lần đầu tiên: chỉ ghi nhận mốc thời gian, không trigger reload
+        lastKnownUpdates[topic] = newTs;
+        continue;
       }
-    };
-
-    source.onerror = function () {
-      console.warn('Mất kết nối realtime, đang kết nối lại sau 5 giây...');
-      source.close();
-      setTimeout(connect, 5000);
-    };
+      if (lastKnownUpdates[topic] !== newTs) {
+        lastKnownUpdates[topic] = newTs;
+        await handleTopicUpdate(topic);
+      }
+    }
+  } catch (err) {
+    console.warn('Lỗi khi poll cập nhật:', err);
   }
+}
 
-  connect();
+async function handleTopicUpdate(topic) {
+  if (topic === 'products') {
+    console.log('⚡ Nhận cập nhật sản phẩm...');
+    await loadProducts();
+    populateProductTypeFilter();
+    renderAdminTable();
+    renderDashboard();
+  } else if (topic === 'orders') {
+    console.log('⚡ Nhận cập nhật đơn hàng...');
+    await loadOrders();
+    renderOrdersTable();
+    renderDashboard();
+  } else if (topic === 'settings') {
+    console.log('⚡ Nhận cập nhật cấu hình...');
+    await loadSettingsForm();
+  }
+}
+
+function initRealtimeUpdates() {
+  pollUpdates(); // gọi ngay lần đầu để lấy mốc thời gian ban đầu
+  pollingTimer = setInterval(pollUpdates, 5000); // poll mỗi 5 giây
 }
 
 initRealtimeUpdates();
