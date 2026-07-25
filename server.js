@@ -1,4 +1,4 @@
-﻿// =====================================================================
+// =====================================================================
 // CỬA HÀNG VẬT TƯ KỸ THUẬT - SERVER
 // Express + lưu dữ liệu bằng file JSON (không cần database).
 // Trang quản trị có URL riêng, yêu cầu đăng nhập bằng mật khẩu.
@@ -841,38 +841,68 @@ app.get('/api/orders/:id', async (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-  // Cơ chế chống Spam đặt hàng theo Device ID + IP + Fingerprint (khóa 1 tiếng nếu spam >= 5 lần trong 5 phút)
-  const deviceId = req.headers['x-device-id'] || 'unknown-device';
-  const ip = req.ip || 'unknown-ip';
+  // ─── CHỐNG SPAM ─────────────────────────────────────────────────────────────
+  // Cảnh báo khi đặt đơn trong 2 phút qua.
+  // Khoá 24 giờ khi đặt >= 5 đơn trong 5 phút.
+  // Nhận dạng theo: visitorId > deviceId > IP > browserFingerprint
+  // Trên Vercel: mọi trạng thái lưu trong bảng visitor_activity (DB bền vững).
+  // Local:       dùng RAM Map (server không restart giữa request).
+  // ─────────────────────────────────────────────────────────────────────────────
+  const deviceId    = req.headers['x-device-id'] || 'unknown-device';
+  const ip          = extractCleanIp(req) || req.ip || 'unknown-ip';
   const fingerprint = req.headers['x-browser-fingerprint'] || 'unknown-fp';
-  const visitorId = req.headers['x-visitor-id'] || req.body.visitorId || req.headers['visitor-id'] || req.body.visitor_id || 'unknown-visitor';
+  const visitorId   = req.headers['x-visitor-id']
+    || req.body?.visitorId
+    || req.headers['visitor-id']
+    || req.body?.visitor_id
+    || ('dev_' + deviceId);   // fallback: dùng deviceId nếu không có visitorId
   const now = Date.now();
 
+  // ── 1. Lấy trạng thái block / attempts ──────────────────────────────────────
   let blockEntry = null;
-  if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+  let attempts   = [];  // mảng timestamp (ms) các lần đặt trong 5 phút qua
+
+  if (IS_VERCEL) {
+    // Trên Vercel: query DB theo mọi định danh để tránh bỏ sót khi visitorId khác nhau
     try {
-      const { rows } = await sql`SELECT * FROM visitor_activity WHERE visitor_id = ${visitorId}`;
+      const { rows } = await sql`
+        SELECT * FROM visitor_activity
+        WHERE visitor_id   = ${visitorId}
+           OR device_id    = ${deviceId}
+           OR ip           = ${ip}
+           OR fingerprint  = ${fingerprint}
+        ORDER BY lock_until DESC
+        LIMIT 1
+      `;
       if (rows.length > 0) {
         blockEntry = rows[0];
+        const raw = blockEntry.attempts;
+        attempts  = Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : []);
       }
     } catch (err) {
-      console.error('Lỗi truy vấn visitor_activity từ DB:', err);
+      console.error('Lỗi truy vấn visitor_activity:', err);
     }
+  } else {
+    // Local: dùng RAM Map (deviceId là khoá chính)
+    attempts = deviceOrderAttempts.get(deviceId) || [];
   }
 
-  const dbLockUntil = blockEntry ? Number(blockEntry.lock_until) : 0;
-  const deviceLockUntil = blockedDevices.get(deviceId);
-  const ipLockUntil = blockedDevices.get(ip);
-  const fpLockUntil = blockedDevices.get(fingerprint);
-  const lockUntil = Math.max(dbLockUntil, deviceLockUntil || 0, ipLockUntil || 0, fpLockUntil || 0);
+  // ── 2. Kiểm tra đang bị khoá không ─────────────────────────────────────────
+  const dbLockUntil     = blockEntry ? Number(blockEntry.lock_until) : 0;
+  const ramLockUntil    = Math.max(
+    blockedDevices.get(deviceId)    || 0,
+    blockedDevices.get(ip)          || 0,
+    blockedDevices.get(fingerprint) || 0
+  );
+  const lockUntil = Math.max(dbLockUntil, ramLockUntil);
 
   if (lockUntil && now < lockUntil) {
     const remainingMin = Math.ceil((lockUntil - now) / 60000);
-    let remainingStr = '';
+    let remainingStr;
     if (remainingMin >= 60) {
-      const hours = Math.floor(remainingMin / 60);
-      const mins = remainingMin % 60;
-      remainingStr = `${hours} giờ ${mins > 0 ? ` ${mins} phút` : ''}`;
+      const h = Math.floor(remainingMin / 60);
+      const m = remainingMin % 60;
+      remainingStr = `${h} giờ${m > 0 ? ` ${m} phút` : ''}`;
     } else {
       remainingStr = `${remainingMin} phút`;
     }
@@ -882,22 +912,9 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  let attempts = [];
-  if (IS_VERCEL && visitorId !== 'unknown-visitor') {
-    if (blockEntry && blockEntry.attempts) {
-      attempts = typeof blockEntry.attempts === 'string' ? JSON.parse(blockEntry.attempts) : blockEntry.attempts;
-    }
-  } else {
-    attempts = deviceOrderAttempts.get(deviceId) || [];
-  }
-
-  let ipAttempts = deviceOrderAttempts.get(ip) || [];
-  let fpAttempts = deviceOrderAttempts.get(fingerprint) || [];
-
-  // 1. Kiểm tra cảnh báo (đã có đơn đặt trong vòng 2 phút trước)
-  const hasOrderInTwoMin = attempts.some(t => t > now - 120000) ||
-    ipAttempts.some(t => t > now - 120000) ||
-    fpAttempts.some(t => t > now - 120000);
+  // ── 3. Kiểm tra cảnh báo (đã đặt trong 2 phút qua) ─────────────────────────
+  const recentAttempts = attempts.filter(t => t > now - 300000); // chỉ giữ trong 5 phút
+  const hasOrderInTwoMin = recentAttempts.some(t => t > now - 120000);
 
   const { customer, phone, address, note, items, force } = req.body || {};
 
@@ -909,73 +926,59 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  // 2. Cập nhật danh sách lần đặt hàng trong vòng 5 phút qua (300,000 ms)
-  attempts = attempts.filter(t => t > now - 300000);
-  attempts.push(now);
+  // ── 4. Ghi nhận lần đặt mới ─────────────────────────────────────────────────
+  const updatedAttempts = [...recentAttempts, now];
+  const currentCount    = updatedAttempts.length;
 
   if (!IS_VERCEL) {
-    deviceOrderAttempts.set(deviceId, attempts);
-    ipAttempts = ipAttempts.filter(t => t > now - 300000);
-    ipAttempts.push(now);
-    deviceOrderAttempts.set(ip, ipAttempts);
-
-    fpAttempts = fpAttempts.filter(t => t > now - 300000);
-    fpAttempts.push(now);
-    deviceOrderAttempts.set(fingerprint, fpAttempts);
+    // Local: cập nhật RAM Map cho cả deviceId, IP và fingerprint
+    deviceOrderAttempts.set(deviceId,    updatedAttempts);
+    deviceOrderAttempts.set(ip,          [...(deviceOrderAttempts.get(ip) || []).filter(t => t > now - 300000), now]);
+    deviceOrderAttempts.set(fingerprint, [...(deviceOrderAttempts.get(fingerprint) || []).filter(t => t > now - 300000), now]);
   }
 
-  const currentCount = IS_VERCEL
-    ? attempts.length
-    : Math.max(attempts.length, ipAttempts.length, fpAttempts.length);
-
+  // ── 5. Khoá nếu đủ 5 lần trong 5 phút ──────────────────────────────────────
   if (currentCount >= 5) {
-    const lockTime = now + 86400000; // Khóa 24 tiếng
-    blockedDevices.set(deviceId, lockTime); // Khóa Device ID
-    blockedDevices.set(ip, lockTime);       // Khóa IP
-    blockedDevices.set(fingerprint, lockTime); // Khóa Fingerprint
+    const lockTime = now + 86400000; // Khoá 24 giờ
 
-    if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+    // Cập nhật RAM Map (dùng cho local và để check nhanh ngay trong session)
+    blockedDevices.set(deviceId,    lockTime);
+    blockedDevices.set(ip,          lockTime);
+    blockedDevices.set(fingerprint, lockTime);
+
+    if (IS_VERCEL) {
       try {
         await sql`
-          INSERT INTO visitor_activity (visitor_id, device_id, ip, fingerprint, lock_until, attempts, count, status, last_time)
-          VALUES (${visitorId}, ${deviceId}, ${ip}, ${fingerprint}, ${lockTime}, ${JSON.stringify(attempts)}, ${currentCount}, 'Spam', NOW())
+          INSERT INTO visitor_activity
+            (visitor_id, device_id, ip, fingerprint, lock_until, attempts, count, status, last_time)
+          VALUES
+            (${visitorId}, ${deviceId}, ${ip}, ${fingerprint},
+             ${lockTime}, ${JSON.stringify(updatedAttempts)}, ${currentCount}, 'Spam', NOW())
           ON CONFLICT (visitor_id) DO UPDATE SET
-            device_id = EXCLUDED.device_id,
-            ip = EXCLUDED.ip,
+            device_id   = EXCLUDED.device_id,
+            ip          = EXCLUDED.ip,
             fingerprint = EXCLUDED.fingerprint,
-            lock_until = EXCLUDED.lock_until,
-            attempts = EXCLUDED.attempts,
-            count = EXCLUDED.count,
-            status = EXCLUDED.status,
-            last_time = NOW();
+            lock_until  = EXCLUDED.lock_until,
+            attempts    = EXCLUDED.attempts,
+            count       = EXCLUDED.count,
+            status      = EXCLUDED.status,
+            last_time   = NOW()
         `;
       } catch (err) {
-        console.error('Lỗi lưu log spam lên DB:', err);
+        console.error('Lỗi lưu spam lock lên DB:', err);
       }
-    } else if (!IS_VERCEL) {
-      // Lưu / Cập nhật vào spam_devices.json
+    } else {
+      // Local: cập nhật danh sách spam_devices
       let entry = spamDevices.find(e => e.fingerprint === fingerprint || e.ip === ip || e.deviceId === deviceId);
       if (!entry) {
-        entry = {
-          deviceId,
-          fingerprint,
-          ip,
-          count: 0,
-          time: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-          status: 'Spam'
-        };
+        entry = { deviceId, fingerprint, ip, count: 0, time: '', status: 'Spam' };
         spamDevices.push(entry);
       }
-      entry.count = currentCount;
+      entry.count     = currentCount;
       entry.lockUntil = lockTime;
-      entry.time = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-      entry.status = 'Spam';
-
-      try {
-        await saveSpamDevices(spamDevices);
-      } catch (err) {
-        console.error('Lỗi lưu log spam:', err);
-      }
+      entry.time      = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+      entry.status    = 'Spam';
+      try { await saveSpamDevices(spamDevices); } catch (err) { console.error('Lỗi lưu spam_devices:', err); }
     }
 
     return res.status(429).json({
@@ -984,26 +987,32 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 
-  // Ghi nhận hoạt động thiết bị nếu hợp lệ
-  if (IS_VERCEL && visitorId !== 'unknown-visitor') {
+  // ── 6. Ghi nhận hoạt động hợp lệ (để đếm lần sau) ──────────────────────────
+  if (IS_VERCEL) {
     try {
       await sql`
-        INSERT INTO visitor_activity (visitor_id, device_id, ip, fingerprint, lock_until, attempts, count, status, last_time)
-        VALUES (${visitorId}, ${deviceId}, ${ip}, ${fingerprint}, 0, ${JSON.stringify(attempts)}, ${currentCount}, 'Normal', NOW())
+        INSERT INTO visitor_activity
+          (visitor_id, device_id, ip, fingerprint, lock_until, attempts, count, status, last_time)
+        VALUES
+          (${visitorId}, ${deviceId}, ${ip}, ${fingerprint},
+           0, ${JSON.stringify(updatedAttempts)}, ${currentCount}, 'Normal', NOW())
         ON CONFLICT (visitor_id) DO UPDATE SET
-          device_id = EXCLUDED.device_id,
-          ip = EXCLUDED.ip,
+          device_id   = EXCLUDED.device_id,
+          ip          = EXCLUDED.ip,
           fingerprint = EXCLUDED.fingerprint,
-          lock_until = EXCLUDED.lock_until,
-          attempts = EXCLUDED.attempts,
-          count = EXCLUDED.count,
-          status = EXCLUDED.status,
-          last_time = NOW();
+          lock_until  = LEAST(visitor_activity.lock_until, EXCLUDED.lock_until),
+          attempts    = EXCLUDED.attempts,
+          count       = EXCLUDED.count,
+          status      = CASE WHEN visitor_activity.lock_until > ${now}
+                             THEN visitor_activity.status
+                             ELSE EXCLUDED.status END,
+          last_time   = NOW()
       `;
     } catch (err) {
       console.error('Lỗi cập nhật visitor activity:', err);
     }
   }
+
 
   const cName = String(customer || '').trim().slice(0, 50);
   const cPhone = String(phone || '').trim().slice(0, 15);
