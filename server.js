@@ -1027,7 +1027,12 @@ app.post('/api/orders', async (req, res) => {
   }
 
   // Gửi mail thông báo bất đồng bộ — không chặn response trả về khách
-  sendOrderNotification(order);
+  if (IS_VERCEL) {
+    await sendOrderNotification(order);
+  } else {
+    // Local: không cần chờ, server luôn chạy nền được
+    sendOrderNotification(order);
+  }
 
   res.json({
     ok: true,
