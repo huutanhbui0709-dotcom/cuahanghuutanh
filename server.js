@@ -71,7 +71,7 @@ const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { uploadImageFile, deleteImageFile, USE_BLOB, vercelBlob } = require('./lib/storage');
+const { uploadImageFile, deleteImageFile } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
 const { sql } = require('@vercel/postgres');
 
@@ -243,17 +243,7 @@ function makeQueuedWriter(filePath, blobPath) {
         try {
           const content = JSON.stringify(data, null, 2);
           await fsp.writeFile(filePath, content, 'utf8');
-          if (USE_BLOB) {
-            try {
-              await vercelBlob.put(blobPath, content, {
-                access: 'public',
-                addRandomSuffix: false
-              });
-              console.log(`☁️ Đã đồng bộ lên Vercel Blob: ${blobPath}`);
-            } catch (err) {
-              console.error(`❌ Lỗi đồng bộ lên Blob ${blobPath}:`, err.message);
-            }
-          }
+          // Vercel Blob is used only for images; JSON data is handled by Vercel DB
         } catch (err) {
           console.error(`❌ Lỗi trong hàng đợi ghi file (${filePath}):`, err.message);
         }
@@ -283,35 +273,7 @@ const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
 const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, 'data/spam_devices.json');
 const saveSuppliers = makeQueuedWriter(SUPPLIERS_FILE, 'data/suppliers.json');
 
-// Khi server khởi động lần đầu trên Azure (hoặc sau mỗi lần deploy), copy
-// tất cả ảnh từ thư mục public/img/ vào IMG_DIR (persistent directory).
-// Chỉ copy những file CHƯA CÓ trong IMG_DIR để không ghi đè ảnh đã được
-// cập nhật qua admin interface.
-async function seedImagesFromPublic() {
-  const bundledImgDir = path.join(__dirname, 'public', 'img');
-  if (!(await existsAsync(bundledImgDir))) return;
-  try {
-    const files = await fsp.readdir(bundledImgDir);
-    let copied = 0;
-    for (const file of files) {
-      const srcPath = path.join(bundledImgDir, file);
-      const destPath = path.join(IMG_DIR, file);
-
-      const stats = await fsp.stat(srcPath);
-      if (stats.isDirectory()) continue;
-
-      if (!(await existsAsync(destPath))) {
-        await fsp.copyFile(srcPath, destPath);
-        copied++;
-      }
-    }
-    if (copied > 0) {
-      console.log(`📸 Đã seed ${copied} ảnh từ public/img/ vào thư mục bền vững: ${IMG_DIR}`);
-    }
-  } catch (err) {
-    console.warn('⚠️ Lỗi seed ảnh từ public/img/:', err.message);
-  }
-}
+// seedImagesFromPublic() removed — images are now stored in Vercel Blob, not local FS.
 
 let isInitialized = false;
 let initPromise = null;
@@ -356,12 +318,10 @@ async function initDbSchema() {
 
 async function initializeData() {
   try {
-    // 1. Đảm bảo thư mục tồn tại bất đồng bộ
-    await fsp.mkdir(DATA_DIR, { recursive: true });
-    await fsp.mkdir(SLIDE_IMG_DIR, { recursive: true });
-
-    // 2. Seed ảnh từ public sang IMG_DIR
-    await seedImagesFromPublic();
+    // 1. Đảm bảo thư mục DATA_DIR tồn tại (dùng cho local/non-Vercel runs)
+    if (!IS_VERCEL) {
+      await fsp.mkdir(DATA_DIR, { recursive: true });
+    }
 
     // 3. Khởi tạo/seed các file JSON nếu chưa có
     if (!(await existsAsync(PRODUCTS_FILE))) {
@@ -485,66 +445,7 @@ async function initializeData() {
       });
     }
 
-    // 6. Đồng bộ dữ liệu với Vercel Blob nếu bật USE_BLOB
-    if (USE_BLOB) {
-      try {
-        console.log('🔄 Đang đồng bộ dữ liệu từ Vercel Blob Storage...');
-        const { blobs } = await vercelBlob.list();
-
-        // Đồng bộ products.json
-        const prodBlob = blobs.find(b => b.pathname === 'data/products.json');
-        if (prodBlob) {
-          const res = await fetch(prodBlob.url);
-          products = await res.json();
-          console.log(`✅ Đã tải ${products.length} sản phẩm từ Blob`);
-        } else {
-          await vercelBlob.put('data/products.json', JSON.stringify(products, null, 2), { access: 'public', addRandomSuffix: false });
-          console.log('📤 Đã đẩy products.json mẫu lên Blob');
-        }
-
-        // Đồng bộ orders.json
-        const ordBlob = blobs.find(b => b.pathname === 'data/orders.json');
-        if (ordBlob) {
-          const res = await fetch(ordBlob.url);
-          orders = await res.json();
-          console.log(`✅ Đã tải ${orders.length} đơn hàng từ Blob`);
-        } else {
-          await vercelBlob.put('data/orders.json', JSON.stringify(orders, null, 2), { access: 'public', addRandomSuffix: false });
-          console.log('📤 Đã đẩy orders.json mẫu lên Blob');
-        }
-
-        // Đồng bộ settings.json
-        const setBlob = blobs.find(b => b.pathname === 'data/settings.json');
-        if (setBlob) {
-          const res = await fetch(setBlob.url);
-          settings = await res.json();
-          console.log('✅ Đã tải settings từ Blob');
-        } else {
-          await vercelBlob.put('data/settings.json', JSON.stringify(settings, null, 2), { access: 'public', addRandomSuffix: false });
-          console.log('📤 Đã đẩy settings.json mẫu lên Blob');
-        }
-
-        // Đồng bộ spam_devices.json
-        const spamBlob = blobs.find(b => b.pathname === 'data/spam_devices.json');
-        if (spamBlob) {
-          const res = await fetch(spamBlob.url);
-          spamDevices = await res.json();
-          console.log(`✅ Đã tải ${spamDevices.length} thiết bị spam từ Blob`);
-          spamDevices.forEach(entry => {
-            if (entry.lockUntil && entry.lockUntil > Date.now()) {
-              if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
-              if (entry.ip) blockedDevices.set(entry.ip, entry.lockUntil);
-              if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
-            }
-          });
-        } else {
-          await vercelBlob.put('data/spam_devices.json', JSON.stringify(spamDevices, null, 2), { access: 'public', addRandomSuffix: false });
-          console.log('📤 Đã đẩy spam_devices.json mẫu lên Blob');
-        }
-      } catch (err) {
-        console.error('❌ Lỗi đồng bộ dữ liệu từ Blob:', err);
-      }
-    }
+    // JSON data is stored in Vercel DB (Postgres). Vercel Blob is used for images only.
   } catch (err) {
     console.error('❌ Lỗi nghiêm trọng khi khởi tạo dữ liệu:', err);
   }
@@ -696,24 +597,9 @@ function broadcastUpdate(type, data = {}) {
 // ---------------------------------------------------------------------
 // PHỤC VỤ FILE TĨNH (trang khách hàng, css, js dùng chung)
 // ---------------------------------------------------------------------
-// Phục vụ hình ảnh được tải lên từ thư mục bền vững (persistent directory).
-// - Nếu là ảnh sản phẩm trực tiếp (nằm ngay trong /img/, ví dụ: /img/DIENCUONVSC-1.5.jpg):
-//   chặn fallthrough (fallthrough: false) để tránh trả về ảnh cũ từ Git (public/img/) khi ảnh bị sửa/xoá.
-// - Nếu là các thư mục con khác (như /img/favicon/ hoặc /img/Slide_img/):
-//   cho phép fallthrough (fallthrough: true) để tự động rơi xuống thư mục public/img/ nếu chưa được tải lên.
-app.use('/img', (req, res, next) => {
-  const pathParts = req.path.split('/').filter(Boolean);
-  if (pathParts.length >= 2) {
-    // Có thư mục con (ví dụ: 'favicon', 'Slide_img'), cho phép fallthrough
-    express.static(IMG_DIR, { fallthrough: true })(req, res, next);
-  } else {
-    // Ảnh sản phẩm trực tiếp, không cho phép fallthrough
-    express.static(IMG_DIR, { fallthrough: false })(req, res, (err) => {
-      if (err) return next(err);
-      res.status(404).send('Product image not found');
-    });
-  }
-});
+// Product images are stored in Vercel Blob and served via their public HTTPS URL.
+// The /img route only serves bundled static assets (favicon, Slide_img, placeholder).
+app.use('/img', express.static(path.join(__dirname, 'public', 'img')));
 
 if (IS_VERCEL) {
   app.use(express.static('/tmp/public'));
@@ -755,24 +641,24 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.get('/api/slides', async (req, res) => {
-  const dir = SLIDE_IMG_DIR;
-  const bundledDir = path.join(__dirname, 'public', 'img', 'Slide_img');
   try {
-    let files = [];
-    if (await existsAsync(dir)) {
-      files = await fsp.readdir(dir);
-    }
-    // Lọc chỉ lấy các file định dạng ảnh
-    let images = files
-      .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
-      .map(f => '/img/Slide_img/' + f);
+    // Lấy danh sách ảnh slide từ Vercel Blob
+    const { list } = require('@vercel/blob');
+    const { blobs } = await list({ prefix: 'slides/' });
+    const images = blobs
+      .filter(b => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(b.pathname))
+      .map(b => b.url);
 
-    // Nếu trong thư mục ghi đè không có slide nào, lấy từ thư mục mẫu của repo
-    if (images.length === 0 && await existsAsync(bundledDir)) {
-      const bundledFiles = await fsp.readdir(bundledDir);
-      images = bundledFiles
-        .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
-        .map(f => '/img/Slide_img/' + f);
+    // Fallback: nếu chưa có slide trên Blob, trả về ảnh mẫu từ repo
+    if (images.length === 0) {
+      const bundledDir = path.join(__dirname, 'public', 'img', 'Slide_img');
+      if (await existsAsync(bundledDir)) {
+        const bundledFiles = await fsp.readdir(bundledDir);
+        const fallback = bundledFiles
+          .filter(f => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(f))
+          .map(f => '/img/Slide_img/' + f);
+        return res.json(fallback);
+      }
     }
     res.json(images);
   } catch (err) {
@@ -2260,23 +2146,8 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/tools/download-images-zip', requireAdmin, (req, res) => {
-  try {
-    const AdmZip = require('adm-zip');
-    const zip = new AdmZip();
-
-    if (fs.existsSync(IMG_DIR)) {
-      zip.addLocalFolder(IMG_DIR);
-      const zipBuffer = zip.toBuffer();
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', 'attachment; filename=public_img.zip');
-      res.send(zipBuffer);
-    } else {
-      res.status(404).json({ ok: false, message: 'Thư mục hình ảnh không tồn tại.' });
-    }
-  } catch (err) {
-    console.error('Lỗi khi nén ảnh zip:', err);
-    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi tạo file ZIP: ' + err.message });
-  }
+  // Images are now stored on Vercel Blob and cannot be zipped server-side.
+  res.status(501).json({ ok: false, message: 'Tính năng tải ZIP ảnh không khả dụng khi sử dụng Vercel Blob. Vui lòng tải ảnh trực tiếp từ Vercel Blob Storage.' });
 });
 
 // ---------------------------------------------------------------------
