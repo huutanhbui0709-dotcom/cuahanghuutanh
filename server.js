@@ -239,7 +239,7 @@ function makeQueuedWriter(filePath, dbKey) {
       // Nếu dbKey là null, bỏ qua (orders/spamDevices có đường ghi riêng)
       if (!dbKey) return Promise.resolve();
       queue = queue
-        .catch(() => {})
+        .catch(() => { })
         .then(async () => {
           try {
             const content = JSON.stringify(data);
@@ -257,7 +257,7 @@ function makeQueuedWriter(filePath, dbKey) {
     }
     // Local: ghi ra file
     queue = queue
-      .catch(() => {}) // không để lỗi trước đó chặn lần ghi sau
+      .catch(() => { }) // không để lỗi trước đó chặn lần ghi sau
       .then(async () => {
         try {
           const content = JSON.stringify(data, null, 2);
@@ -748,14 +748,44 @@ app.get('/api/slides', async (req, res) => {
 });
 
 // API tra cứu đơn hàng bằng ID (không cần đăng nhập quản trị)
-app.get('/api/orders/:id', (req, res) => {
+app.get('/api/orders/:id', async (req, res) => {
   const orderId = String(req.params.id || '').trim().toUpperCase();
-  const order = orders.find(o => o.id.toUpperCase() === orderId);
+
+  let order = null;
+
+  if (IS_VERCEL) {
+    // Luôn đọc trực tiếp từ Postgres, không dùng RAM cache
+    // vì các serverless instance không chia sẻ bộ nhớ với nhau
+    try {
+      const { rows } = await sql`SELECT * FROM orders WHERE UPPER(id) = ${orderId}`;
+      if (rows.length > 0) {
+        const r = rows[0];
+        order = {
+          id: r.id,
+          createdAt: r.created_at,
+          customer: r.customer,
+          phone: r.phone,
+          address: r.address,
+          note: r.note,
+          items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
+          total: Number(r.total),
+          status: r.status,
+          deviceId: r.device_id,
+          visitorId: r.visitor_id
+        };
+      }
+    } catch (err) {
+      console.error('Lỗi tra cứu đơn hàng từ DB:', err);
+      return res.status(500).json({ ok: false, message: 'Lỗi hệ thống, vui lòng thử lại.' });
+    }
+  } else {
+    order = orders.find(o => o.id.toUpperCase() === orderId);
+  }
+
   if (!order) {
     return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng nào có mã này.' });
   }
-  
-  // Gắn thêm thông tin ảnh sản phẩm vào từng item của đơn hàng để hiển thị
+
   const enrichedItems = order.items.map(item => {
     const p = products.find(prod => prod.ma === item.ma);
     return {
@@ -764,13 +794,7 @@ app.get('/api/orders/:id', (req, res) => {
     };
   });
 
-  res.json({
-    ok: true,
-    order: {
-      ...order,
-      items: enrichedItems
-    }
-  });
+  res.json({ ok: true, order: { ...order, items: enrichedItems } });
 });
 
 app.post('/api/orders', async (req, res) => {
@@ -1056,7 +1080,29 @@ app.get('/api/admin/me', (req, res) => {
 // API QUẢN TRỊ (yêu cầu đăng nhập)
 // =====================================================================
 
-app.get('/api/admin/orders', requireAdmin, (req, res) => {
+app.get('/api/admin/orders', requireAdmin, async (req, res) => {
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
+      const freshOrders = rows.map(r => ({
+        id: r.id,
+        createdAt: r.created_at,
+        customer: r.customer,
+        phone: r.phone,
+        address: r.address,
+        note: r.note,
+        items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
+        total: Number(r.total),
+        status: r.status,
+        deviceId: r.device_id,
+        visitorId: r.visitor_id
+      }));
+      return res.json(freshOrders);
+    } catch (err) {
+      console.error('Lỗi tải danh sách đơn từ DB:', err);
+      return res.status(500).json({ ok: false, message: 'Lỗi tải danh sách đơn.' });
+    }
+  }
   res.json(orders);
 });
 
