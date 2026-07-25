@@ -1,4 +1,4 @@
-// =====================================================================
+﻿// =====================================================================
 // CỬA HÀNG VẬT TƯ KỸ THUẬT - SERVER
 // Express + lưu dữ liệu bằng file JSON (không cần database).
 // Trang quản trị có URL riêng, yêu cầu đăng nhập bằng mật khẩu.
@@ -231,19 +231,37 @@ async function readJSONAsync(file, fallback) {
   }
 }
 
-function makeQueuedWriter(filePath, blobPath) {
+function makeQueuedWriter(filePath, dbKey) {
   let queue = Promise.resolve();
   return function write(data) {
     if (IS_VERCEL) {
-      return Promise.resolve();
+      // Trên Vercel: persist vào Vercel DB (bảng app_settings) thay vì file
+      // Nếu dbKey là null, bỏ qua (orders/spamDevices có đường ghi riêng)
+      if (!dbKey) return Promise.resolve();
+      queue = queue
+        .catch(() => {})
+        .then(async () => {
+          try {
+            const content = JSON.stringify(data);
+            await sql`
+              INSERT INTO app_settings (key, value, updated_at)
+              VALUES (${dbKey}, ${content}, NOW())
+              ON CONFLICT (key) DO UPDATE
+                SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at
+            `;
+          } catch (err) {
+            console.error(`❌ Lỗi ghi DB (${dbKey}):`, err.message);
+          }
+        });
+      return queue;
     }
+    // Local: ghi ra file
     queue = queue
-      .catch(() => { }) // không để lỗi trước đó chặn lần ghi sau
+      .catch(() => {}) // không để lỗi trước đó chặn lần ghi sau
       .then(async () => {
         try {
           const content = JSON.stringify(data, null, 2);
           await fsp.writeFile(filePath, content, 'utf8');
-          // Vercel Blob is used only for images; JSON data is handled by Vercel DB
         } catch (err) {
           console.error(`❌ Lỗi trong hàng đợi ghi file (${filePath}):`, err.message);
         }
@@ -267,11 +285,13 @@ let suppliers = [];
 const deviceOrderAttempts = new Map();
 const blockedDevices = new Map();
 
-const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'data/products.json');
-const saveOrders = makeQueuedWriter(ORDERS_FILE, 'data/orders.json');
-const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'data/settings.json');
-const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, 'data/spam_devices.json');
-const saveSuppliers = makeQueuedWriter(SUPPLIERS_FILE, 'data/suppliers.json');
+// Trên Vercel: products/settings/suppliers lưu vào bảng app_settings.
+// orders và spamDevices được ghi trực tiếp theo từng hành động vào bảng riêng.
+const saveProducts = makeQueuedWriter(PRODUCTS_FILE, 'products');
+const saveOrders = makeQueuedWriter(ORDERS_FILE, null); // orders ghi trực tiếp vào bảng orders
+const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'settings');
+const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, null); // visitor_activity ghi trực tiếp
+const saveSuppliers = makeQueuedWriter(SUPPLIERS_FILE, 'suppliers');
 
 // seedImagesFromPublic() removed — images are now stored in Vercel Blob, not local FS.
 
@@ -281,6 +301,7 @@ let initPromise = null;
 async function initDbSchema() {
   if (!IS_VERCEL) return;
   try {
+    // Bảng đơn hàng
     await sql`
       CREATE TABLE IF NOT EXISTS orders (
         id VARCHAR(100) PRIMARY KEY,
@@ -296,6 +317,7 @@ async function initDbSchema() {
         visitor_id VARCHAR(100)
       );
     `;
+    // Bảng theo dõi thiết bị spam
     await sql`
       CREATE TABLE IF NOT EXISTS visitor_activity (
         visitor_id VARCHAR(100) PRIMARY KEY,
@@ -309,6 +331,14 @@ async function initDbSchema() {
         last_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
+    // Bảng lưu JSON data (products, settings, suppliers, ...)
+    await sql`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key VARCHAR(200) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
     console.log('✅ Vercel DB tables initialized successfully.');
   } catch (err) {
     console.error('❌ Lỗi tạo table trong Vercel DB:', err);
@@ -318,79 +348,77 @@ async function initDbSchema() {
 
 async function initializeData() {
   try {
-    // 1. Đảm bảo thư mục DATA_DIR tồn tại (dùng cho local/non-Vercel runs)
-    if (!IS_VERCEL) {
-      await fsp.mkdir(DATA_DIR, { recursive: true });
-    }
-
-    // 3. Khởi tạo/seed các file JSON nếu chưa có
-    if (!(await existsAsync(PRODUCTS_FILE))) {
-      const seed = (await existsAsync(BUNDLED_PRODUCTS_SEED))
-        ? await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8')
-        : '[]';
-      await fsp.writeFile(PRODUCTS_FILE, seed, 'utf8');
-      console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
-    }
-
-    if (!IS_VERCEL && !(await existsAsync(ORDERS_FILE))) {
-      const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
-      const seed = (await existsAsync(seedOrders))
-        ? await fsp.readFile(seedOrders, 'utf8')
-        : '[]';
-      await fsp.writeFile(ORDERS_FILE, seed, 'utf8');
-      console.log('📋 Đã tạo orders.json mới từ dữ liệu mẫu tại:', ORDERS_FILE);
-    }
-
-    if (!(await existsAsync(SETTINGS_FILE))) {
-      const seedSettings = path.join(BUNDLED_DATA_DIR, 'settings.json');
-      if (await existsAsync(seedSettings)) {
-        await fsp.writeFile(SETTINGS_FILE, await fsp.readFile(seedSettings, 'utf8'), 'utf8');
-      } else {
-        const defaultSettings = {
-          address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
-          phone: "0945 592 209",
-          email: "diennuochuutanh@gmail.com",
-          mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
-        };
-        await fsp.writeFile(SETTINGS_FILE, JSON.stringify(defaultSettings, null, 2), 'utf8');
-      }
-      console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
-    }
-
-    if (!IS_VERCEL && !(await existsAsync(SPAM_DEVICES_FILE))) {
-      await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
-      console.log('🛡️ Đã tạo/khởi tạo lại spam_devices.json tại:', SPAM_DEVICES_FILE);
-    } else if (!IS_VERCEL) {
-      try {
-        const spamStats = await fsp.stat(SPAM_DEVICES_FILE);
-        if (spamStats.size === 0) {
-          await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
-        }
-      } catch (err) { }
-    }
-
-    if (!(await existsAsync(SUPPLIERS_FILE))) {
-      await fsp.writeFile(SUPPLIERS_FILE, '[]', 'utf8');
-      console.log('🚛 Đã tạo/khởi tạo lại suppliers.json tại:', SUPPLIERS_FILE);
-    }
-
-    // 4. Load dữ liệu lên Cache RAM bất đồng bộ
-    products = await readJSONAsync(PRODUCTS_FILE, []);
-    settings = await readJSONAsync(SETTINGS_FILE, {
-      address: "Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ",
-      phone: "0945 592 209",
-      email: "diennuochuutanh@gmail.com",
-      mapUrl: "https://maps.google.com/maps?q=C%E1%BB%ADa%20h%C3%A0ng%20%C4%91i%E1%BB%87n%20n%C6%B0%E1%BB%9Bc%20H%E1%BB%AFu%20T%C3%A1nh,%20Th%E1%BB%91t%20N%E1%BB%91t,%20C%E1%BA%A7n%20Th%C6%A1&t=&z=15&ie=UTF8&iwloc=&output=embed"
-    });
-    suppliers = await readJSONAsync(SUPPLIERS_FILE, []);
-
-    // 5. Cập nhật danh sách thiết bị bị khóa
-    blockedDevices.clear();
-
     if (IS_VERCEL) {
+      // ================================================================
+      // Môi trường Vercel: tất cả data từ Vercel DB, không dùng filesystem
+      // ================================================================
       await initDbSchema();
+
+      // Load products từ DB
       try {
-        const { rows } = await sql`SELECT * FROM orders`;
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+        if (rows.length > 0) {
+          products = JSON.parse(rows[0].value);
+          console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
+        } else {
+          // Lần đầu: seed từ bundled data
+          try {
+            const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
+            products = JSON.parse(raw);
+          } catch { products = []; }
+          await sql`
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('products', ${JSON.stringify(products)}, NOW())
+            ON CONFLICT (key) DO NOTHING
+          `;
+          console.log(`📦 Seeded ${products.length} products into Vercel DB.`);
+        }
+      } catch (err) {
+        console.error('❌ Lỗi load products từ DB:', err);
+        products = [];
+      }
+
+      // Load settings từ DB
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'settings'`;
+        if (rows.length > 0) {
+          settings = JSON.parse(rows[0].value);
+          console.log('✅ Loaded settings from Vercel DB.');
+        } else {
+          // Lần đầu: seed settings mặc định
+          await sql`
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('settings', ${JSON.stringify(settings)}, NOW())
+            ON CONFLICT (key) DO NOTHING
+          `;
+          console.log('⚙️ Seeded default settings into Vercel DB.');
+        }
+      } catch (err) {
+        console.error('❌ Lỗi load settings từ DB:', err);
+      }
+
+      // Load suppliers từ DB
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+        if (rows.length > 0) {
+          suppliers = JSON.parse(rows[0].value);
+          console.log(`✅ Loaded ${suppliers.length} suppliers from Vercel DB.`);
+        } else {
+          await sql`
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('suppliers', '[]', NOW())
+            ON CONFLICT (key) DO NOTHING
+          `;
+          suppliers = [];
+        }
+      } catch (err) {
+        console.error('❌ Lỗi load suppliers từ DB:', err);
+        suppliers = [];
+      }
+
+      // Load orders từ DB
+      try {
+        const { rows } = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
         orders = rows.map(r => ({
           id: r.id,
           createdAt: r.created_at,
@@ -410,7 +438,9 @@ async function initializeData() {
         orders = [];
       }
 
+      // Load blocked visitors từ DB
       try {
+        blockedDevices.clear();
         const { rows } = await sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`;
         spamDevices = rows.map(r => ({
           deviceId: r.device_id,
@@ -428,14 +458,66 @@ async function initializeData() {
             if (entry.fingerprint) blockedDevices.set(entry.fingerprint, entry.lockUntil);
           }
         });
-        console.log(`✅ Loaded ${spamDevices.length} blocked activities from Vercel DB.`);
+        console.log(`✅ Loaded ${spamDevices.length} blocked visitors from Vercel DB.`);
       } catch (err) {
         console.error('❌ Lỗi load spamDevices từ Vercel DB:', err);
         spamDevices = [];
       }
+
     } else {
+      // ================================================================
+      // Môi trường Local: dùng filesystem JSON
+      // ================================================================
+      await fsp.mkdir(DATA_DIR, { recursive: true });
+
+      if (!(await existsAsync(PRODUCTS_FILE))) {
+        const seed = (await existsAsync(BUNDLED_PRODUCTS_SEED))
+          ? await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8')
+          : '[]';
+        await fsp.writeFile(PRODUCTS_FILE, seed, 'utf8');
+        console.log('📦 Đã tạo products.json mới từ dữ liệu mẫu tại:', PRODUCTS_FILE);
+      }
+
+      if (!(await existsAsync(ORDERS_FILE))) {
+        const seedOrders = path.join(BUNDLED_DATA_DIR, 'orders.json');
+        const seed = (await existsAsync(seedOrders))
+          ? await fsp.readFile(seedOrders, 'utf8')
+          : '[]';
+        await fsp.writeFile(ORDERS_FILE, seed, 'utf8');
+        console.log('📋 Đã tạo orders.json mới từ dữ liệu mẫu tại:', ORDERS_FILE);
+      }
+
+      if (!(await existsAsync(SETTINGS_FILE))) {
+        const seedSettings = path.join(BUNDLED_DATA_DIR, 'settings.json');
+        if (await existsAsync(seedSettings)) {
+          await fsp.writeFile(SETTINGS_FILE, await fsp.readFile(seedSettings, 'utf8'), 'utf8');
+        } else {
+          await fsp.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+        }
+        console.log('⚙️ Đã tạo settings.json mới tại:', SETTINGS_FILE);
+      }
+
+      if (!(await existsAsync(SPAM_DEVICES_FILE))) {
+        await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
+      } else {
+        try {
+          const spamStats = await fsp.stat(SPAM_DEVICES_FILE);
+          if (spamStats.size === 0) await fsp.writeFile(SPAM_DEVICES_FILE, '[]', 'utf8');
+        } catch (err) { }
+      }
+
+      if (!(await existsAsync(SUPPLIERS_FILE))) {
+        await fsp.writeFile(SUPPLIERS_FILE, '[]', 'utf8');
+      }
+
+      // Load vào RAM
+      products = await readJSONAsync(PRODUCTS_FILE, []);
+      settings = await readJSONAsync(SETTINGS_FILE, settings);
+      suppliers = await readJSONAsync(SUPPLIERS_FILE, []);
       orders = await readJSONAsync(ORDERS_FILE, []);
       spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
+
+      blockedDevices.clear();
       spamDevices.forEach(entry => {
         if (entry.lockUntil && entry.lockUntil > Date.now()) {
           if (entry.deviceId) blockedDevices.set(entry.deviceId, entry.lockUntil);
@@ -445,7 +527,6 @@ async function initializeData() {
       });
     }
 
-    // JSON data is stored in Vercel DB (Postgres). Vercel Blob is used for images only.
   } catch (err) {
     console.error('❌ Lỗi nghiêm trọng khi khởi tạo dữ liệu:', err);
   }
@@ -1146,8 +1227,7 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
       const newImagePath = await uploadImageFile({ ...req.file, filename }, 'products');
       // Xóa ảnh cũ nếu khác
       if (product.image && product.image !== newImagePath) {
-        const oldFilename = path.basename(product.image);
-        await deleteImageFile(oldFilename, 'products');
+        await deleteImageFile(product.image, 'products');
       }
       product.image = newImagePath;
       console.log(`✅ Đã cập nhật ảnh sản phẩm: ${filename}`);
@@ -1187,8 +1267,7 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
     try {
       const newImagePath = await uploadImageFile({ ...req.file, filename }, 'products');
       if (product.image && product.image !== newImagePath) {
-        const oldFilename = path.basename(product.image);
-        await deleteImageFile(oldFilename, 'products');
+        await deleteImageFile(product.image, 'products');
       }
       product.image = newImagePath;
     } catch (err) {
@@ -1213,8 +1292,7 @@ app.delete('/api/admin/products/remove', requireAdmin, async (req, res) => {
 
   const product = products[idx];
   if (product.image) {
-    const filename = path.basename(product.image);
-    await deleteImageFile(filename, 'products');
+    await deleteImageFile(product.image, 'products');
   }
 
   products.splice(idx, 1);
@@ -1235,8 +1313,7 @@ app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
 
   const product = products[idx];
   if (product.image) {
-    const filename = path.basename(product.image);
-    await deleteImageFile(filename, 'products');
+    await deleteImageFile(product.image, 'products');
   }
 
   products.splice(idx, 1);
@@ -1321,9 +1398,8 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
         const newImagePath = await uploadImageFile({ ...file, filename }, 'products');
         // Xóa ảnh cũ nếu khác
         if (product.image) {
-          const oldFilename = path.basename(product.image);
-          if (oldFilename !== filename) {
-            await deleteImageFile(oldFilename, 'products');
+          if (product.image !== newImagePath) {
+            await deleteImageFile(product.image, 'products');
           }
         }
         product.image = newImagePath;
@@ -1405,9 +1481,8 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
   const { url } = req.body || {};
   if (!url) return res.status(400).json({ ok: false, message: 'Đường dẫn ảnh không hợp lệ.' });
 
-  const filename = path.basename(url);
   try {
-    await deleteImageFile(filename, 'slides');
+    await deleteImageFile(url, 'slides'); // url là Blob URL đầy đủ
     res.json({ ok: true });
   } catch (err) {
     console.error('Lỗi xoá slide:', err);
