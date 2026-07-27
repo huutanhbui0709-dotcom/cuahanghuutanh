@@ -655,22 +655,32 @@ app.get('/api/updates/poll', async (req, res) => {
   res.json({ ok: true, updates: localUpdateTimestamps, serverTime: Date.now() });
 });
 
-// Giữ nguyên route SSE cũ CHỈ cho local dev (Vercel sẽ không dùng route này nữa)
-if (!IS_VERCEL) {
-  app.get('/api/updates/stream', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
-
-    sseClients.push(res);
-
-    req.on('close', () => {
-      sseClients = sseClients.filter(client => client !== res);
+// Route SSE: luôn đăng ký để tránh 404.
+// - Trên Vercel: trả 410 Gone để trình duyệt dừng retry ngay lập tức.
+// - Local: SSE bình thường (server chạy liên tục, không có vấn đề timeout).
+app.get('/api/updates/stream', (req, res) => {
+  if (IS_VERCEL) {
+    // Vercel serverless không hỗ trợ SSE long-lived connection.
+    // 410 Gone báo cho client biết endpoint đã bị bỏ, không retry nữa.
+    return res.status(410).json({
+      ok: false,
+      message: 'SSE không khả dụng trên Vercel. Vui lòng dùng /api/updates/poll.'
     });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  sseClients.push(res);
+
+  req.on('close', () => {
+    sseClients = sseClients.filter(client => client !== res);
   });
-}
+});
+
 
 // Nguyên nhân 2: Sửa cú pháp vòng lặp Heartbeat và bảo vệ null-check
 // Nguyên nhân 3: Gửi ping mỗi 3 phút (180 giây) để vượt qua giới hạn
@@ -1721,7 +1731,9 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
         ]);
 
         const textResult = response.response.text();
-        const parsed = JSON.parse(textResult);
+        // Dọn dẹp trường hợp Gemini bọc JSON trong markdown ```json ... ```
+        const cleanedText = textResult.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsed = JSON.parse(cleanedText);
 
         // Đối chiếu tên sản phẩm
         if (parsed.products && Array.isArray(parsed.products)) {
@@ -1948,7 +1960,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
       if (val.includes('thành tiền')) {
         colIndices.amount = colNumber;
       }
-      if (val.includes('ngày')) {
+      if (val === 'ngày' || val.includes('ngày chứng từ') || val.includes('ngày hóa đơn') || val.includes('ngày ct')) {
         colIndices.date = colNumber;
       }
       if (val.includes('số chứng từ') || val.includes('số hóa đơn') || val.includes('ký hiệu')) {
@@ -2001,7 +2013,16 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
     for (const inv of invoices) {
       // 1. Logic dò tìm Mã nhà cung cấp (Cột D) và Tên đối tượng (Cột E)
       const sellerNameNormalized = normalizeName(inv.sellerName);
-      const foundSupplier = suppliersList.find(s => normalizeName(s.name) === sellerNameNormalized);
+      // Đối chiếu NCC bằng similarity (nhất quán với logic parse-invoice)
+      const foundSupplier = suppliersList.find(s => {
+        const supNorm = normalizeName(s.name);
+        if (!supNorm) return false;
+        const sim = calculateSimilarity(supNorm, sellerNameNormalized);
+        return supNorm === sellerNameNormalized ||
+          sim >= 0.8 ||
+          supNorm.includes(sellerNameNormalized) ||
+          sellerNameNormalized.includes(supNorm);
+      });
 
       let supplierCode = 'NCC_MOI';
       let supplierName = inv.sellerName || 'N/A';
@@ -2039,11 +2060,11 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         if (d && m && y) dateStr = `${d}/${m}/${y}`;
       }
 
-      const descriptionText = `Nhập kho hàng hóa mới từ hóa đơn của NCC ${supplierCode} - Ký hiệu ${inv.serial || ''} ngày ${dateStr}`;
+      const descriptionText = `Nhập kho hàng hóa lần ${orderCountInMonth} trong tháng từ hóa đơn của NCC ${supplierCode} - Ký hiệu ${inv.serial || ''} ngày ${dateStr}`;
 
-      const products = inv.products || [];
-      for (let pIdx = 0; pIdx < products.length; pIdx++) {
-        const p = products[pIdx];
+      const invProducts = inv.products || []; // Đổi tên tránh shadowing global `products`
+      for (let pIdx = 0; pIdx < invProducts.length; pIdx++) {
+        const p = invProducts[pIdx];
         const row = worksheet.getRow(currentRow);
 
         // Nếu vượt số dòng ban đầu của mẫu, sao chép định dạng từ Dòng 9
