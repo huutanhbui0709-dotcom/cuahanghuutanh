@@ -561,9 +561,47 @@ app.use(session({
   }
 }));
 
+const instanceTimestamps = { products: 0, settings: 0, suppliers: 0 };
+
+async function syncVercelCache() {
+  if (!IS_VERCEL) return;
+  try {
+    const { rows } = await sql`SELECT topic, updated_at FROM last_updates`;
+    const updates = {};
+    rows.forEach(r => { updates[r.topic] = Number(r.updated_at); });
+
+    if (updates.products && updates.products > instanceTimestamps.products) {
+      const { rows: prodRows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (prodRows.length > 0) {
+        products = JSON.parse(prodRows[0].value);
+        instanceTimestamps.products = updates.products;
+      }
+    }
+    if (updates.settings && updates.settings > instanceTimestamps.settings) {
+      const { rows: setRows } = await sql`SELECT value FROM app_settings WHERE key = 'settings'`;
+      if (setRows.length > 0) {
+        settings = JSON.parse(setRows[0].value);
+        instanceTimestamps.settings = updates.settings;
+      }
+    }
+    if (updates.suppliers && updates.suppliers > instanceTimestamps.suppliers) {
+      const { rows: supRows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+      if (supRows.length > 0) {
+        suppliers = JSON.parse(supRows[0].value);
+        instanceTimestamps.suppliers = updates.suppliers;
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi sync cache:', err);
+  }
+}
+
 app.use(async (req, res, next) => {
   try {
     await ensureInitialized();
+    if (req.path.startsWith('/api/')) {
+      await syncVercelCache();
+    }
     next();
   } catch (err) {
     console.error('Lỗi khởi tạo dữ liệu:', err);
