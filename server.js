@@ -2193,9 +2193,11 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
 
         let pCode = 'SP_MOI';
         let pName = p.name || '';
+        let pUnit = p.unit || '';
         if (systemMatch) {
           pCode = systemMatch.ma;
           pName = systemMatch.ten;
+          pUnit = systemMatch.donvi || pUnit;
         }
 
         // Hàm chuyển đổi chuỗi số có định dạng nghìn/thập phân kiểu Việt Nam/Anh thành số chuẩn JS
@@ -2228,7 +2230,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
 
         if (colIndices.productCode) row.getCell(colIndices.productCode).value = pCode;
         if (colIndices.productName) row.getCell(colIndices.productName).value = pName;
-        if (colIndices.unit) row.getCell(colIndices.unit).value = p.unit || '';
+        if (colIndices.unit) row.getCell(colIndices.unit).value = pUnit;
         if (colIndices.quantity) row.getCell(colIndices.quantity).value = qty;
         if (colIndices.price) row.getCell(colIndices.price).value = price;
         if (colIndices.amount) row.getCell(colIndices.amount).value = amount;
