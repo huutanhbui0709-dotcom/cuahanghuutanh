@@ -463,22 +463,22 @@
           <div id="tools-tab-invoice" class="tools-tab-content">
             <div class="admin-card">
               <div class="admin-card-title">
-                <i class="fa-solid fa-file-pdf"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF)
+                <i class="fa-solid fa-file-invoice"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF / Hình ảnh)
               </div>
               <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
-                Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF cùng lúc.
+                Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF hoặc hình ảnh (PNG, JPG, WEBP) cùng lúc. Hỗ trợ dán trực tiếp từ clipboard.
               </p>
               <div class="upload-zone" id="invoiceUploadZone"
                 onclick="document.getElementById('invoiceFileInput').click()" ondragover="handleInvoiceDragOver(event)"
                 ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
-                <div class="upload-zone-icon"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
+                <div class="upload-zone-icon"><i class="fa-solid fa-file-image" style="color: #3b82f6;"></i> <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
                 <div class="upload-zone-text" id="invoiceUploadText">
-                  Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file
+                  Kéo thả file PDF, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)
                 </div>
                 <div class="upload-zone-hint">
-                  Chỉ chấp nhận file định dạng .pdf (Dung lượng < 5MB/file) </div>
+                  Hỗ trợ .pdf, .png, .jpg, .jpeg, .webp, .bmp, .jfif (Dung lượng < 5MB/file) </div>
                 </div>
-                <input type="file" id="invoiceFileInput" multiple accept=".pdf" style="display: none"
+                <input type="file" id="invoiceFileInput" multiple accept=".pdf,image/*" style="display: none"
                   onchange="handleInvoiceFilesSelect(event)" />
                 <div id="invoiceFilesList"
                   style="margin-top: 12px; font-size: 0.9rem; color: var(--muted); display: none;">

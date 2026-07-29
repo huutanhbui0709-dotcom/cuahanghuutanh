@@ -1239,7 +1239,7 @@ function handleInvoiceFilesSelect(e) {
 }
 
 function filterAndSetInvoiceFiles(filesList) {
-  selectedInvoiceFiles = [];
+  // We append files now to allow pasting multiple times
   const listEl = document.getElementById('invoiceFilesList');
   const btnProcess = document.getElementById('btnProcessInvoices');
   const btnClear = document.getElementById('btnClearInvoices');
@@ -1247,19 +1247,25 @@ function filterAndSetInvoiceFiles(filesList) {
 
   for (let i = 0; i < filesList.length; i++) {
     const file = filesList[i];
-    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.name);
+    
+    if (isPDF || isImage) {
       if (file.size <= 5 * 1024 * 1024) {
-        selectedInvoiceFiles.push(file);
+        // Prevent duplicate files based on name and size
+        if (!selectedInvoiceFiles.some(f => f.name === file.name && f.size === file.size)) {
+          selectedInvoiceFiles.push(file);
+        }
       } else {
         showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} vượt quá 5MB.`, 'error');
       }
     } else {
-      showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} không phải định dạng PDF.`, 'error');
+      showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} không phải định dạng PDF hoặc hình ảnh.`, 'error');
     }
   }
 
   if (selectedInvoiceFiles.length > 0) {
-    uploadText.innerHTML = `Đã chọn <strong>${selectedInvoiceFiles.length} file PDF</strong> hóa đơn`;
+    uploadText.innerHTML = `Đã chọn <strong>${selectedInvoiceFiles.length} file</strong> hóa đơn`;
     listEl.style.display = 'block';
     listEl.innerHTML = '<ul style="margin: 8px 0 0 16px; padding: 0;">' +
       selectedInvoiceFiles.map(f => `<li>${f.name} (${(f.size / (1024 * 1024)).toFixed(2)} MB)</li>`).join('') +
@@ -1271,11 +1277,41 @@ function filterAndSetInvoiceFiles(filesList) {
   }
 }
 
+// Paste event listener for clipboard image/pdf import in invoice tab
+document.addEventListener('paste', function(e) {
+  const invoiceTab = document.getElementById('tools-tab-invoice');
+  if (!invoiceTab || invoiceTab.style.display === 'none') {
+    return;
+  }
+  
+  if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+    e.preventDefault();
+    filterAndSetInvoiceFiles(e.clipboardData.files);
+  } else if (e.clipboardData && e.clipboardData.items) {
+    const files = [];
+    for (let i = 0; i < e.clipboardData.items.length; i++) {
+      const item = e.clipboardData.items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          const extension = item.type.split('/')[1] || 'png';
+          const newFile = new File([file], `dán-hóa-đơn-${Date.now()}-${i}.${extension}`, { type: file.type });
+          files.push(newFile);
+        }
+      }
+    }
+    if (files.length > 0) {
+      e.preventDefault();
+      filterAndSetInvoiceFiles(files);
+    }
+  }
+});
+
 function clearInvoiceSelection() {
   selectedInvoiceFiles = [];
   parsedInvoicesList = [];
   document.getElementById('invoiceFileInput').value = '';
-  document.getElementById('invoiceUploadText').innerHTML = 'Kéo thả nhiều file PDF hóa đơn vào đây hoặc nhấn để chọn file';
+  document.getElementById('invoiceUploadText').innerHTML = 'Kéo thả file PDF, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)';
   document.getElementById('invoiceFilesList').style.display = 'none';
   document.getElementById('invoiceFilesList').innerHTML = '';
   document.getElementById('btnProcessInvoices').setAttribute('disabled', 'true');

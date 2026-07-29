@@ -1621,10 +1621,10 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
 const uploadInvoice = multer({
   storage: multer.memoryStorage(),
   fileFilter: function (req, file, cb) {
-    if (/\.pdf$/i.test(file.originalname)) {
+    if (/\.(pdf|png|jpe?g|webp|bmp|jfif)$/i.test(file.originalname)) {
       cb(null, true);
     } else {
-      cb(new Error('Chỉ chấp nhận file PDF.'));
+      cb(new Error('Chỉ chấp nhận file PDF hoặc hình ảnh (PNG, JPG, WEBP, BMP, JFIF).'));
     }
   },
   limits: { fileSize: 5 * 1024 * 1024 } // Giới hạn 5MB
@@ -1671,7 +1671,7 @@ function calculateSimilarity(str1, str2) {
 app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 15), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ ok: false, message: 'Không có file PDF nào được tải lên.' });
+      return res.status(400).json({ ok: false, message: 'Không có file PDF hoặc hình ảnh nào được tải lên.' });
     }
 
     const apiKey = (settings.geminiKeySource === 'custom' && settings.geminiApiKey) ? settings.geminiApiKey : process.env.GEMINI_API_KEY;
@@ -1696,7 +1696,7 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
       // Sửa lỗi font tiếng Việt do multer mã hóa tên file bằng latin1 (ISO-8859-1)
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
       try {
-        const prompt = `Hãy đọc hóa đơn GTGT PDF được cung cấp và trích xuất thông tin chi tiết chính xác theo định dạng JSON sau:
+        const prompt = `Hãy đọc hóa đơn GTGT (dạng PDF hoặc hình ảnh) được cung cấp và trích xuất thông tin chi tiết chính xác theo định dạng JSON sau:
 {
   "sellerName": "Tên đơn vị bán hàng",
   "serial": "Ký hiệu hóa đơn (Ký hiệu / Serial, ví dụ: 1C26TAA)",
@@ -1726,7 +1726,7 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
           {
             inlineData: {
               data: file.buffer.toString('base64'),
-              mimeType: 'application/pdf'
+              mimeType: file.mimetype || 'application/pdf'
             }
           }
         ]);
