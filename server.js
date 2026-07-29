@@ -2072,7 +2072,9 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
           row.height = firstDataRow.height;
           firstDataRow.eachCell({ includeEmpty: true }, (srcCell, colNumber) => {
             const destCell = row.getCell(colNumber);
-            destCell.style = srcCell.style;
+            // Chỉ copy style, KHÔNG copy value/formula để tránh lỗi Shared Formula
+            destCell.style = JSON.parse(JSON.stringify(srcCell.style));
+            destCell.value = null; // Reset value để xóa mọi shared formula reference
           });
         }
 
