@@ -2038,8 +2038,19 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
     // Lấy lại firstDataRow từ worksheet đã sạch (sau reload)
     const firstDataRow = worksheet.getRow(9);
 
+    // Xóa sạch toàn bộ giá trị từ row 9 trở xuống (giữ style)
+    // Tránh data mẫu của template bị dính kèm vào file xuất
+    const lastTemplateRow = worksheet.rowCount;
+    for (let r = 9; r <= lastTemplateRow; r++) {
+      const tplRow = worksheet.getRow(r);
+      tplRow.eachCell({ includeEmpty: true }, (cell) => {
+        cell.value = null;
+      });
+      tplRow.commit();
+    }
 
     let currentRow = headerRowNumber + 1;
+
 
     for (const inv of invoices) {
       // 1. Logic dò tìm Mã nhà cung cấp (Cột D) và Tên đối tượng (Cột E)
