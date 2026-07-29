@@ -1739,9 +1739,17 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
         // Đối chiếu tên sản phẩm
         if (parsed.products && Array.isArray(parsed.products)) {
           for (const prod of parsed.products) {
+            const prodNameLower = (prod.name || '').toLowerCase().trim();
             const hasMatch = systemProducts.some(sysP => {
-              const sim = calculateSimilarity(prod.name, sysP.ten);
-              return sim >= 0.85 || prod.name.toLowerCase().includes(sysP.ten.toLowerCase()) || sysP.ten.toLowerCase().includes(prod.name.toLowerCase());
+              const sysNameLower = (sysP.ten || '').toLowerCase().trim();
+              const sim = calculateSimilarity(prodNameLower, sysNameLower);
+              if (sim >= 0.85) return true;
+              // Chỉ dùng includes() khi cả 2 chuỗi đủ dài (>= 6 ký tự)
+              // tránh khớp nhầm với tên ngắn/tên chung chung
+              if (prodNameLower.length >= 6 && sysNameLower.length >= 6) {
+                if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
+              }
+              return false;
             });
             if (!hasMatch) {
               prod.isNewSystemProduct = true;
