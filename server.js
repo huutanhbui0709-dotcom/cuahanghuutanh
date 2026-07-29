@@ -2405,7 +2405,7 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
   try {
-    const archiver = require('archiver');
+    const archiver = (await import('archiver')).default;
     const { list } = require('@vercel/blob');
     
     // Set headers for ZIP download
