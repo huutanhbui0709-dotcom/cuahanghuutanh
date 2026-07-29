@@ -2403,9 +2403,59 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/admin/tools/download-images-zip', requireAdmin, (req, res) => {
-  // Images are now stored on Vercel Blob and cannot be zipped server-side.
-  res.status(501).json({ ok: false, message: 'Tính năng tải ZIP ảnh không khả dụng khi sử dụng Vercel Blob. Vui lòng tải ảnh trực tiếp từ Vercel Blob Storage.' });
+app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
+  try {
+    const archiver = require('archiver');
+    const { list } = require('@vercel/blob');
+    
+    // Set headers for ZIP download
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="images.zip"');
+    
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    
+    // Listen for errors
+    archive.on('error', (err) => {
+      console.error('Lỗi khi tạo ZIP:', err);
+      if (!res.headersSent) {
+        res.status(500).end('Lỗi máy chủ khi tạo file ZIP.');
+      }
+    });
+
+    // Pipe archive directly to response
+    archive.pipe(res);
+
+    // List all images from Vercel Blob (both products and slides if any)
+    let hasMore = true;
+    let cursor = undefined;
+    
+    while (hasMore) {
+      const result = await list({ cursor });
+      for (const blob of result.blobs) {
+        try {
+          const resp = await fetch(blob.url);
+          if (resp.ok) {
+            const arrayBuffer = await resp.arrayBuffer();
+            // blob.pathname is like "products/file.jpg" or "slides/file.jpg"
+            archive.append(Buffer.from(arrayBuffer), { name: blob.pathname });
+          } else {
+            console.warn('Lỗi tải ảnh từ Blob:', blob.url, resp.status);
+          }
+        } catch (fetchErr) {
+          console.warn('Exception khi tải ảnh từ Blob:', blob.url, fetchErr);
+        }
+      }
+      hasMore = result.hasMore;
+      cursor = result.cursor;
+    }
+
+    await archive.finalize();
+  } catch (err) {
+    console.error('Lỗi API download-images-zip:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ ok: false, message: 'Lỗi tải ảnh: ' + err.message });
+    }
+  }
 });
 
 // ---------------------------------------------------------------------
