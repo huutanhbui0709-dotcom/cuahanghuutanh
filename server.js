@@ -2102,7 +2102,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         if (d && m && y) dateStr = `${d}/${m}/${y}`;
       }
 
-      const descriptionText = `Nhập kho hàng hóa lần ${orderCountInMonth} trong tháng từ hóa đơn của NCC ${supplierCode} - Ký hiệu ${inv.serial || ''} ngày ${dateStr}`;
+      const descriptionText = `Nhập kho hàng hóa hóa đơn của NCC ${supplierCode} - Số HĐ: ${inv.invoiceNumber || inv.serial || ''} ngày ${dateStr}`;
 
       const invProducts = inv.products || []; // Đổi tên tránh shadowing global `products`
       for (let pIdx = 0; pIdx < invProducts.length; pIdx++) {
