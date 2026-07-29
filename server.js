@@ -2405,14 +2405,14 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
   try {
-    const archiver = (await import('archiver')).default;
+    const { ZipArchive } = await import('archiver');
     const { list } = require('@vercel/blob');
     
     // Set headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="images.zip"');
     
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
     
     // Listen for errors
     archive.on('error', (err) => {
