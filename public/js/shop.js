@@ -1133,7 +1133,7 @@ function openFullScreenImage(src) {
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = 'fullscreenImageOverlay';
-    overlay.className = 'fixed inset-0 bg-black/90 z-[300] flex items-center justify-center p-4 cursor-zoom-out opacity-0 transition-opacity duration-200 pointer-events-none';
+    overlay.className = 'fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-4 cursor-zoom-out opacity-0 transition-opacity duration-200 pointer-events-none';
     overlay.onclick = closeFullScreenImage;
     overlay.innerHTML = `
       <button class="absolute top-4 right-4 text-white text-3xl font-light hover:text-slate-300 transition w-10 h-10 flex items-center justify-center" onclick="closeFullScreenImage()">✕</button>
