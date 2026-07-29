@@ -151,6 +151,15 @@
                   <option value="yes">Bán chạy</option>
                   <option value="no">Không bán chạy</option>
                 </select>
+                <select class="filter-select" id="adminImageFilter" onchange="adminPage = 1; renderAdminTable()"
+                  style="padding: 7px 12px; font-size: 0.85rem;">
+                  <option value="">Tất cả ảnh</option>
+                  <option value="yes">Đã có ảnh</option>
+                  <option value="no">Chưa có ảnh</option>
+                </select>
+                <button class="btn btn-success btn-sm" onclick="exportNoImageProductsExcel()" title="Xuất Excel SP chưa ảnh">
+                  <i class="fa-solid fa-file-excel"></i> Xuất SP chưa ảnh
+                </button>
                 <button class="btn btn-primary btn-sm" onclick="openProductModal()">
                   <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                 </button>

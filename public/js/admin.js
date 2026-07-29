@@ -401,6 +401,7 @@ function renderAdminTable() {
   const typeFilter = document.getElementById('adminTypeFilter')?.value || '';
   const statusFilter = document.getElementById('adminStatusFilter')?.value || '';
   const bestSellerFilter = document.getElementById('adminBestSellerFilter')?.value || '';
+  const imageFilter = document.getElementById('adminImageFilter')?.value || '';
 
   let list = products.filter(p => {
     if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
@@ -408,6 +409,8 @@ function renderAdminTable() {
     if (statusFilter && (p.trangthai || 'Đang theo dõi') !== statusFilter) return false;
     if (bestSellerFilter === 'yes' && !p.isBestSeller) return false;
     if (bestSellerFilter === 'no' && p.isBestSeller) return false;
+    if (imageFilter === 'yes' && !p.image) return false;
+    if (imageFilter === 'no' && p.image) return false;
     return true;
   });
 
@@ -1750,6 +1753,34 @@ async function exportSingleInvoiceExcel(index) {
       btn.innerHTML = originalHTML;
     }
   }
+}
+
+function exportNoImageProductsExcel() {
+  if (typeof XLSX === 'undefined') {
+    showToast('<i class="fa-solid fa-xmark"></i> Thư viện xuất Excel chưa tải xong!', 'error');
+    return;
+  }
+  const noImageList = products.filter(p => !p.image);
+  if (noImageList.length === 0) {
+    showToast('<i class="fa-solid fa-check"></i> Tất cả sản phẩm đều đã có ảnh!', 'success');
+    return;
+  }
+  
+  const wsData = noImageList.map((p, index) => ({
+    'STT': index + 1,
+    'Mã SP': p.ma,
+    'Tên sản phẩm': p.ten,
+    'Giá bán': p.gia,
+    'ĐVT': p.donvi || '',
+    'Loại': p.loai || '',
+    'Trạng thái': p.trangthai || 'Đang theo dõi',
+    'Bán chạy': p.isBestSeller ? 'Có' : 'Không'
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "SP_Chua_Anh");
+  XLSX.writeFile(wb, "Danh_Sach_SP_Chua_Anh.xlsx");
 }
 
 // ==============================
