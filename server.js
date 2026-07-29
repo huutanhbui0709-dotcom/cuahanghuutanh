@@ -1123,7 +1123,7 @@ app.post('/api/orders', async (req, res) => {
     } else {
       await saveOrders(orders);
     }
-    broadcastUpdate('orders_updated');
+    await broadcastUpdate('orders_updated');
   } catch (err) {
     console.error('Lỗi lưu đơn hàng:', err);
     return res.status(500).json({ ok: false, message: 'Lỗi lưu đơn hàng, vui lòng thử lại.' });
@@ -1231,7 +1231,7 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
     } else {
       await saveOrders(orders);
     }
-    broadcastUpdate('orders_updated');
+    await broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1250,7 +1250,7 @@ app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
     } else {
       await saveOrders(orders);
     }
-    broadcastUpdate('orders_updated');
+    await broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1271,7 +1271,7 @@ app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => 
     } else {
       await saveOrders(orders);
     }
-    broadcastUpdate('orders_updated');
+    await broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1364,7 +1364,7 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
 
   try {
     await saveProducts(products);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1405,7 +1405,7 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
 
   try {
     await saveProducts(products);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1443,7 +1443,7 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
 
   try {
     await saveProducts(products);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1464,7 +1464,7 @@ app.delete('/api/admin/products/remove', requireAdmin, async (req, res) => {
   products.splice(idx, 1);
   try {
     await saveProducts(products);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1485,7 +1485,7 @@ app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
   products.splice(idx, 1);
   try {
     await saveProducts(products);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1535,7 +1535,7 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
 
   try {
     await saveProducts(products);
-    broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }
@@ -1583,7 +1583,7 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
   if (updatedCount > 0) {
     try {
       await saveProducts(products);
-      broadcastUpdate('products_updated');
+    await broadcastUpdate('products_updated');
     } catch (err) {
       return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu sản phẩm.' });
     }
@@ -1617,7 +1617,7 @@ app.put('/api/admin/settings', requireAdmin, async (req, res) => {
 
   try {
     await saveSettings(settings);
-    broadcastUpdate('settings_updated');
+    await broadcastUpdate('settings_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu cấu hình.' });
   }
