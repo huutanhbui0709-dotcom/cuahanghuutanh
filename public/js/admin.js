@@ -1474,6 +1474,7 @@ function renderInvoiceResults(results) {
         </div>
         <div style="font-size: 0.85rem; text-align: right; color: var(--text);">
           <div><strong>Ký hiệu (Serial):</strong> ${inv.serial || 'N/A'}</div>
+          <div><strong>Số hóa đơn (Số HĐ):</strong> ${inv.invoiceNumber || 'N/A'}</div>
           <div><strong>Mã thuế/Cơ quan thuế:</strong> ${inv.taxCode || 'N/A'}</div>
           <div><strong>Ngày hóa đơn:</strong> ${dateStr}</div>
         </div>
@@ -1727,7 +1728,13 @@ async function exportSingleInvoiceExcel(index) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Phieu_Nhap_Kho_${inv.serial || 'Invoice'}.xlsx`;
+    
+    // Tương đồng định dạng 'Số chứng từ' trên server (Số HĐ bỏ 0 + Serial)
+    const invoiceNumStripped = inv.invoiceNumber ? String(inv.invoiceNumber).replace(/^0+/, '') : '';
+    const serialStr = inv.serial || '';
+    const documentNumber = invoiceNumStripped ? (invoiceNumStripped + serialStr) : (serialStr || 'Invoice');
+    
+    a.download = `Phieu_Nhap_Kho_${documentNumber}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
