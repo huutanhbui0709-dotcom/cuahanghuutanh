@@ -1740,8 +1740,22 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
         if (parsed.products && Array.isArray(parsed.products)) {
           for (const prod of parsed.products) {
             const prodNameLower = (prod.name || '').toLowerCase().trim();
+            const prodCodeLower = (prod.code || '').toLowerCase().trim();
+            const prodNums = (prodNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
             const hasMatch = systemProducts.some(sysP => {
+              const sysCodeLower = (sysP.ma || '').toLowerCase().trim();
               const sysNameLower = (sysP.ten || '').toLowerCase().trim();
+
+              // 1. Kiểm tra khớp mã sản phẩm trước
+              if (prodCodeLower && sysCodeLower === prodCodeLower) return true;
+              if (prodNameLower.includes(sysCodeLower) || sysCodeLower.includes(prodNameLower)) return true;
+              
+              // 2. Nếu không khớp mã, kiểm tra khớp tên
+              // Nếu cả 2 đều có số, thì các số này phải trùng nhau
+              // Tránh trường hợp 'VSC - Oval 6.0' khớp nhầm với 'VSC - Oval 4.0'
+              const sysNums = (sysNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
+              if (prodNums !== sysNums) return false;
+
               const sim = calculateSimilarity(prodNameLower, sysNameLower);
               if (sim >= 0.85) return true;
               // Chỉ dùng includes() khi cả 2 chuỗi đủ dài (>= 6 ký tự)
