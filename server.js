@@ -1699,7 +1699,8 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
         const prompt = `Hãy đọc hóa đơn GTGT PDF được cung cấp và trích xuất thông tin chi tiết chính xác theo định dạng JSON sau:
 {
   "sellerName": "Tên đơn vị bán hàng",
-  "serial": "Ký hiệu hóa đơn (Ký hiệu / Serial)",
+  "serial": "Ký hiệu hóa đơn (Ký hiệu / Serial, ví dụ: 1C26TAA)",
+  "invoiceNumber": "Số hóa đơn (Số / No., ví dụ: 00029613)",
   "taxCode": "Mã của cơ quan thuế hoặc Mã số thuế người bán",
   "invoiceDate": {
     "date": "Ngày (dạng số ví dụ: 25)",
@@ -1899,7 +1900,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
     const ExcelJS = require('exceljs');
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
-    const worksheet = workbook.getWorksheet(1);
+    let worksheet = workbook.getWorksheet(1);
 
     const suppliersList = suppliers;
     const systemProducts = products;
@@ -2003,25 +2004,40 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
     colIndices.price = colIndices.price || 16;
     colIndices.amount = colIndices.amount || 17;
 
-    // Hàng dữ liệu mẫu đầu tiên (Hàng 9)
-    const firstDataRow = worksheet.getRow(9);
-    const defaultColA = firstDataRow.getCell(1).value;  // Cột A: Loại nhập kho mẫu
-    const defaultColL = firstDataRow.getCell(colIndices.warehouseCode || 12).value; // Cột L: Mã kho mẫu
+    // Lấy giá trị mặc định từ dòng 9 trước khi strip (vì sau strip cell.value có thể = null)
+    const _row9 = worksheet.getRow(9);
+    const defaultColA = _row9.getCell(1).value;
+    const defaultColL = _row9.getCell(colIndices.warehouseCode || 12).value;
 
-    // Strip toàn bộ shared formula khỏi worksheet để tránh lỗi
-    // "Shared Formula master must exist above and or left of clone"
-    // ExcelJS giữ shared formula range trong nội bộ — phải xóa sạch trước khi ghi dữ liệu
-    worksheet.eachRow({ includeEmpty: false }, (row) => {
-      row.eachCell({ includeEmpty: false }, (cell) => {
+    // -----------------------------------------------------------------------
+    // FIX: "Shared Formula master must exist above and or left of clone"
+    // ExcelJS lưu shared formula tracking trong INTERNAL state (_sharedFormulae)
+    // tách biệt với cell.value. Chỉ thay cell.value KHÔNG đủ.
+    // Giải pháp: strip all formula values → serialize ra buffer → reload lại.
+    // Khi reload, ExcelJS parse lại từ XML sạch (không còn <f t="shared">)
+    // nên internal tracking được xóa hoàn toàn.
+    // -----------------------------------------------------------------------
+
+    // Bước 1: Strip tất cả formula/sharedFormula values (dùng includeEmpty:true
+    // để không bỏ sót cell có formula result = 0)
+    worksheet.eachRow({ includeEmpty: true }, (row) => {
+      row.eachCell({ includeEmpty: true }, (cell) => {
         const v = cell.value;
-        if (v && typeof v === 'object') {
-          if (v.formula || v.sharedFormula) {
-            // Giữ lại calculated result nếu có, không thì null
-            cell.value = (v.result !== undefined && v.result !== null) ? v.result : null;
-          }
+        if (v && typeof v === 'object' && (v.formula || v.sharedFormula)) {
+          // Giữ calculated result nếu có (kể cả khi result = 0)
+          cell.value = (v.result !== undefined && v.result !== null) ? v.result : null;
         }
       });
     });
+
+    // Bước 2: Serialize ra buffer và reload — xóa sạch internal shared formula state
+    const _cleanBuf = await workbook.xlsx.writeBuffer();
+    await workbook.xlsx.load(_cleanBuf);
+    worksheet = workbook.getWorksheet(1); // Rebind sau reload
+
+    // Lấy lại firstDataRow từ worksheet đã sạch (sau reload)
+    const firstDataRow = worksheet.getRow(9);
+
 
     let currentRow = headerRowNumber + 1;
 
@@ -2101,7 +2117,12 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
 
         // Điền các cột chung từ hóa đơn
         if (colIndices.date) row.getCell(colIndices.date).value = dateStr;
-        if (colIndices.serial) row.getCell(colIndices.serial).value = inv.serial || '';
+        // Ghép Số chứng từ = số hoá đơn (bỏ số 0 đầu) + ký hiệu serial
+        // VD: 00029613 + 1C26TAA -> 296131C26TAA
+        const invoiceNumStripped = inv.invoiceNumber ? String(inv.invoiceNumber).replace(/^0+/, '') : '';
+        const serialStr = inv.serial || '';
+        const documentNumber = invoiceNumStripped ? (invoiceNumStripped + serialStr) : serialStr;
+        if (colIndices.serial) row.getCell(colIndices.serial).value = documentNumber;
         if (colIndices.supplierCode) row.getCell(colIndices.supplierCode).value = supplierCode;
         if (colIndices.supplierName) row.getCell(colIndices.supplierName).value = supplierName;
 
