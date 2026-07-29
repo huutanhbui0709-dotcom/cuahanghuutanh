@@ -2008,6 +2008,21 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
     const defaultColA = firstDataRow.getCell(1).value;  // Cột A: Loại nhập kho mẫu
     const defaultColL = firstDataRow.getCell(colIndices.warehouseCode || 12).value; // Cột L: Mã kho mẫu
 
+    // Strip toàn bộ shared formula khỏi worksheet để tránh lỗi
+    // "Shared Formula master must exist above and or left of clone"
+    // ExcelJS giữ shared formula range trong nội bộ — phải xóa sạch trước khi ghi dữ liệu
+    worksheet.eachRow({ includeEmpty: false }, (row) => {
+      row.eachCell({ includeEmpty: false }, (cell) => {
+        const v = cell.value;
+        if (v && typeof v === 'object') {
+          if (v.formula || v.sharedFormula) {
+            // Giữ lại calculated result nếu có, không thì null
+            cell.value = (v.result !== undefined && v.result !== null) ? v.result : null;
+          }
+        }
+      });
+    });
+
     let currentRow = headerRowNumber + 1;
 
     for (const inv of invoices) {
