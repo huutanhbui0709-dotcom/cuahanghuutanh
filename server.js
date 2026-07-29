@@ -2167,14 +2167,28 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
           row.getCell(colIndices.paymentMethod).value = inv.paymentMethod || 'Tiền mặt';
         }
 
-        // 3. Logic đối chiếu sản phẩm trong hệ thống (yêu cầu trùng khớp các con số như 100mm, 150mm...)
+        // 3. Logic đối chiếu sản phẩm trong hệ thống (nhất quán với logic parse-invoice)
         const systemMatch = systemProducts.find(sysP => {
-          const pNums = (p.name.match(/\d+/g) || []).join(',');
-          const sysNums = (sysP.ten.match(/\d+/g) || []).join(',');
-          if (pNums !== sysNums) return false; // Loại trừ nếu thông số kích thước/số số lượng khác nhau
+          const prodNameLower = (p.name || '').toLowerCase().trim();
+          const prodCodeLower = (p.code || '').toLowerCase().trim();
+          const sysCodeLower = (sysP.ma || '').toLowerCase().trim();
+          const sysNameLower = (sysP.ten || '').toLowerCase().trim();
 
-          const sim = calculateSimilarity(p.name, sysP.ten);
-          return sim >= 0.85 || p.name.toLowerCase().includes(sysP.ten.toLowerCase()) || sysP.ten.toLowerCase().includes(p.name.toLowerCase());
+          // 1. Kiểm tra khớp mã sản phẩm trước
+          if (prodCodeLower && sysCodeLower === prodCodeLower) return true;
+          if (prodNameLower.includes(sysCodeLower) || sysCodeLower.includes(prodNameLower)) return true;
+
+          // 2. Nếu không khớp mã, kiểm tra khớp tên
+          const prodNums = (prodNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
+          const sysNums = (sysNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
+          if (prodNums !== sysNums) return false;
+
+          const sim = calculateSimilarity(prodNameLower, sysNameLower);
+          if (sim >= 0.85) return true;
+          if (prodNameLower.length >= 6 && sysNameLower.length >= 6) {
+            if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
+          }
+          return false;
         });
 
         let pCode = 'SP_MOI';
