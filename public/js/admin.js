@@ -1052,7 +1052,7 @@ async function processImportImages(files) {
     return;
   }
 
-  const BATCH_SIZE = 50;
+  const BATCH_SIZE = 5;
   const totalBatches = Math.ceil(matchedFiles.length / BATCH_SIZE);
   let totalUpdated = 0;
 
@@ -1078,7 +1078,21 @@ async function processImportImages(files) {
         body: formData,
       });
       if (res.status === 401) return;
-      const data = await res.json();
+
+      let data = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        if (res.status === 413 || text.includes('Payload Too Large') || text.includes('Request Entity Too Large')) {
+          showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi: Dung lượng đợt ảnh quá lớn (vượt quá giới hạn 4.5MB của Vercel). Đã tự động giảm BATCH_SIZE.`);
+        } else {
+          showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi từ máy chủ (Mã ${res.status}): ${text.substring(0, 150)}`);
+        }
+        return;
+      }
+
       if (!res.ok || !data.ok) {
         showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi tải lên đợt ${b + 1}: ${data.message || 'Lỗi không xác định.'}`);
         return;
