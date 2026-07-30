@@ -232,13 +232,13 @@
   .stat-label { font-size: .8rem; color: var(--muted); margin-top: 4px; }
 
   /* Table */
-  .table-wrap { overflow-x: auto; }
+  .table-wrap { overflow-x: auto; max-height: calc(100vh - 280px); overflow-y: auto; }
   table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-  thead th { background: var(--bg); padding: 10px 14px; text-align: left; font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  thead th { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 10px 14px; text-align: left; font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid var(--border); white-space: nowrap; }
   tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tbody tr:hover { background: #f8fafc; }
   tbody tr:last-child td { border-bottom: none; }
-  .badge { padding: 3px 9px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+  .badge { padding: 3px 9px; border-radius: 20px; font-size: .72rem; font-weight: 700; white-space: nowrap; }
   .badge-blue { background: #dbeafe; color: #1d4ed8; }
   .badge-green { background: #d1fae5; color: #065f46; }
   .badge-yellow { background: #fef3c7; color: #92400e; }
