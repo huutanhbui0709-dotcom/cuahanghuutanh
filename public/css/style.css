@@ -177,8 +177,9 @@
 
   /* ===== CENTERED MODAL (popup, dùng cho chi tiết đơn hàng, form sản phẩm) ===== */
   .modal-overlay.center.open { display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .modal-overlay.center .modal { width: 100%; max-width: 460px; height: auto; max-height: 90vh; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25); animation: fadeUp .25s ease; overflow-y: auto; }
+  .modal-overlay.center .modal { width: 100%; max-width: 460px; height: auto; max-height: 90vh; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25); animation: fadeUp .25s ease; overflow-y: auto; display: flex; flex-direction: column; }
   .modal-overlay.center .modal.modal-lg { max-width: 800px; }
+  .modal-overlay.center .modal.modal-169 { max-width: 960px; aspect-ratio: 16 / 9; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
   .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; border-radius: 16px 16px 0 0; }

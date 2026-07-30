@@ -157,7 +157,8 @@
                   <option value="yes">Đã có ảnh</option>
                   <option value="no">Chưa có ảnh</option>
                 </select>
-                <button class="btn btn-success btn-sm" onclick="exportNoImageProductsExcel()" title="Xuất Excel SP chưa ảnh">
+                <button class="btn btn-success btn-sm" onclick="exportNoImageProductsExcel()"
+                  title="Xuất Excel SP chưa ảnh">
                   <i class="fa-solid fa-file-excel"></i> Xuất SP chưa ảnh
                 </button>
                 <button class="btn btn-primary btn-sm" onclick="openProductModal()">
@@ -466,12 +467,14 @@
                 <i class="fa-solid fa-file-invoice"></i> Xuất thông tin đơn từ hóa đơn GTGT (PDF / Hình ảnh)
               </div>
               <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
-                Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF hoặc hình ảnh (PNG, JPG, WEBP) cùng lúc. Hỗ trợ dán trực tiếp từ clipboard.
+                Hệ thống tự động sử dụng Google Gemini API để đọc và phân tích cấu trúc nhiều hóa đơn PDF hoặc hình ảnh
+                (PNG, JPG, WEBP) cùng lúc. Hỗ trợ dán trực tiếp từ clipboard.
               </p>
               <div class="upload-zone" id="invoiceUploadZone"
                 onclick="document.getElementById('invoiceFileInput').click()" ondragover="handleInvoiceDragOver(event)"
                 ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
-                <div class="upload-zone-icon"><i class="fa-solid fa-file-image" style="color: #3b82f6;"></i> <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
+                <div class="upload-zone-icon"><i class="fa-solid fa-file-image" style="color: #3b82f6;"></i> <i
+                    class="fa-solid fa-file-pdf" style="color: #ef4444;"></i></div>
                 <div class="upload-zone-text" id="invoiceUploadText">
                   Kéo thả file PDF, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)
                 </div>
@@ -532,7 +535,7 @@
                 </div>
 
                 <p id="geminiKeyHint" style="font-size: .8rem; color: var(--muted); margin-top: 8px; margin-bottom: 0;">
-                  Hệ thống đang sử dụng Key mặc định cấu hình trên Azure/máy chủ.
+                  Hệ thống đang sử dụng Key mặc định cấu hình trên máy chủ.
                 </p>
               </div>
             </div>
@@ -558,49 +561,55 @@
 
     <!-- ======= PRODUCT ADD/EDIT MODAL ======= -->
     <div class="modal-overlay center" id="productModal">
-      <div class="modal">
+      <div class="modal modal-169">
         <div class="modal-header">
           <h3 id="productModalTitle">+ Thêm sản phẩm</h3>
           <button class="modal-close" onclick="closeModal('productModal')">
             ✕
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; overflow-y: auto;">
           <input type="hidden" id="pf_originalMa" />
-          <div class="form-group">
-            <label>Mã sản phẩm *</label>
-            <input class="form-control" id="pf_ma" placeholder="SP000001" />
-          </div>
-          <div class="form-group">
-            <label>Tên sản phẩm *</label>
-            <input class="form-control" id="pf_ten" placeholder="Ống nước PVC 21" />
-          </div>
-          <div class="form-group">
-            <label>Ảnh sản phẩm</label>
-            <input class="form-control" type="file" id="pf_image" accept="image/*"
-              onchange="previewProductImage(event)" />
-            <div id="pf_image_preview" style="margin-top: 8px; max-width: 100px; display: none;">
-              <img id="pf_image_img" src="" style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
+          
+          <div>
+            <div class="form-group">
+              <label>Mã sản phẩm *</label>
+              <input class="form-control" id="pf_ma" placeholder="SP000001" />
+            </div>
+            <div class="form-group">
+              <label>Tên sản phẩm *</label>
+              <input class="form-control" id="pf_ten" placeholder="Ống nước PVC 21" />
+            </div>
+            <div class="form-group">
+              <label>Ảnh sản phẩm</label>
+              <input class="form-control" type="file" id="pf_image" accept="image/*"
+                onchange="previewProductImage(event)" />
+              <div id="pf_image_preview" style="margin-top: 8px; max-width: 100px; display: none;">
+                <img id="pf_image_img" src="" style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
+              </div>
             </div>
           </div>
-          <div class="form-group">
-            <label>Giá bán</label>
-            <input class="form-control" id="pf_gia" type="number" min="0" placeholder="50000" />
-          </div>
-          <div class="form-group">
-            <label>Đơn vị tính</label>
-            <input class="form-control" id="pf_donvi" placeholder="Cái, Mét, Bộ..." />
-          </div>
-          <div class="form-group">
-            <label>Loại hàng hóa</label>
-            <input class="form-control" id="pf_loai" placeholder="Hàng hóa thường / dịch vụ..." />
-          </div>
-          <div class="form-group">
-            <label>Trạng thái</label>
-            <select class="form-control" id="pf_trangthai">
-              <option value="Đang theo dõi">Đang theo dõi</option>
-              <option value="Ngừng theo dõi">Ngừng theo dõi</option>
-            </select>
+
+          <div>
+            <div class="form-group">
+              <label>Giá bán</label>
+              <input class="form-control" id="pf_gia" type="number" min="0" placeholder="50000" />
+            </div>
+            <div class="form-group">
+              <label>Đơn vị tính</label>
+              <input class="form-control" id="pf_donvi" placeholder="Cái, Mét, Bộ..." />
+            </div>
+            <div class="form-group">
+              <label>Loại hàng hóa</label>
+              <input class="form-control" id="pf_loai" placeholder="Hàng hóa thường / dịch vụ..." />
+            </div>
+            <div class="form-group">
+              <label>Trạng thái</label>
+              <select class="form-control" id="pf_trangthai">
+                <option value="Đang theo dõi">Đang theo dõi</option>
+                <option value="Ngừng theo dõi">Ngừng theo dõi</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
