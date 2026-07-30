@@ -71,7 +71,7 @@ const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { uploadImageFile, deleteImageFile } = require('./lib/storage');
+const { uploadImageFile, deleteImageFile, listFiles } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
 const { sql } = require('@vercel/postgres');
 
@@ -817,14 +817,13 @@ app.get('/api/settings', (req, res) => {
 
 app.get('/api/slides', async (req, res) => {
   try {
-    // Lấy danh sách ảnh slide từ Vercel Blob
-    const { list } = require('@vercel/blob');
-    const { blobs } = await list({ prefix: 'slides/' });
-    const images = blobs
-      .filter(b => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(b.pathname))
-      .map(b => b.url);
+    // Lấy danh sách ảnh slide từ Cloudflare R2
+    const items = await listFiles('slides');
+    const images = items
+      .filter(i => /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(i.key))
+      .map(i => i.url);
 
-    // Fallback: nếu chưa có slide trên Blob, trả về ảnh mẫu từ repo
+    // Fallback: nếu chưa có slide trên R2, trả về ảnh mẫu từ repo
     if (images.length === 0) {
       const bundledDir = path.join(__dirname, 'public', 'img', 'Slide_img');
       if (await existsAsync(bundledDir)) {
@@ -1555,8 +1554,18 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
     const ext = path.extname(originalName).toLowerCase();
     const code = path.basename(originalName, ext).trim();
 
-    // Tìm sản phẩm tương ứng (không phân biệt hoa thường)
-    const product = products.find(p => String(p.ma).trim().toLowerCase() === code.toLowerCase());
+    // Chuẩn hóa mã sản phẩm để so khớp (chuyển ký tự đặc biệt, khoảng trắng, gạch ngang thành '_')
+    const normalizeCodeForMatch = (c) => {
+      if (!c) return '';
+      return String(c)
+        .trim()
+        .toLowerCase()
+        .replace(/[\\\/:*?"<>|]/g, '_')
+        .replace(/[-\s]/g, '_');
+    };
+
+    const targetNorm = normalizeCodeForMatch(code);
+    const product = products.find(p => normalizeCodeForMatch(p.ma) === targetNorm);
 
     if (product) {
       const filename = code + ext;
@@ -2446,15 +2455,14 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
   try {
-    const { ZipArchive } = await import('archiver');
-    const { list } = require('@vercel/blob');
-    
+    const archiver = require('archiver');
+
     // Set headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="images.zip"');
-    
-    const archive = new ZipArchive({ zlib: { level: 9 } });
-    
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
     // Listen for errors
     archive.on('error', (err) => {
       console.error('Lỗi khi tạo ZIP:', err);
@@ -2466,28 +2474,22 @@ app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) =
     // Pipe archive directly to response
     archive.pipe(res);
 
-    // List all images from Vercel Blob (both products and slides if any)
-    let hasMore = true;
-    let cursor = undefined;
-    
-    while (hasMore) {
-      const result = await list({ cursor });
-      for (const blob of result.blobs) {
-        try {
-          const resp = await fetch(blob.url);
-          if (resp.ok) {
-            const arrayBuffer = await resp.arrayBuffer();
-            // blob.pathname is like "products/file.jpg" or "slides/file.jpg"
-            archive.append(Buffer.from(arrayBuffer), { name: blob.pathname });
-          } else {
-            console.warn('Lỗi tải ảnh từ Blob:', blob.url, resp.status);
-          }
-        } catch (fetchErr) {
-          console.warn('Exception khi tải ảnh từ Blob:', blob.url, fetchErr);
+    // List all objects from Cloudflare R2 (products + slides)
+    const allItems = await listFiles('');
+    for (const item of allItems) {
+      if (!/\.(png|jpe?g|gif|webp|bmp|jfif|pdf)$/i.test(item.key)) continue;
+      try {
+        const resp = await fetch(item.url);
+        if (resp.ok) {
+          const arrayBuffer = await resp.arrayBuffer();
+          // item.key is like "products/file.jpg" or "slides/file.jpg"
+          archive.append(Buffer.from(arrayBuffer), { name: item.key });
+        } else {
+          console.warn('Lỗi tải file từ R2:', item.url, resp.status);
         }
+      } catch (fetchErr) {
+        console.warn('Exception khi tải file từ R2:', item.url, fetchErr);
       }
-      hasMore = result.hasMore;
-      cursor = result.cursor;
     }
 
     await archive.finalize();
