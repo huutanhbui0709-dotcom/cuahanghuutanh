@@ -1813,9 +1813,31 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
         ]);
 
         const textResult = response.response.text();
-        // Dọn dẹp trường hợp Gemini bọc JSON trong markdown ```json ... ```
-        const cleanedText = textResult.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+
+        // Làm sạch JSON trả về từ Gemini (đặc biệt khi input là ảnh PNG/JPG
+        // thay vì PDF — Gemini hay trả về JSON không hợp lệ: trailing comma,
+        // comment JS, hoặc bọc trong markdown code fence)
+        let cleanedText = textResult
+          // Bỏ markdown code fence ```json ... ``` hoặc ``` ... ```
+          .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+          // Bỏ comment dạng // ... (single-line)
+          .replace(/\/\/[^\n]*/g, '')
+          // Bỏ comment dạng /* ... */
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          // Bỏ trailing comma trước } hoặc ] (JSON không cho phép)
+          .replace(/,\s*([}\]])/g, '$1')
+          .trim();
+
+        // Nếu Gemini trả về nhiều JSON object nối tiếp, chỉ lấy cái đầu tiên
+        if (!cleanedText.startsWith('{') && !cleanedText.startsWith('[')) {
+          const firstBrace = cleanedText.indexOf('{');
+          const firstBracket = cleanedText.indexOf('[');
+          const start = firstBrace === -1 ? firstBracket : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket));
+          if (start !== -1) cleanedText = cleanedText.slice(start);
+        }
+
         const parsed = JSON.parse(cleanedText);
+
 
         // Đối chiếu tên sản phẩm
         if (parsed.products && Array.isArray(parsed.products)) {
