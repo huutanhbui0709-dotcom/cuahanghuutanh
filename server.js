@@ -1574,7 +1574,7 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
     for (const file of req.files) {
       // Fix: multer mã hóa originalname bằng latin1; decode lại sang utf8
       // để tên file có tiếng Việt / ký tự đặc biệt không bị sai khi so khớp mã SP
-      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\/g, '/');
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\\/g, '/');
       const ext = path.extname(originalName).toLowerCase();
       const code = path.basename(originalName, ext).trim();
 
