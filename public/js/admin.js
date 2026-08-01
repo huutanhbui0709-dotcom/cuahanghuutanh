@@ -1,4 +1,4 @@
-// ==============================
+﻿// ==============================
 // STATE
 // ==============================
 if (window.location.protocol === 'file:') {
@@ -1030,21 +1030,31 @@ async function processImportImages(files) {
   // Lấy danh sách mã sản phẩm để kiểm tra phía client
   const productCodes = new Set(products.map(p => String(p.ma).trim().toLowerCase()));
 
+  // Giới hạn 4MB/file — Vercel Hobby chỉ cho phép body tối đa 4.5MB
+  const MAX_FILE_SIZE = 4 * 1024 * 1024;
   const matchedFiles = [];
   const skippedNames = [];
+  const oversizedNames = [];
 
   for (const file of files) {
     const ext = file.name.lastIndexOf('.');
     const codePart = ext >= 0 ? file.name.slice(0, ext).trim() : file.name.trim();
-    if (productCodes.has(codePart.toLowerCase())) {
-      matchedFiles.push(file);
-    } else {
+    if (!productCodes.has(codePart.toLowerCase())) {
       skippedNames.push(file.name);
+      continue;
     }
+    if (file.size > MAX_FILE_SIZE) {
+      oversizedNames.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+      continue;
+    }
+    matchedFiles.push(file);
   }
 
   if (matchedFiles.length === 0) {
-    let msg = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>Không khớp mã sản phẩm nào!</strong> Kiểm tra tên file phải trùng chính xác với mã sản phẩm.<br>`;
+    let msg = '<i class="fa-solid fa-triangle-exclamation"></i> <strong>Không khớp mã sản phẩm nào!</strong> Kiểm tra tên file phải trùng chính xác với mã sản phẩm.<br>';
+    if (oversizedNames.length > 0) {
+      msg += `<small style="color:var(--muted)"><i class="fa-solid fa-triangle-exclamation"></i> ${oversizedNames.length} file quá lớn (>4MB, giới hạn Vercel): ${oversizedNames.slice(0, 5).join(', ')}</small><br>`;
+    }
     if (skippedNames.length > 0) {
       msg += `<small style="color:var(--muted)">File không khớp: ${skippedNames.slice(0, 10).join(', ')}${skippedNames.length > 10 ? ` và ${skippedNames.length - 10} file khác...` : ''}</small>`;
     }
@@ -1052,25 +1062,26 @@ async function processImportImages(files) {
     return;
   }
 
-  const BATCH_SIZE = 5;
-  const totalBatches = Math.ceil(matchedFiles.length / BATCH_SIZE);
+  // Gửi TỪNG FILE MỘT để không vượt giới hạn 4.5MB/request của Vercel Hobby.
+  // Mỗi request chỉ upload 1 ảnh, tuần tự để tránh timeout 10s.
+  const total = matchedFiles.length;
   let totalUpdated = 0;
+  const failedFiles = [];
 
-  showFolderUploadResult('info', `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải lên <strong>${matchedFiles.length}</strong> ảnh khớp mã sản phẩm...`);
+  for (let i = 0; i < total; i++) {
+    const file = matchedFiles[i];
+    const fileName = getBaseFileName(file.webkitRelativePath || file.name);
 
-  for (let b = 0; b < totalBatches; b++) {
-    const batch = matchedFiles.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
-    const formData = new FormData();
-    for (const file of batch) {
-      const fileName = getBaseFileName(file.webkitRelativePath || file.name);
-      formData.append('images', file, fileName);
-    }
-
-    // Hiển thị tiến trình
-    const uploaded = Math.min((b + 1) * BATCH_SIZE, matchedFiles.length);
+    // Cập nhật progress với thanh tiến trình
+    const pct = Math.round((i / total) * 100);
     showFolderUploadResult('info',
-      `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải lên: <strong>${uploaded}/${matchedFiles.length}</strong> ảnh (đợt ${b + 1}/${totalBatches})...`
+      `<i class="fa-solid fa-spinner fa-spin"></i> Đang tải lên: <strong>${i + 1}/${total}</strong> — ${fileName}` +
+      `<div style="margin-top:8px;background:#bfdbfe;border-radius:4px;height:6px">` +
+      `<div style="background:#2563eb;height:6px;border-radius:4px;width:${pct}%"></div></div>`
     );
+
+    const formData = new FormData();
+    formData.append('images', file, fileName);
 
     try {
       const res = await adminFetch('/api/admin/products/import-images', {
@@ -1086,21 +1097,20 @@ async function processImportImages(files) {
       } else {
         const text = await res.text();
         if (res.status === 413 || text.includes('Payload Too Large') || text.includes('Request Entity Too Large')) {
-          showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi: Dung lượng đợt ảnh quá lớn (vượt quá giới hạn 4.5MB của Vercel). Đã tự động giảm BATCH_SIZE.`);
+          failedFiles.push(`${fileName} (quá lớn)`);
         } else {
-          showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi từ máy chủ (Mã ${res.status}): ${text.substring(0, 150)}`);
+          failedFiles.push(`${fileName} (HTTP ${res.status})`);
         }
-        return;
+        continue; // Tiếp tục file khác, không dừng toàn bộ
       }
 
-      if (!res.ok || !data.ok) {
-        showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi tải lên đợt ${b + 1}: ${data.message || 'Lỗi không xác định.'}`);
-        return;
+      if (res.ok && data.ok) {
+        totalUpdated += data.updated || 0;
+      } else {
+        failedFiles.push(`${fileName} (${data.message || 'lỗi không xác định'})`);
       }
-      totalUpdated += data.updated || 0;
     } catch (err) {
-      showFolderUploadResult('error', `<i class="fa-solid fa-xmark"></i> Lỗi kết nối: ${err.message}`);
-      return;
+      failedFiles.push(`${fileName} (lỗi kết nối: ${err.message})`);
     }
   }
 
@@ -1109,25 +1119,33 @@ async function processImportImages(files) {
   renderAdminTable();
   renderDashboard();
 
-  function getBaseFileName(name) {
-    const segments = name.split(/[/\\]/);
-    return segments[segments.length - 1];
+  // Tổng hợp kết quả
+  let resultMsg = `<i class="fa-solid fa-circle-check"></i> Import ảnh hoàn tất! <strong>${totalUpdated}</strong> sản phẩm đã được cập nhật ảnh.`;
+  if (oversizedNames.length > 0) {
+    resultMsg += `<br><small style="margin-top:6px;display:block;color:inherit;opacity:.8">` +
+      `<i class="fa-solid fa-triangle-exclamation"></i> ${oversizedNames.length} file bỏ qua (quá 4MB): ${oversizedNames.slice(0, 5).join(', ')}</small>`;
   }
-
-  let resultMsg = `<i class="fa-solid fa-circle-check"></i> Import ảnh hoàn tất!
-    <strong>${totalUpdated}</strong> sản phẩm đã được cập nhật ảnh.`;
+  if (failedFiles.length > 0) {
+    resultMsg += `<br><small style="margin-top:6px;display:block;color:inherit;opacity:.8">` +
+      `<i class="fa-solid fa-xmark"></i> ${failedFiles.length} file lỗi: ${failedFiles.slice(0, 5).join(', ')}</small>`;
+  }
   if (skippedNames.length > 0) {
-    resultMsg += `<br><small style="margin-top:6px;display:block;color:inherit;opacity:.8">
-      <i class="fa-solid fa-triangle-exclamation"></i> ${skippedNames.length} file bỏ qua (không khớp mã):
-      ${skippedNames.slice(0, 10).join(', ')}${skippedNames.length > 10 ? ` và ${skippedNames.length - 10} file khác...` : ''}
-    </small>`;
+    resultMsg += `<br><small style="margin-top:6px;display:block;color:inherit;opacity:.8">` +
+      `<i class="fa-solid fa-triangle-exclamation"></i> ${skippedNames.length} file bỏ qua (không khớp mã): ${skippedNames.slice(0, 10).join(', ')}${skippedNames.length > 10 ? ` và ${skippedNames.length - 10} file khác...` : ''}</small>`;
   }
 
-  showFolderUploadResult('success', resultMsg);
-  showToast(`<i class="fa-solid fa-circle-check"></i> Import ảnh: ${totalUpdated} sản phẩm cập nhật`, 'success');
+  showFolderUploadResult(totalUpdated > 0 ? 'success' : 'error', resultMsg);
+  if (totalUpdated > 0) {
+    showToast(`<i class="fa-solid fa-circle-check"></i> Import ảnh: ${totalUpdated} sản phẩm cập nhật`, 'success');
+  }
 
   // Cập nhật text zone
   document.getElementById('folderUploadText').textContent = 'Kéo thả thư mục chứa ảnh sản phẩm vào đây hoặc nhấn để chọn thư mục';
+}
+
+function getBaseFileName(name) {
+  const segments = name.split(/[/\\]/);
+  return segments[segments.length - 1];
 }
 
 function showFolderUploadResult(type, msg) {

@@ -162,7 +162,9 @@ const uploadFolderImages = multer({
       cb(null, false);
     }
   },
-  limits: { fileSize: 10 * 1024 * 1024 }
+  // Giới hạn 4MB/file (Vercel Hobby giới hạn request body 4.5MB tổng cộng).
+  // Client phải gửi từng file một để đảm bảo không vượt ngưỡng.
+  limits: { fileSize: 4 * 1024 * 1024, files: 3 }
 });
 
 // Dọn dẹp các ảnh trùng mã sản phẩm nhưng khác đuôi mở rộng
@@ -1541,84 +1543,93 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
   res.json({ ok: true, added, updated, errors });
 });
 
-app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.array('images', 50), async (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ ok: false, message: 'Không nhận được file ảnh nào.' });
-  }
-
-  // ── Trên Vercel: đọc fresh products từ DB để tránh ghi đè stale RAM cache ──
-  // Các serverless instance không chia sẻ RAM với nhau. Nếu instance này có
-  // data cũ (stale) mà ta saveProducts(products) thì sẽ ghi đè DB, xóa mất
-  // ảnh đã cập nhật bởi instance/request khác trước đó.
-  let productsList;
-  if (IS_VERCEL) {
-    try {
-      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
-      productsList = rows.length > 0 ? JSON.parse(rows[0].value) : [];
-    } catch (err) {
-      console.error('Lỗi đọc products từ DB (import-images):', err);
-      return res.status(500).json({ ok: false, message: 'Lỗi đọc dữ liệu sản phẩm từ DB.' });
+app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.array('images', 3), async (req, res) => {
+  // Bọc toàn bộ handler trong try-catch để tránh crash serverless function
+  // thành 500 FUNCTION_INVOCATION_FAILED mà không có JSON body
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Không nhận được file ảnh nào.' });
     }
-  } else {
-    productsList = products;
-  }
 
-  let updatedCount = 0;
-  let skippedCount = 0;
-
-  for (const file of req.files) {
-    // Fix: multer mã hóa originalname bằng latin1; decode lại sang utf8
-    // để tên file có tiếng Việt / ký tự đặc biệt không bị sai khi so khớp mã SP
-    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\/g, '/');
-    const ext = path.extname(originalName).toLowerCase();
-    const code = path.basename(originalName, ext).trim();
-
-    // Chuẩn hóa mã sản phẩm để so khớp (chuyển ký tự đặc biệt, khoảng trắng, gạch ngang thành '_')
-    const normalizeCodeForMatch = (c) => {
-      if (!c) return '';
-      return String(c)
-        .trim()
-        .toLowerCase()
-        .replace(/[\/:*?"<>|]/g, '_')
-        .replace(/[-\s]/g, '_');
-    };
-
-    const targetNorm = normalizeCodeForMatch(code);
-    const product = productsList.find(p => normalizeCodeForMatch(p.ma) === targetNorm);
-
-    if (product) {
-      const filename = code + ext;
+    // ── Trên Vercel: đọc fresh products từ DB để tránh ghi đè stale RAM cache ──
+    // Các serverless instance không chia sẻ RAM với nhau. Nếu instance này có
+    // data cũ (stale) mà ta saveProducts(products) thì sẽ ghi đè DB, xóa mất
+    // ảnh đã cập nhật bởi instance/request khác trước đó.
+    let productsList;
+    if (IS_VERCEL) {
       try {
-        const newImagePath = await uploadImageFile({ ...file, filename }, 'products');
-        // Xóa ảnh cũ nếu khác
-        if (product.image && product.image !== newImagePath) {
-          await deleteImageFile(product.image, 'products');
-        }
-        product.image = newImagePath;
-        product.updatedAt = Date.now();
-        updatedCount++;
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+        productsList = rows.length > 0 ? JSON.parse(rows[0].value) : [];
       } catch (err) {
-        console.error(`Lỗi upload ảnh ${filename}:`, err);
-        skippedCount++;
+        console.error('Lỗi đọc products từ DB (import-images):', err);
+        return res.status(500).json({ ok: false, message: 'Lỗi đọc dữ liệu sản phẩm từ DB.' });
       }
     } else {
-      skippedCount++;
+      productsList = products;
     }
-  }
 
-  if (updatedCount > 0) {
-    try {
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    for (const file of req.files) {
+      // Fix: multer mã hóa originalname bằng latin1; decode lại sang utf8
+      // để tên file có tiếng Việt / ký tự đặc biệt không bị sai khi so khớp mã SP
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\/g, '/');
+      const ext = path.extname(originalName).toLowerCase();
+      const code = path.basename(originalName, ext).trim();
+
+      // Chuẩn hóa mã sản phẩm để so khớp
+      const normalizeCodeForMatch = (c) => {
+        if (!c) return '';
+        return String(c)
+          .trim()
+          .toLowerCase()
+          .replace(/[\/:*?"<>|]/g, '_')
+          .replace(/[-\s]/g, '_');
+      };
+
+      const targetNorm = normalizeCodeForMatch(code);
+      const product = productsList.find(p => normalizeCodeForMatch(p.ma) === targetNorm);
+
+      if (product) {
+        const filename = code + ext;
+        try {
+          const newImagePath = await uploadImageFile({ ...file, filename }, 'products');
+          // Xóa ảnh cũ nếu khác
+          if (product.image && product.image !== newImagePath) {
+            await deleteImageFile(product.image, 'products');
+          }
+          product.image = newImagePath;
+          product.updatedAt = Date.now();
+          updatedCount++;
+          // Giải phóng bộ nhớ ngay sau khi upload xong
+          file.buffer = null;
+        } catch (err) {
+          console.error(`Lỗi upload ảnh ${filename}:`, err.message);
+          skippedCount++;
+        }
+      } else {
+        skippedCount++;
+      }
+    }
+
+    if (updatedCount > 0) {
       // Sync lại RAM cache với bản đã cập nhật ảnh (quan trọng trên Vercel
       // vì productsList là bản riêng đọc fresh từ DB, không phải `products` gốc)
       if (IS_VERCEL) products = productsList;
       await saveProducts(productsList);
       await broadcastUpdate('products_updated');
-    } catch (err) {
-      return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu sản phẩm.' });
+    }
+
+    res.json({ ok: true, updated: updatedCount, skipped: skippedCount });
+
+  } catch (err) {
+    // Bắt mọi lỗi bất ngờ, trả JSON thay vì crash serverless function
+    console.error('❌ Lỗi nghiêm trọng trong import-images:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi upload ảnh: ' + err.message });
     }
   }
-
-  res.json({ ok: true, updated: updatedCount, skipped: skippedCount });
 });
 
 app.put('/api/admin/settings', requireAdmin, async (req, res) => {
