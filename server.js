@@ -1546,11 +1546,30 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
     return res.status(400).json({ ok: false, message: 'Không nhận được file ảnh nào.' });
   }
 
+  // ── Trên Vercel: đọc fresh products từ DB để tránh ghi đè stale RAM cache ──
+  // Các serverless instance không chia sẻ RAM với nhau. Nếu instance này có
+  // data cũ (stale) mà ta saveProducts(products) thì sẽ ghi đè DB, xóa mất
+  // ảnh đã cập nhật bởi instance/request khác trước đó.
+  let productsList;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      productsList = rows.length > 0 ? JSON.parse(rows[0].value) : [];
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB (import-images):', err);
+      return res.status(500).json({ ok: false, message: 'Lỗi đọc dữ liệu sản phẩm từ DB.' });
+    }
+  } else {
+    productsList = products;
+  }
+
   let updatedCount = 0;
   let skippedCount = 0;
 
   for (const file of req.files) {
-    const originalName = file.originalname.replace(/\\/g, '/');
+    // Fix: multer mã hóa originalname bằng latin1; decode lại sang utf8
+    // để tên file có tiếng Việt / ký tự đặc biệt không bị sai khi so khớp mã SP
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\/g, '/');
     const ext = path.extname(originalName).toLowerCase();
     const code = path.basename(originalName, ext).trim();
 
@@ -1560,22 +1579,20 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
       return String(c)
         .trim()
         .toLowerCase()
-        .replace(/[\\\/:*?"<>|]/g, '_')
+        .replace(/[\/:*?"<>|]/g, '_')
         .replace(/[-\s]/g, '_');
     };
 
     const targetNorm = normalizeCodeForMatch(code);
-    const product = products.find(p => normalizeCodeForMatch(p.ma) === targetNorm);
+    const product = productsList.find(p => normalizeCodeForMatch(p.ma) === targetNorm);
 
     if (product) {
       const filename = code + ext;
       try {
         const newImagePath = await uploadImageFile({ ...file, filename }, 'products');
         // Xóa ảnh cũ nếu khác
-        if (product.image) {
-          if (product.image !== newImagePath) {
-            await deleteImageFile(product.image, 'products');
-          }
+        if (product.image && product.image !== newImagePath) {
+          await deleteImageFile(product.image, 'products');
         }
         product.image = newImagePath;
         product.updatedAt = Date.now();
@@ -1591,8 +1608,11 @@ app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.a
 
   if (updatedCount > 0) {
     try {
-      await saveProducts(products);
-    await broadcastUpdate('products_updated');
+      // Sync lại RAM cache với bản đã cập nhật ảnh (quan trọng trên Vercel
+      // vì productsList là bản riêng đọc fresh từ DB, không phải `products` gốc)
+      if (IS_VERCEL) products = productsList;
+      await saveProducts(productsList);
+      await broadcastUpdate('products_updated');
     } catch (err) {
       return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu sản phẩm.' });
     }

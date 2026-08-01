@@ -74,7 +74,7 @@
           <i class="fa-solid fa-box"></i> Sản phẩm
         </div>
         <div class="admin-sidebar-item" onclick="adminTab('import', this)">
-          <i class="fa-solid fa-file-import"></i> Import Excel
+          <i class="fa-solid fa-file-import"></i> Import
         </div>
         <div class="admin-sidebar-item" onclick="adminTab('orders', this)">
           <i class="fa-solid fa-clipboard-list"></i> Đơn hàng
@@ -380,7 +380,7 @@
                   onchange="importSuppliersExcel(event)" />
                 <button class="btn btn-primary" onclick="document.getElementById('supplierExcelFileInput').click()"
                   id="btnImportSuppliers">
-                  <i class="fa-solid fa-file-import"></i> Import Excel
+                  <i class="fa-solid fa-file-import"></i> Import
                 </button>
                 <div id="supplierImportSpinner" style="display: none; font-size: 0.85rem; color: var(--text);">
                   <i class="fa-solid fa-spinner fa-spin" style="color: var(--primary);"></i> Đang xử lý...
@@ -570,7 +570,7 @@
         </div>
         <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; overflow-y: auto;">
           <input type="hidden" id="pf_originalMa" />
-          
+
           <div>
             <div class="form-group">
               <label>Mã sản phẩm *</label>
@@ -585,7 +585,8 @@
               <input class="form-control" type="file" id="pf_image" accept="image/*"
                 onchange="previewProductImage(event)" />
               <div id="pf_image_preview" style="margin-top: 8px; max-width: 100px; display: none;">
-                <img id="pf_image_img" src="" style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
+                <img id="pf_image_img" src=""
+                  style="width: 100%; border-radius: 4px; border: 1px solid var(--border);" />
               </div>
             </div>
           </div>
