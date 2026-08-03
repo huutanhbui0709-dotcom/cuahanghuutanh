@@ -2544,14 +2544,13 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
   try {
-    const archiverModule = await import('archiver');
-    const archiver = archiverModule.default || archiverModule;
+    const { ZipArchive } = await import('archiver');
 
     // Set headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="images.zip"');
 
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
 
     // Listen for errors
     archive.on('error', (err) => {
