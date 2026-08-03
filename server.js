@@ -2544,7 +2544,8 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
   try {
-    const archiver = require('archiver');
+    const archiverModule = await import('archiver');
+    const archiver = archiverModule.default || archiverModule;
 
     // Set headers for ZIP download
     res.setHeader('Content-Type', 'application/zip');
