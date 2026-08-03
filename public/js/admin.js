@@ -723,8 +723,8 @@ function renderOrdersTable() {
       <thead><tr><th>#</th><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Địa chỉ</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>${pagedOrders.map((o, i) => `
         <tr class="order-row">
-          <td style="color:var(--muted);font-size:.78rem">${(orderPage - 1) * ORDERS_PER_PAGE + i + 1}</td>
-          <td>${o.id}</td>
+          <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">${(orderPage - 1) * ORDERS_PER_PAGE + i + 1}</td>
+          <td style="white-space:nowrap">${o.id}</td>
           <td>${o.customer}</td>
           <td>${o.phone}</td>
           <td style="max-width:150px;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address}">${o.address}</td>
