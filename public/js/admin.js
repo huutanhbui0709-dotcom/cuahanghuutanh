@@ -1021,14 +1021,21 @@ function handleFolderUpload(e) {
   processImportImages(files);
 }
 
+// Chuẩn hóa mã SP trên client — phải nhất quán với normalizeProductCode() ở server.js
+function normalizeCode(c) {
+  if (!c) return '';
+  return String(c)
+    .trim()
+    .toLowerCase()
+    .replace(/[/:*?"<>|]/g, '_')
+    .replace(/[-\s]/g, '_');
+}
+
 async function processImportImages(files) {
   if (!files || files.length === 0) {
     showFolderUploadResult('error', '<i class="fa-solid fa-triangle-exclamation"></i> Không có file ảnh nào để xử lý.');
     return;
   }
-
-  // Lấy danh sách mã sản phẩm để kiểm tra phía client
-  const productCodes = new Set(products.map(p => String(p.ma).trim().toLowerCase()));
 
   // Giới hạn 4MB/file — Vercel Hobby chỉ cho phép body tối đa 4.5MB
   const MAX_FILE_SIZE = 4 * 1024 * 1024;
@@ -1036,10 +1043,15 @@ async function processImportImages(files) {
   const skippedNames = [];
   const oversizedNames = [];
 
+  // Dùng normalizeCode() nhất quán với server để tránh lệch khi so khớp
+  const normalizedCodeMap = new Map(
+    products.map(p => [normalizeCode(p.ma), String(p.ma).trim()])
+  );
+
   for (const file of files) {
-    const ext = file.name.lastIndexOf('.');
-    const codePart = ext >= 0 ? file.name.slice(0, ext).trim() : file.name.trim();
-    if (!productCodes.has(codePart.toLowerCase())) {
+    const extIdx = file.name.lastIndexOf('.');
+    const codePart = extIdx >= 0 ? file.name.slice(0, extIdx).trim() : file.name.trim();
+    if (!normalizedCodeMap.has(normalizeCode(codePart))) {
       skippedNames.push(file.name);
       continue;
     }
@@ -1063,10 +1075,10 @@ async function processImportImages(files) {
   }
 
   // Gửi TỪNG FILE MỘT để không vượt giới hạn 4.5MB/request của Vercel Hobby.
-  // Mỗi request chỉ upload 1 ảnh, tuần tự để tránh timeout 10s.
   const total = matchedFiles.length;
   let totalUpdated = 0;
-  const failedFiles = [];
+  const failedFiles = [];   // lỗi upload thực sự từ server
+  const serverSkipped = []; // server báo file nào không match (safety net)
 
   for (let i = 0; i < total; i++) {
     const file = matchedFiles[i];
@@ -1101,11 +1113,17 @@ async function processImportImages(files) {
         } else {
           failedFiles.push(`${fileName} (HTTP ${res.status})`);
         }
-        continue; // Tiếp tục file khác, không dừng toàn bộ
+        continue;
       }
 
       if (res.ok && data.ok) {
         totalUpdated += data.updated || 0;
+        // Hiển thị chi tiết file nào lỗi upload R2 mà server báo về
+        if (data.failedFiles && data.failedFiles.length > 0) {
+          for (const f of data.failedFiles) {
+            failedFiles.push(`${f.filename} (${f.reason || 'lỗi R2'})`);
+          }
+        }
       } else {
         failedFiles.push(`${fileName} (${data.message || 'lỗi không xác định'})`);
       }
@@ -1127,7 +1145,7 @@ async function processImportImages(files) {
   }
   if (failedFiles.length > 0) {
     resultMsg += `<br><small style="margin-top:6px;display:block;color:inherit;opacity:.8">` +
-      `<i class="fa-solid fa-xmark"></i> ${failedFiles.length} file lỗi: ${failedFiles.slice(0, 5).join(', ')}</small>`;
+      `<i class="fa-solid fa-xmark"></i> ${failedFiles.length} file lỗi upload R2: ${failedFiles.slice(0, 5).join(', ')}</small>`;
   }
   if (skippedNames.length > 0) {
     resultMsg += `<br><small style="margin-top:6px;display:block;color:inherit;opacity:.8">` +
@@ -1139,9 +1157,35 @@ async function processImportImages(files) {
     showToast(`<i class="fa-solid fa-circle-check"></i> Import ảnh: ${totalUpdated} sản phẩm cập nhật`, 'success');
   }
 
-  // Cập nhật text zone
   document.getElementById('folderUploadText').textContent = 'Kéo thả thư mục chứa ảnh sản phẩm vào đây hoặc nhấn để chọn thư mục';
 }
+
+// Dọn ảnh broken: gọi cleanup-broken-images route rồi reload
+async function cleanupBrokenImages() {
+  const btn = document.getElementById('btnCleanupBrokenImages');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang quét...'; }
+  try {
+    const res = await adminFetch('/api/admin/products/cleanup-broken-images', { method: 'POST' });
+    if (res.status === 401) return;
+    const data = await res.json();
+    if (data.ok) {
+      await loadProducts();
+      renderAdminTable();
+      renderDashboard();
+      const msg = data.cleaned > 0
+        ? `Đã xoá ${data.cleaned} URL ảnh broken. Các sản phẩm đó sẽ hiện trong "Chưa có ảnh".`
+        : 'Không tìm thấy URL ảnh nào bị hỏng. DB đang sạch!';
+      showToast(`<i class="fa-solid fa-broom"></i> ${msg}`, data.cleaned > 0 ? 'warning' : 'success');
+    } else {
+      showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${data.message}`, 'error');
+    }
+  } catch (err) {
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi kết nối: ${err.message}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-broom"></i> Dọn ảnh lỗi'; }
+  }
+}
+
 
 function getBaseFileName(name) {
   const segments = name.split(/[/\\]/);

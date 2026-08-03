@@ -1543,94 +1543,130 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
   res.json({ ok: true, added, updated, errors });
 });
 
+// Hàm chuẩn hóa mã SP dùng chung giữa import-images và cleanup.
+// Phải nhất quán với hàm normalizeCode() phía client trong admin.js.
+function normalizeProductCode(c) {
+  if (!c) return '';
+  return String(c)
+    .trim()
+    .toLowerCase()
+    .replace(/[/:*?"<>|]/g, '_')   // ký tự cấm
+    .replace(/[-\s]/g, '_');        // gạch ngang và khoảng trắng → _
+}
+
 app.post('/api/admin/products/import-images', requireAdmin, uploadFolderImages.array('images', 3), async (req, res) => {
-  // Bọc toàn bộ handler trong try-catch để tránh crash serverless function
-  // thành 500 FUNCTION_INVOCATION_FAILED mà không có JSON body
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ ok: false, message: 'Không nhận được file ảnh nào.' });
+      return res.status(400).json({ ok: false, message: 'Kh\u00f4ng nh\u1eadn \u0111\u01b0\u1ee3c file \u1ea3nh n\u00e0o.' });
     }
 
-    // ── Trên Vercel: đọc fresh products từ DB để tránh ghi đè stale RAM cache ──
-    // Các serverless instance không chia sẻ RAM với nhau. Nếu instance này có
-    // data cũ (stale) mà ta saveProducts(products) thì sẽ ghi đè DB, xóa mất
-    // ảnh đã cập nhật bởi instance/request khác trước đó.
+    // \u2500\u2500 Tr\u00ean Vercel: \u0111\u1ecdc fresh products t\u1eeb DB \u0111\u1ec3 tr\u00e1nh ghi \u0111\u00e8 stale RAM cache \u2500\u2500
     let productsList;
     if (IS_VERCEL) {
       try {
         const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
         productsList = rows.length > 0 ? JSON.parse(rows[0].value) : [];
       } catch (err) {
-        console.error('Lỗi đọc products từ DB (import-images):', err);
-        return res.status(500).json({ ok: false, message: 'Lỗi đọc dữ liệu sản phẩm từ DB.' });
+        console.error('L\u1ed7i \u0111\u1ecdc products t\u1eeb DB (import-images):', err);
+        return res.status(500).json({ ok: false, message: 'L\u1ed7i \u0111\u1ecdc d\u1eef li\u1ec7u s\u1ea3n ph\u1ea9m t\u1eeb DB.' });
       }
     } else {
       productsList = products;
     }
 
     let updatedCount = 0;
-    let skippedCount = 0;
+    const failedFiles = []; // { filename, reason } — upload th\u1ea5t b\u1ea1i th\u1ef1c s\u1ef1
 
     for (const file of req.files) {
-      // Fix: multer mã hóa originalname bằng latin1; decode lại sang utf8
-      // để tên file có tiếng Việt / ký tự đặc biệt không bị sai khi so khớp mã SP
+      // multer m\u00e3 h\u00f3a originalname b\u1eb1ng latin1; decode l\u1ea1i sang utf8
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8').replace(/\\/g, '/');
       const ext = path.extname(originalName).toLowerCase();
       const code = path.basename(originalName, ext).trim();
 
-      // Chuẩn hóa mã sản phẩm để so khớp
-      const normalizeCodeForMatch = (c) => {
-        if (!c) return '';
-        return String(c)
-          .trim()
-          .toLowerCase()
-          .replace(/[\/:*?"<>|]/g, '_')
-          .replace(/[-\s]/g, '_');
-      };
-
-      const targetNorm = normalizeCodeForMatch(code);
-      const product = productsList.find(p => normalizeCodeForMatch(p.ma) === targetNorm);
+      // D\u00f9ng h\u00e0m normalizeProductCode nh\u1ea5t qu\u00e1n v\u1edbi client
+      const targetNorm = normalizeProductCode(code);
+      const product = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
 
       if (product) {
         const filename = code + ext;
         try {
           const newImagePath = await uploadImageFile({ ...file, filename }, 'products');
-          // Xóa ảnh cũ nếu khác
+          // uploadImageFile \u0111\u00e3 verify HTTP 200 \u2014 n\u1ebfu kh\u00f4ng throw th\u00ec upload th\u00e0nh c\u00f4ng
           if (product.image && product.image !== newImagePath) {
             await deleteImageFile(product.image, 'products');
           }
           product.image = newImagePath;
           product.updatedAt = Date.now();
           updatedCount++;
-          // Giải phóng bộ nhớ ngay sau khi upload xong
-          file.buffer = null;
+          file.buffer = null; // Gi\u1ea3i ph\u00f3ng RAM
         } catch (err) {
-          console.error(`Lỗi upload ảnh ${filename}:`, err.message);
-          skippedCount++;
+          console.error(`L\u1ed7i upload \u1ea3nh ${filename}:`, err.message);
+          // Kh\u00f4ng ghi URL v\u00e0o DB \u2014 ch\u1ec9 b\u00e1o l\u1ed7i cho client
+          failedFiles.push({ filename, reason: err.message });
         }
-      } else {
-        skippedCount++;
       }
+      // Kh\u00f4ng match m\u00e3 \u2192 b\u1ecf qua (\u0111\u00e3 \u0111\u01b0\u1ee3c l\u1ecdc ph\u00eda client)
     }
 
     if (updatedCount > 0) {
-      // Sync lại RAM cache với bản đã cập nhật ảnh (quan trọng trên Vercel
-      // vì productsList là bản riêng đọc fresh từ DB, không phải `products` gốc)
       if (IS_VERCEL) products = productsList;
       await saveProducts(productsList);
       await broadcastUpdate('products_updated');
     }
 
-    res.json({ ok: true, updated: updatedCount, skipped: skippedCount });
+    res.json({ ok: true, updated: updatedCount, failedFiles });
 
   } catch (err) {
-    // Bắt mọi lỗi bất ngờ, trả JSON thay vì crash serverless function
-    console.error('❌ Lỗi nghiêm trọng trong import-images:', err);
+    console.error('\u274c L\u1ed7i nghi\u00eam tr\u1ecdng trong import-images:', err);
     if (!res.headersSent) {
-      res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi upload ảnh: ' + err.message });
+      res.status(500).json({ ok: false, message: 'L\u1ed7i m\u00e1y ch\u1ee7 khi upload \u1ea3nh: ' + err.message });
     }
   }
 });
+
+// \u2500\u2500 D\u1ecdn d\u1eb9p URL \u1ea3nh broken trong DB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// So s\u00e1nh image URL trong DB v\u1edbi danh s\u00e1ch object th\u1ef1c t\u1ebf tr\u00ean R2.
+// URL n\u00e0o kh\u00f4ng c\u00f3 tr\u00ean R2 \u2192 x\u00f3a kh\u1ecfi DB \u0111\u1ec3 filter "Ch\u01b0a c\u00f3 \u1ea3nh" ho\u1ea1t \u0111\u1ed9ng \u0111\u00fang.
+app.post('/api/admin/products/cleanup-broken-images', requireAdmin, async (req, res) => {
+  try {
+    const { listFiles } = require('./lib/storage');
+
+    // L\u1ea5y danh s\u00e1ch key th\u1ef1c t\u1ebf tr\u00ean R2
+    const r2Objects = await listFiles('products');
+    const r2Urls = new Set(r2Objects.map(o => o.url));
+
+    let productsList;
+    if (IS_VERCEL) {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      productsList = rows.length > 0 ? JSON.parse(rows[0].value) : [];
+    } else {
+      productsList = products;
+    }
+
+    const cleaned = [];
+    for (const p of productsList) {
+      if (p.image && !r2Urls.has(p.image)) {
+        console.log(`\u1f9f9 X\u00f3a URL \u1ea3nh broken cho SP ${p.ma}: ${p.image}`);
+        cleaned.push({ ma: p.ma, ten: p.ten, oldImage: p.image });
+        p.image = null;
+        p.updatedAt = Date.now();
+      }
+    }
+
+    if (cleaned.length > 0) {
+      if (IS_VERCEL) products = productsList;
+      await saveProducts(productsList);
+      await broadcastUpdate('products_updated');
+    }
+
+    res.json({ ok: true, cleaned: cleaned.length, details: cleaned });
+
+  } catch (err) {
+    console.error('L\u1ed7i cleanup-broken-images:', err);
+    res.status(500).json({ ok: false, message: 'L\u1ed7i khi d\u1ecdn d\u1eb9p \u1ea3nh: ' + err.message });
+  }
+});
+
 
 app.put('/api/admin/settings', requireAdmin, async (req, res) => {
   const { address, phone, email, mapUrl, geminiApiKey, geminiKeySource } = req.body || {};
