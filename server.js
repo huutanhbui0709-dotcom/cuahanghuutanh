@@ -2545,43 +2545,66 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
 app.get('/api/admin/tools/download-images-zip', requireAdmin, async (req, res) => {
   try {
     const { ZipArchive } = await import('archiver');
-
-    // Set headers for ZIP download
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', 'attachment; filename="images.zip"');
-
-    const archive = new ZipArchive({ zlib: { level: 9 } });
-
-    // Listen for errors
-    archive.on('error', (err) => {
-      console.error('Lỗi khi tạo ZIP:', err);
-      if (!res.headersSent) {
-        res.status(500).end('Lỗi máy chủ khi tạo file ZIP.');
-      }
-    });
-
-    // Pipe archive directly to response
-    archive.pipe(res);
+    const { PassThrough } = require('stream');
 
     // List all objects from Cloudflare R2 (products + slides)
     const allItems = await listFiles('');
-    for (const item of allItems) {
-      if (!/\.(png|jpe?g|gif|webp|bmp|jfif|pdf)$/i.test(item.key)) continue;
-      try {
+    const imageItems = allItems.filter(item => /\.(png|jpe?g|gif|webp|bmp|jfif|pdf)$/i.test(item.key));
+
+    // Fetch all image buffers in parallel (with concurrency cap to avoid rate limits)
+    const CONCURRENCY = 5;
+    const fetched = [];
+    for (let i = 0; i < imageItems.length; i += CONCURRENCY) {
+      const batch = imageItems.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(batch.map(async (item) => {
         const resp = await fetch(item.url);
-        if (resp.ok) {
-          const arrayBuffer = await resp.arrayBuffer();
-          // item.key is like "products/file.jpg" or "slides/file.jpg"
-          archive.append(Buffer.from(arrayBuffer), { name: item.key });
-        } else {
+        if (!resp.ok) {
           console.warn('Lỗi tải file từ R2:', item.url, resp.status);
+          return null;
         }
-      } catch (fetchErr) {
-        console.warn('Exception khi tải file từ R2:', item.url, fetchErr);
+        const arrayBuffer = await resp.arrayBuffer();
+        return { key: item.key, buffer: Buffer.from(arrayBuffer) };
+      }));
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) fetched.push(r.value);
+        else if (r.status === 'rejected') console.warn('Exception khi tải ảnh R2:', r.reason);
       }
     }
 
-    await archive.finalize();
+    // Build the ZIP entirely in memory, then send as one complete response.
+    // On Vercel serverless, piping directly to res is unreliable — the connection
+    // may close before finalize() completes, producing a corrupted/truncated ZIP.
+    const chunks = [];
+    const passthrough = new PassThrough();
+    passthrough.on('data', (chunk) => chunks.push(chunk));
+
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+      console.error('Lỗi khi tạo ZIP:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ ok: false, message: 'Lỗi tạo ZIP: ' + err.message });
+      }
+    });
+
+    archive.pipe(passthrough);
+
+    for (const { key, buffer } of fetched) {
+      archive.append(buffer, { name: key });
+    }
+
+    await new Promise((resolve, reject) => {
+      passthrough.on('end', resolve);
+      passthrough.on('error', reject);
+      archive.finalize();
+    });
+
+    const zipBuffer = Buffer.concat(chunks);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="images.zip"');
+    res.setHeader('Content-Length', zipBuffer.length);
+    res.end(zipBuffer);
+
   } catch (err) {
     console.error('Lỗi API download-images-zip:', err);
     if (!res.headersSent) {
