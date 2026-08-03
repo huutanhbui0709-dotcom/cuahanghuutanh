@@ -1,4 +1,4 @@
-﻿// ==============================
+// ==============================
 // STATE
 // ==============================
 if (window.location.protocol === 'file:') {
@@ -733,9 +733,9 @@ function renderOrdersTable() {
           <td style="font-size:.78rem;color:var(--muted)">${o.createdAt}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td>
-            <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <div class="row-actions">
               <button class="btn btn-sm btn-primary" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button>
-              ${o.status === 'Chờ xác nhận' ? `<button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button><button class="btn btn-sm btn-danger" onclick="updateOrderStatus('${o.id}','Đã huỷ')">✕</button>` : ''}
+              ${o.status === 'Chờ xác nhận' ? `<button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button><button class="btn btn-sm btn-danger" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>` : ''}
               ${o.status === 'Đã huỷ' ? `<button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
             </div>
           </td>
