@@ -28,7 +28,7 @@ const multer = require('multer');
 const { uploadImageFile, deleteImageFile, listFiles } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
 const { neon } = require('@neondatabase/serverless');
-const sql = neon(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+const sql = neon(process.env.POSTGRES_URL || process.env.DATABASE_URL, { fullResults: true });
 
 const IS_VERCEL = !!process.env.VERCEL;
 

@@ -27,7 +27,7 @@ const multer = require('multer');
 
 // ── Database (Neon HTTP driver — không cần TCP handshake) ─────────────
 const { neon } = require('@neondatabase/serverless');
-const sql = neon(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+const sql = neon(process.env.POSTGRES_URL || process.env.DATABASE_URL, { fullResults: true });
 
 // ── Storage (Cloudflare R2) ───────────────────────────────────────────
 const { uploadImageFile, listFiles } = require('../lib/storage');
