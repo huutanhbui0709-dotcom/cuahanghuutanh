@@ -6,52 +6,55 @@
 
 require('dotenv').config();
 
-// Monkey-patch ExcelJS để tránh crash khi Conditional Formatting trong template MISA bị lỗi
-try {
-  const CfRuleXform = require('exceljs/lib/xlsx/xform/sheet/cf/cf-rule-xform');
+// Monkey-patch ExcelJS lazily để tránh crash khi Conditional Formatting trong template MISA bị lỗi
+let isExcelJsPatched = false;
+function applyExcelJsPatch() {
+  if (isExcelJsPatched) return;
+  try {
+    const CfRuleXform = require('exceljs/lib/xlsx/xform/sheet/cf/cf-rule-xform');
 
-  // Patch hàm render tổng
-  const _origRender = CfRuleXform.prototype.render;
-  CfRuleXform.prototype.render = function (xmlStream, model) {
-    if (model) {
-      if (!model.formulae) model.formulae = [];
-    }
-    try {
-      return _origRender.call(this, xmlStream, model);
-    } catch (e) {
-      console.warn('[ExcelJS Warning] Bỏ qua lỗi vẽ CfRuleXform.render:', e.message);
-    }
-  };
+    // Patch hàm render tổng
+    const _origRender = CfRuleXform.prototype.render;
+    CfRuleXform.prototype.render = function (xmlStream, model) {
+      if (model) {
+        if (!model.formulae) model.formulae = [];
+      }
+      try {
+        return _origRender.call(this, xmlStream, model);
+      } catch (e) {
+        console.warn('[ExcelJS Warning] Bỏ qua lỗi vẽ CfRuleXform.render:', e.message);
+      }
+    };
 
-  // Patch hàm renderExpression chi tiết
-  const _origRenderExpression = CfRuleXform.prototype.renderExpression;
-  CfRuleXform.prototype.renderExpression = function (xmlStream, model) {
-    if (model) {
-      if (!model.formulae) model.formulae = [];
-      if (model.formulae.length === 0) model.formulae.push('');
-    }
-    try {
-      return _origRenderExpression.call(this, xmlStream, model);
-    } catch (e) {
-      console.warn('[ExcelJS Warning] Bỏ qua lỗi renderExpression:', e.message);
-    }
-  };
+    // Patch hàm renderExpression chi tiết
+    const _origRenderExpression = CfRuleXform.prototype.renderExpression;
+    CfRuleXform.prototype.renderExpression = function (xmlStream, model) {
+      if (model) {
+        if (!model.formulae) model.formulae = [];
+        if (model.formulae.length === 0) model.formulae.push('');
+      }
+      try {
+        return _origRenderExpression.call(this, xmlStream, model);
+      } catch (e) {
+        console.warn('[ExcelJS Warning] Bỏ qua lỗi renderExpression:', e.message);
+      }
+    };
 
-  // Patch hàm renderCellIs chi tiết
-  const _origRenderCellIs = CfRuleXform.prototype.renderCellIs;
-  CfRuleXform.prototype.renderCellIs = function (xmlStream, model) {
-    if (model) {
-      if (!model.formulae) model.formulae = [];
-    }
-    try {
-      return _origRenderCellIs.call(this, xmlStream, model);
-    } catch (e) {
-      console.warn('[ExcelJS Warning] Bỏ qua lỗi renderCellIs:', e.message);
-    }
-  };
-} catch (ignored) { }
-
-
+    // Patch hàm renderCellIs chi tiết
+    const _origRenderCellIs = CfRuleXform.prototype.renderCellIs;
+    CfRuleXform.prototype.renderCellIs = function (xmlStream, model) {
+      if (model) {
+        if (!model.formulae) model.formulae = [];
+      }
+      try {
+        return _origRenderCellIs.call(this, xmlStream, model);
+      } catch (e) {
+        console.warn('[ExcelJS Warning] Bỏ qua lỗi renderCellIs:', e.message);
+      }
+    };
+    isExcelJsPatched = true;
+  } catch (ignored) { }
+}
 
 // Tự động dọn dẹp dấu nháy kép/đơn và khoảng trắng thừa của biến môi trường (phổ biến khi cấu hình Azure Portal)
 for (const key in process.env) {
@@ -70,7 +73,6 @@ const session = require('express-session');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { uploadImageFile, deleteImageFile, listFiles } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
 const { sql } = require('@vercel/postgres');
@@ -91,8 +93,6 @@ if (IS_VERCEL) {
 }
 
 const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : defaultDataDir;
-
-const XLSX = require('xlsx');
 
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
@@ -361,74 +361,98 @@ async function initializeData() {
       // ================================================================
       // Môi trường Vercel: tất cả data từ Vercel DB, không dùng filesystem
       // ================================================================
-      await initDbSchema();
+      
+      // Chạy song song các truy vấn tải dữ liệu chính để giảm thiểu roundtrip latency
+      let results = await Promise.allSettled([
+        sql`SELECT value FROM app_settings WHERE key = 'products'`,
+        sql`SELECT value FROM app_settings WHERE key = 'settings'`,
+        sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
+        sql`SELECT * FROM orders ORDER BY created_at DESC`,
+        sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
+      ]);
 
-      // Load products từ DB
-      try {
-        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
-        if (rows.length > 0) {
-          products = JSON.parse(rows[0].value);
-          console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
-        } else {
-          // Lần đầu: seed từ bundled data
-          try {
-            const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
-            products = JSON.parse(raw);
-          } catch { products = []; }
+      // Kiểm tra xem có lỗi "relation does not exist" không (xảy ra khi deploy DB trống lần đầu)
+      let hasRelationError = false;
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          const errMsg = String(r.reason?.message || r.reason);
+          if (errMsg.includes('relation') && errMsg.includes('does not exist')) {
+            hasRelationError = true;
+            break;
+          }
+        }
+      }
+
+      if (hasRelationError) {
+        console.log('⚠️ Phát hiện bảng chưa tồn tại. Tiến hành chạy initDbSchema đồng bộ...');
+        await initDbSchema();
+        // Thử tải lại song song sau khi đã khởi tạo schema
+        results = await Promise.allSettled([
+          sql`SELECT value FROM app_settings WHERE key = 'products'`,
+          sql`SELECT value FROM app_settings WHERE key = 'settings'`,
+          sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
+          sql`SELECT * FROM orders ORDER BY created_at DESC`,
+          sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
+        ]);
+      }
+
+      const [prodRes, setRes, supRes, orderRes, visitorRes] = results;
+
+      // 1. Parse products từ kết quả
+      if (prodRes.status === 'fulfilled' && prodRes.value.rows.length > 0) {
+        products = JSON.parse(prodRes.value.rows[0].value);
+        console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
+      } else {
+        try {
+          const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
+          products = JSON.parse(raw);
+        } catch {
+          products = [];
+        }
+        if (prodRes.status === 'fulfilled') {
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('products', ${JSON.stringify(products)}, NOW())
             ON CONFLICT (key) DO NOTHING
-          `;
-          console.log(`📦 Seeded ${products.length} products into Vercel DB.`);
+          `.catch(e => console.error('Lỗi seed products:', e));
         }
-      } catch (err) {
-        console.error('❌ Lỗi load products từ DB:', err);
-        products = [];
+        console.log(`📦 Seeded/Loaded default ${products.length} products.`);
       }
 
-      // Load settings từ DB
-      try {
-        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'settings'`;
-        if (rows.length > 0) {
-          settings = JSON.parse(rows[0].value);
-          console.log('✅ Loaded settings from Vercel DB.');
-        } else {
-          // Lần đầu: seed settings mặc định
+      // 2. Parse settings từ kết quả
+      if (setRes.status === 'fulfilled' && setRes.value.rows.length > 0) {
+        settings = JSON.parse(setRes.value.rows[0].value);
+        console.log('✅ Loaded settings from Vercel DB.');
+      } else {
+        if (setRes.status === 'fulfilled') {
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('settings', ${JSON.stringify(settings)}, NOW())
             ON CONFLICT (key) DO NOTHING
-          `;
-          console.log('⚙️ Seeded default settings into Vercel DB.');
+          `.catch(e => console.error('Lỗi seed settings:', e));
         }
-      } catch (err) {
-        console.error('❌ Lỗi load settings từ DB:', err);
+        console.log('⚙️ Seeded/Loaded default settings.');
       }
 
-      // Load suppliers từ DB
-      try {
-        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
-        if (rows.length > 0) {
-          suppliers = JSON.parse(rows[0].value);
-          console.log(`✅ Loaded ${suppliers.length} suppliers from Vercel DB.`);
-        } else {
+      // 3. Parse suppliers từ kết quả
+      if (supRes.status === 'fulfilled' && supRes.value.rows.length > 0) {
+        suppliers = JSON.parse(supRes.value.rows[0].value);
+        console.log(`✅ Loaded ${suppliers.length} suppliers from Vercel DB.`);
+      } else {
+        if (supRes.status === 'fulfilled') {
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('suppliers', '[]', NOW())
             ON CONFLICT (key) DO NOTHING
-          `;
-          suppliers = [];
+          `.catch(e => console.error('Lỗi seed suppliers:', e));
         }
-      } catch (err) {
-        console.error('❌ Lỗi load suppliers từ DB:', err);
         suppliers = [];
+        console.log('📦 Seeded/Loaded default suppliers.');
       }
 
-      // Load orders từ DB
-      try {
-        const { rows } = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
-        orders = rows.map(r => ({
+      // 4. Parse orders từ kết quả
+      if (orderRes.status === 'fulfilled') {
+        orders = orderRes.value.rows.map(r => ({
           id: r.id,
           createdAt: r.created_at,
           customer: r.customer,
@@ -442,16 +466,15 @@ async function initializeData() {
           visitorId: r.visitor_id
         }));
         console.log(`✅ Loaded ${orders.length} orders from Vercel DB.`);
-      } catch (err) {
-        console.error('❌ Lỗi load orders từ Vercel DB:', err);
+      } else {
+        console.error('❌ Lỗi load orders từ Vercel DB:', orderRes.reason);
         orders = [];
       }
 
-      // Load blocked visitors từ DB
-      try {
+      // 5. Parse spam visitor activity từ kết quả
+      if (visitorRes.status === 'fulfilled') {
         blockedDevices.clear();
-        const { rows } = await sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`;
-        spamDevices = rows.map(r => ({
+        spamDevices = visitorRes.value.rows.map(r => ({
           deviceId: r.device_id,
           fingerprint: r.fingerprint,
           ip: r.ip,
@@ -468,8 +491,8 @@ async function initializeData() {
           }
         });
         console.log(`✅ Loaded ${spamDevices.length} blocked visitors from Vercel DB.`);
-      } catch (err) {
-        console.error('❌ Lỗi load spamDevices từ Vercel DB:', err);
+      } else {
+        console.error('❌ Lỗi load spamDevices từ Vercel DB:', visitorRes.reason);
         spamDevices = [];
       }
 
@@ -1800,6 +1823,7 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
     const systemProducts = products;
     const systemSuppliers = suppliers;
 
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: 'gemini-3.5-flash',
@@ -1964,6 +1988,7 @@ app.post('/api/suppliers/import', requireAdmin, uploadExcel.single('file'), asyn
     }
 
     // Đọc dữ liệu từ file Excel trong memory buffer
+    const XLSX = require('xlsx');
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -2058,6 +2083,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy file template Nhap_khau_phieu_nhap_kho.xlsx' });
     }
 
+    applyExcelJsPatch();
     const ExcelJS = require('exceljs');
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
@@ -2417,6 +2443,7 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy file mẫu Nhap_khau_hang_hoa.xlsx' });
     }
 
+    applyExcelJsPatch();
     const ExcelJS = require('exceljs');
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(templatePath);
