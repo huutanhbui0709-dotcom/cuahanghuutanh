@@ -1692,4 +1692,9 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
   }
 });
 
+// API lấy danh sách nhà cung cấp
+app.get('/api/suppliers', requireAdmin, (req, res) => {
+  res.json(suppliers);
+});
+
 module.exports = app;
