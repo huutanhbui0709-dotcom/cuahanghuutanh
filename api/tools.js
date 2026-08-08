@@ -100,14 +100,22 @@ let initPromise = null;
 
 async function loadSharedState() {
   try {
-    const [prodRows, supRows, setRows] = await Promise.all([
+    const [prodResult, supResult, setResult] = await Promise.all([
       sql`SELECT value FROM app_settings WHERE key = 'products'`,
       sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
       sql`SELECT value FROM app_settings WHERE key = 'settings'`,
     ]);
-    if (prodRows.length > 0) products = JSON.parse(prodRows[0].value);
-    if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
-    if (setRows.length > 0) settings = JSON.parse(setRows[0].value);
+    // Khi dùng fullResults: true, neon trả về { rows: [...], rowCount, fields }
+    // thay vì mảng trực tiếp → phải lấy .rows
+    const prodRows = prodResult.rows ?? prodResult;
+    const supRows  = supResult.rows  ?? supResult;
+    const setRows  = setResult.rows  ?? setResult;
+
+    if (prodRows.length > 0) products  = JSON.parse(prodRows[0].value);
+    if (supRows.length  > 0) suppliers = JSON.parse(supRows[0].value);
+    if (setRows.length  > 0) settings  = JSON.parse(setRows[0].value);
+
+    console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp`);
   } catch (err) {
     console.error('[tools] Lỗi load shared state từ DB:', err.message);
   }
@@ -171,8 +179,6 @@ function normalizeProductCode(c) {
     .replace(/[-\s]/g, '_');
 }
 
-// Rút gọn tên: bỏ khoảng trắng, dấu gạch ngang, dấu nhân, dấu chấm để so sánh mềm
-// VD: "màn phủ 1m x 100m" → "mànphủ1mx100m" = "màn phủ 1mx100m"
 function compactName(str) {
   if (!str) return '';
   return str.toLowerCase()
