@@ -664,7 +664,10 @@ function formatOrderDate(str) {
   if (m) {
     const time = `${m[1].padStart(2,'0')}:${m[2]}`;
     const date = `${m[4].padStart(2,'0')}/${m[5].padStart(2,'0')}/${m[6]}`;
-    return `<span style="font-weight:600;color:var(--text)">${time}</span><br><span style="font-size:.72rem;color:var(--muted)">${date}</span>`;
+    return `<div style="text-align:center;line-height:1.5">`
+         + `<span style="font-weight:700;color:var(--text);display:block">${date}</span>`
+         + `<span style="font-size:.72rem;color:var(--muted);display:block">${time}</span>`
+         + `</div>`;
   }
   return str;
 }
@@ -768,7 +771,7 @@ function renderOrdersTable() {
           <td style="max-width:150px;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address}">${o.address}</td>
           <td><span class="order-detail">${o.items.length} sản phẩm</span></td>
           <td style="font-weight:700;color:var(--primary)">${formatPrice(o.total)}</td>
-          <td style="font-size:.82rem;white-space:nowrap;text-align:center;line-height:1.4">${formatOrderDate(o.createdAt)}</td>
+          <td style="white-space:nowrap;font-size:.82rem">${formatOrderDate(o.createdAt)}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td style="white-space:nowrap">
             <div class="row-actions" style="display:grid;grid-template-columns:32px 32px 32px;gap:4px;justify-content:center">
