@@ -339,11 +339,7 @@ function renderDashboard() {
 
   const dashboardStatusFilter = document.getElementById('dashboardOrderStatusFilter')?.value || '';
   const filteredOrders = (dashboardStatusFilter ? orders.filter(o => o.status === dashboardStatusFilter) : orders)
-    .slice().sort((a, b) => {
-      const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
-      const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
-      return db - da;
-    });
+    .slice().sort((a, b) => parseOrderDateTime(b.createdAt) - parseOrderDateTime(a.createdAt));
   const recent = filteredOrders.slice(0, 5);
 
   if (recent.length === 0) {
@@ -640,6 +636,26 @@ function parseCreatedAt(createdAtStr) {
   return new Date(year, month, day);
 }
 
+// Parse đầy đủ ngày + giờ từ định dạng "HH:MM:SS DD/MM/YYYY" hoặc "HH:MM DD/MM/YYYY"
+// Dùng để sắp xếp đơn hàng chính xác (kể cả cùng ngày)
+function parseOrderDateTime(str) {
+  if (!str) return new Date(0);
+  // Khớp định dạng: "14:46:11 8/8/2026" hoặc "14:46 29/7/2026"
+  const m = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) {
+    const h   = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    const sec = m[3] ? parseInt(m[3], 10) : 0;
+    const d   = parseInt(m[4], 10);
+    const mo  = parseInt(m[5], 10) - 1;
+    const y   = parseInt(m[6], 10);
+    return new Date(y, mo, d, h, min, sec);
+  }
+  // Fallback: thử ISO hoặc định dạng khác
+  const fallback = new Date(str);
+  return isNaN(fallback) ? new Date(0) : fallback;
+}
+
 function resetOrderFilters() {
   const searchInput = document.getElementById('orderSearch');
   const dateFromInput = document.getElementById('orderDateFrom');
@@ -695,11 +711,7 @@ function renderOrdersTable() {
   });
 
   // Sắp xếp: đơn mới nhất lên trên
-  list.sort((a, b) => {
-    const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
-    const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
-    return db - da;
-  });
+  list.sort((a, b) => parseOrderDateTime(b.createdAt) - parseOrderDateTime(a.createdAt));
 
   // Cập nhật badge số lượng đơn hàng
 
