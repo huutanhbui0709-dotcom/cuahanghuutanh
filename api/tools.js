@@ -274,10 +274,14 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
             const prodCodeLower = (prod.code || '').toLowerCase().trim();
             const prodNums = (prodNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
             const hasMatch = systemProducts.some(sysP => {
-              const sysCodeLower = (sysP.ma || '').toLowerCase().trim();
+              const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();   // mã gốc (giữ dấu -)
               const sysNameLower = (sysP.ten || '').toLowerCase().trim();
-              if (prodCodeLower && sysCodeLower === prodCodeLower) return true;
-              if (prodNameLower.includes(sysCodeLower) || sysCodeLower.includes(prodNameLower)) return true;
+              // Khớp theo mã SP của hóa đơn
+              if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
+              // Mã SP có trong tên sản phẩm hóa đơn (ví dụ: "...model COV-22-RS")
+              if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
+              // Tên ngắn nằm trong mã (ít gặp, giữ lại để an toàn — chỉ khi mã đủ dài)
+              if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
               const sysNums = (sysNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
               if (prodNums !== sysNums) return false;
               const sim = calculateSimilarity(prodNameLower, sysNameLower);
@@ -475,10 +479,14 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         const systemMatch = systemProducts.find(sysP => {
           const prodNameLower = (p.name || '').toLowerCase().trim();
           const prodCodeLower = (p.code || '').toLowerCase().trim();
-          const sysCodeLower = (sysP.ma || '').toLowerCase().trim();
+          const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();   // mã gốc (giữ dấu -)
           const sysNameLower = (sysP.ten || '').toLowerCase().trim();
-          if (prodCodeLower && sysCodeLower === prodCodeLower) return true;
-          if (prodNameLower.includes(sysCodeLower) || sysCodeLower.includes(prodNameLower)) return true;
+          // Khớp theo mã SP của hóa đơn
+          if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
+          // Mã SP có trong tên sản phẩm hóa đơn (ví dụ: "...model COV-22-RS")
+          if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
+          // Tên ngắn nằm trong mã (ít gặp, giữ lại để an toàn — chỉ khi mã đủ dài)
+          if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
           const prodNums = (prodNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
           const sysNums = (sysNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
           if (prodNums !== sysNums) return false;
