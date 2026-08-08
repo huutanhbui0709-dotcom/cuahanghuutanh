@@ -171,6 +171,15 @@ function normalizeProductCode(c) {
     .replace(/[-\s]/g, '_');
 }
 
+// Rút gọn tên: bỏ khoảng trắng, dấu gạch ngang, dấu nhân, dấu chấm để so sánh mềm
+// VD: "màn phủ 1m x 100m" → "mànphủ1mx100m" = "màn phủ 1mx100m"
+function compactName(str) {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/[\s\-×x\/\.]/g, '') // bỏ space, gạch ngang, dấu x/×, dấu chấm, dấu slash
+    .trim();
+}
+
 function parseCleanNumber(val) {
   if (val === undefined || val === null) return 0;
   if (typeof val === 'number') return val;
@@ -272,21 +281,37 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
           for (const prod of parsed.products) {
             const prodNameLower = (prod.name || '').toLowerCase().trim();
             const prodCodeLower = (prod.code || '').toLowerCase().trim();
-            const prodNums = (prodNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
             const hasMatch = systemProducts.some(sysP => {
-              const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();   // mã gốc (giữ dấu -)
+              const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
               const sysNameLower = (sysP.ten || '').toLowerCase().trim();
-              // Khớp theo mã SP của hóa đơn
+
+              // 1. Khớp chính xác theo mã SP
               if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
-              // Mã SP có trong tên sản phẩm hóa đơn (ví dụ: "...model COV-22-RS")
+              // 2. Mã SP có trong tên sản phẩm hóa đơn (vd: "...model COV-22-RS")
               if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
-              // Tên ngắn nằm trong mã (ít gặp, giữ lại để an toàn — chỉ khi mã đủ dài)
               if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
-              const sysNums = (sysNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
-              if (prodNums !== sysNums) return false;
+
+              // 3. So sánh tên rút gọn: bỏ khoảng trắng/dấu phân cách
+              // VD: "màn phủ 1mx100m" ↔ "màn phủ 1m x 100m" → compact khớp
+              const prodCompact = compactName(prodNameLower);
+              const sysCompact = compactName(sysNameLower);
+              if (prodCompact && sysCompact) {
+                if (prodCompact === sysCompact) return true;
+                const minLen = Math.min(prodCompact.length, sysCompact.length);
+                if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
+              }
+
+              // 4. Số chứa trong tên (soft guard — chỉ loại nếu cả hai có số VÀ khác nhau rõ ràng)
+              const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
+              const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
+              if (prodNums && sysNums && prodNums !== sysNums) return false;
+
+              // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
               const sim = calculateSimilarity(prodNameLower, sysNameLower);
-              if (sim >= 0.85) return true;
-              if (prodNameLower.length >= 6 && sysNameLower.length >= 6) {
+              if (sim >= 0.80) return true;
+
+              // 6. Tên nằm trong nhau (tên dài bao tên ngắn)
+              if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
                 if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
               }
               return false;
@@ -476,23 +501,38 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
         if (colIndices.description) row.getCell(colIndices.description).value = descriptionText;
         if (colIndices.paymentMethod) row.getCell(colIndices.paymentMethod).value = inv.paymentMethod || 'Tiền mặt';
 
+        const prodNameLower = (p.name || '').toLowerCase().trim();
+        const prodCodeLower = (p.code || '').toLowerCase().trim();
         const systemMatch = systemProducts.find(sysP => {
-          const prodNameLower = (p.name || '').toLowerCase().trim();
-          const prodCodeLower = (p.code || '').toLowerCase().trim();
-          const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();   // mã gốc (giữ dấu -)
+          const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
           const sysNameLower = (sysP.ten || '').toLowerCase().trim();
-          // Khớp theo mã SP của hóa đơn
+
+          // 1. Khớp chính xác theo mã SP
           if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
-          // Mã SP có trong tên sản phẩm hóa đơn (ví dụ: "...model COV-22-RS")
+          // 2. Mã SP có trong tên sản phẩm hóa đơn
           if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
-          // Tên ngắn nằm trong mã (ít gặp, giữ lại để an toàn — chỉ khi mã đủ dài)
           if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
-          const prodNums = (prodNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
-          const sysNums = (sysNameLower.match(/\d+(\.\d+)?/g) || []).join(',');
-          if (prodNums !== sysNums) return false;
+
+          // 3. So sánh tên rút gọn
+          const prodCompact = compactName(prodNameLower);
+          const sysCompact = compactName(sysNameLower);
+          if (prodCompact && sysCompact) {
+            if (prodCompact === sysCompact) return true;
+            const minLen = Math.min(prodCompact.length, sysCompact.length);
+            if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
+          }
+
+          // 4. Số chứa trong tên (soft guard)
+          const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
+          const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
+          if (prodNums && sysNums && prodNums !== sysNums) return false;
+
+          // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
           const sim = calculateSimilarity(prodNameLower, sysNameLower);
-          if (sim >= 0.85) return true;
-          if (prodNameLower.length >= 6 && sysNameLower.length >= 6) {
+          if (sim >= 0.80) return true;
+
+          // 6. Tên nằm trong nhau
+          if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
             if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
           }
           return false;
