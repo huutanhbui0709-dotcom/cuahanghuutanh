@@ -1172,7 +1172,13 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
       return res.status(500).json({ ok: false, message: 'Lỗi tải danh sách đơn.' });
     }
   }
-  res.json(orders);
+  // Fallback: trả về từ RAM, sort mới nhất lên trên
+  const sorted = orders.slice().sort((a, b) => {
+    const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return db - da;
+  });
+  res.json(sorted);
 });
 
 const ALLOWED_STATUS = ['Chờ xác nhận', 'Đã xác nhận', 'Đã huỷ'];

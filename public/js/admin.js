@@ -338,7 +338,12 @@ function renderDashboard() {
   `;
 
   const dashboardStatusFilter = document.getElementById('dashboardOrderStatusFilter')?.value || '';
-  const filteredOrders = dashboardStatusFilter ? orders.filter(o => o.status === dashboardStatusFilter) : orders;
+  const filteredOrders = (dashboardStatusFilter ? orders.filter(o => o.status === dashboardStatusFilter) : orders)
+    .slice().sort((a, b) => {
+      const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return db - da;
+    });
   const recent = filteredOrders.slice(0, 5);
 
   if (recent.length === 0) {
@@ -689,7 +694,15 @@ function renderOrdersTable() {
     return true;
   });
 
+  // Sắp xếp: đơn mới nhất lên trên
+  list.sort((a, b) => {
+    const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return db - da;
+  });
+
   // Cập nhật badge số lượng đơn hàng
+
   const orderCountEl = document.getElementById('orderCount');
   if (orderCountEl) {
     orderCountEl.textContent = list.length === orders.length
