@@ -656,6 +656,19 @@ function parseOrderDateTime(str) {
   return isNaN(fallback) ? new Date(0) : fallback;
 }
 
+// Định dạng hiển thị ngày giờ đặt hàng cho dễ đọc
+// Input:  "14:46:11 8/8/2026"  →  Output HTML: "14:46 | 08/08/2026"
+function formatOrderDate(str) {
+  if (!str) return '—';
+  const m = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) {
+    const time = `${m[1].padStart(2,'0')}:${m[2]}`;
+    const date = `${m[4].padStart(2,'0')}/${m[5].padStart(2,'0')}/${m[6]}`;
+    return `<span style="font-weight:600;color:var(--text)">${time}</span><br><span style="font-size:.72rem;color:var(--muted)">${date}</span>`;
+  }
+  return str;
+}
+
 function resetOrderFilters() {
   const searchInput = document.getElementById('orderSearch');
   const dateFromInput = document.getElementById('orderDateFrom');
@@ -755,7 +768,7 @@ function renderOrdersTable() {
           <td style="max-width:150px;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address}">${o.address}</td>
           <td><span class="order-detail">${o.items.length} sản phẩm</span></td>
           <td style="font-weight:700;color:var(--primary)">${formatPrice(o.total)}</td>
-          <td style="font-size:.78rem;color:var(--muted)">${o.createdAt}</td>
+          <td style="font-size:.82rem;white-space:nowrap;text-align:center;line-height:1.4">${formatOrderDate(o.createdAt)}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td style="white-space:nowrap">
             <div class="row-actions" style="display:grid;grid-template-columns:32px 32px 32px;gap:4px;justify-content:center">
@@ -852,7 +865,7 @@ function viewOrderDetail(id) {
       <div class="admin-card" style="border:none;background:var(--bg);padding:16px;border-radius:10px;margin:0">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.875rem">
           <div><strong>Mã đơn:</strong> ${o.id}</div>
-          <div><strong>Ngày đặt:</strong> ${o.createdAt}</div>
+          <div><strong>Ngày đặt:</strong> ${formatOrderDate(o.createdAt)}</div>
           <div><strong>Khách hàng:</strong> ${o.customer}</div>
           <div><strong>SĐT:</strong> ${o.phone}</div>
           <div style="grid-column:1/-1"><strong>Địa chỉ:</strong> ${o.address}</div>
