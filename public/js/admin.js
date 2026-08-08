@@ -935,13 +935,13 @@ async function printOrderInvoice(id) {
   const printTime = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
 
   const itemRows = o.items.map((item, idx) => `
-    <tr class="${idx % 2 === 1 ? 'alt' : ''}">
-      <td class="tc">${idx + 1}</td>
-      <td class="name">${item.ten || ''}</td>
-      <td class="tc">${item.qty}</td>
-      <td class="tc">${item.donvi || ''}</td>
-      <td class="tr">${item.gia ? (item.gia).toLocaleString('vi-VN') : 'Liên hệ'}</td>
-      <td class="tr bold">${item.gia ? ((item.gia) * item.qty).toLocaleString('vi-VN') : 'Liên hệ'}</td>
+    <tr>
+      <td style="text-align:center;border:1px solid #ccc;padding:5px 4px">${idx + 1}</td>
+      <td style="border:1px solid #ccc;padding:5px 4px">${item.ten || ''}</td>
+      <td style="text-align:center;border:1px solid #ccc;padding:5px 4px">${item.qty}</td>
+      <td style="text-align:center;border:1px solid #ccc;padding:5px 4px">${item.donvi || ''}</td>
+      <td style="text-align:right;border:1px solid #ccc;padding:5px 4px">${item.gia ? item.gia.toLocaleString('vi-VN') : 'Liên hệ'}</td>
+      <td style="text-align:right;font-weight:700;border:1px solid #ccc;padding:5px 4px">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') : 'Liên hệ'}</td>
     </tr>`).join('');
 
   const html = `<!DOCTYPE html>
@@ -949,87 +949,105 @@ async function printOrderInvoice(id) {
 <head>
   <meta charset="UTF-8">
   <title>Hóa đơn ${o.id}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    @page { size: A5 portrait; margin: 10mm 12mm 10mm 12mm; }
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root { --navy: #1a2e4a; --accent: #2563eb; --light: #eff6ff; --muted: #64748b; --border: #e2e8f0; }
-    body { font-family: 'Be Vietnam Pro', Arial, sans-serif; font-size: 10.5px; color: #1e293b; background: #fff; line-height: 1.5; }
-    .header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 3px solid var(--navy); }
-    .shop-brand h1 { font-size: 18px; font-weight: 800; color: var(--navy); letter-spacing: .5px; line-height: 1.2; }
-    .shop-brand .tagline { font-size: 8.5px; color: var(--muted); margin-top: 2px; }
-    .shop-contact { text-align: right; font-size: 9px; color: var(--muted); line-height: 1.7; }
-    .shop-contact strong { color: var(--navy); font-weight: 600; }
-    .inv-title { background: var(--navy); color: #fff; text-align: center; padding: 7px 0 5px; border-radius: 5px; margin-bottom: 10px; }
-    .inv-title h2 { font-size: 13px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; }
-    .inv-title .inv-meta { font-size: 8.5px; opacity: .75; margin-top: 1px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; background: var(--light); border: 1px solid #bfdbfe; border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; font-size: 9.5px; }
-    .info-grid .full { grid-column: 1 / -1; }
-    .info-grid .label { color: var(--muted); font-size: 8.5px; display: block; line-height: 1.2; }
-    .info-grid .value { font-weight: 600; color: var(--navy); }
-    .info-grid .value.mono { font-family: monospace; font-size: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 9.5px; margin-bottom: 0; }
-    thead tr { background: var(--navy); color: #fff; }
-    thead th { padding: 5px; font-weight: 600; font-size: 9px; letter-spacing: .3px; }
-    th:first-child { border-radius: 4px 0 0 0; } th:last-child { border-radius: 0 4px 0 0; }
-    tbody tr { border-bottom: 1px solid var(--border); } tbody tr.alt { background: #f8fafc; }
-    tbody td { padding: 5px; vertical-align: middle; }
-    td.tc { text-align: center; } td.tr { text-align: right; } td.bold { font-weight: 700; color: var(--navy); } td.name { line-height: 1.35; }
-    .total-box { display: flex; justify-content: flex-end; margin-top: 8px; margin-bottom: 10px; }
-    .total-inner { background: var(--navy); color: #fff; border-radius: 6px; padding: 8px 14px; display: flex; align-items: center; gap: 14px; min-width: 180px; justify-content: space-between; }
-    .total-inner .lbl { font-size: 9px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; opacity: .8; }
-    .total-inner .amt { font-size: 15px; font-weight: 800; color: #fbbf24; white-space: nowrap; }
-    .sig-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; font-size: 8.5px; color: var(--muted); text-align: center; }
-    .sig-box { border: 1px dashed #cbd5e1; border-radius: 4px; padding: 4px 6px 28px; line-height: 1.4; }
-    .sig-box strong { color: var(--navy); display: block; font-size: 9px; }
-    .footer { border-top: 1px dashed #94a3b8; padding-top: 7px; text-align: center; font-size: 8.5px; color: var(--muted); line-height: 1.7; }
-    .footer .thank { font-size: 10px; font-weight: 700; color: var(--navy); margin-bottom: 1px; }
-    .footer strong { color: var(--navy); }
+    @page { size: A5 portrait; margin: 12mm 14mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Be Vietnam Pro', Arial, sans-serif; font-size: 10.5px; color: #000; background: #fff; line-height: 1.6; }
+
+    /* HEADER */
+    .header { text-align: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid #000; }
+    .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+    .header .sub { font-size: 9px; color: #444; margin-top: 3px; }
+
+    /* TITLE */
+    .inv-title { text-align: center; margin: 8px 0; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0; }
+    .inv-title h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+    .inv-title .meta { font-size: 9px; color: #555; margin-top: 2px; }
+
+    /* INFO */
+    .info-box { border: 1px solid #999; padding: 7px 10px; margin: 8px 0; font-size: 9.5px; }
+    .info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; }
+    .info-row.full { grid-template-columns: 1fr; }
+    .lbl { color: #555; font-size: 8.5px; }
+    .val { font-weight: 600; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 9.5px; margin: 8px 0; }
+    thead th { background: #000; color: #fff; padding: 5px 4px; font-weight: 600; font-size: 9px; letter-spacing: .3px; border: 1px solid #000; }
+    tbody tr:nth-child(even) { background: #f5f5f5; }
+
+    /* TOTAL */
+    .total-row td { padding: 6px 4px; font-weight: 800; font-size: 11px; border-top: 2px solid #000; }
+
+    /* SIGNATURE */
+    .sig { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; text-align: center; font-size: 8.5px; color: #444; }
+    .sig-box { border: 1px dashed #999; padding: 4px 6px 26px; }
+    .sig-box strong { display: block; font-size: 9px; color: #000; margin-bottom: 2px; }
+
+    /* FOOTER */
+    .footer { border-top: 1px dashed #999; padding-top: 6px; text-align: center; font-size: 8.5px; color: #555; }
+
     @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
   </style>
 </head>
 <body>
+
   <div class="header">
-    <div class="shop-brand">
-      <h1>🛍️ ${shopName}</h1>
-      <div class="tagline">Chất lượng · Uy tín · Phục vụ tận tâm</div>
-    </div>
-    <div class="shop-contact">
-      ${shopPhone   ? `<div>📞 <strong>${shopPhone}</strong></div>` : ''}
-      ${shopAddress ? `<div style="max-width:160px">📍 ${shopAddress}</div>` : ''}
+    <h1>${shopName}</h1>
+    <div class="sub">
+      ${shopPhone ? `Tel: ${shopPhone}` : ''}
+      ${shopPhone && shopAddress ? ' &nbsp;|&nbsp; ' : ''}
+      ${shopAddress ? `Dia chi: ${shopAddress}` : ''}
     </div>
   </div>
+
   <div class="inv-title">
-    <h2>Hóa đơn bán hàng</h2>
-    <div class="inv-meta">Ngày in: ${printDate} lúc ${printTime}</div>
+    <h2>Hoa don ban hang</h2>
+    <div class="meta">Ngay in: ${printDate} luc ${printTime}</div>
   </div>
-  <div class="info-grid">
-    <div><span class="label">Mã đơn hàng</span><span class="value mono">${o.id}</span></div>
-    <div><span class="label">Ngày đặt</span><span class="value">${o.createdAt || '—'}</span></div>
-    <div><span class="label">Khách hàng</span><span class="value">${o.customer || 'Khách lẻ'}</span></div>
-    <div><span class="label">Số điện thoại</span><span class="value">${o.phone || '—'}</span></div>
-    ${o.address ? `<div class="full"><span class="label">Địa chỉ giao hàng</span><span class="value">${o.address}</span></div>` : ''}
-    ${o.note    ? `<div class="full"><span class="label">Ghi chú</span><span class="value">${o.note}</span></div>`    : ''}
+
+  <div class="info-box">
+    <div class="info-row">
+      <div><div class="lbl">Ma don hang</div><div class="val">${o.id}</div></div>
+      <div><div class="lbl">Ngay dat</div><div class="val">${o.createdAt || '—'}</div></div>
+      <div><div class="lbl">Khach hang</div><div class="val">${o.customer || 'Khach le'}</div></div>
+      <div><div class="lbl">So dien thoai</div><div class="val">${o.phone || '—'}</div></div>
+    </div>
+    ${o.address ? `<div style="margin-top:4px"><div class="lbl">Dia chi giao hang</div><div class="val">${o.address}</div></div>` : ''}
+    ${o.note    ? `<div style="margin-top:4px"><div class="lbl">Ghi chu</div><div class="val">${o.note}</div></div>`    : ''}
   </div>
+
   <table>
-    <thead><tr>
-      <th style="width:22px;text-align:center">#</th>
-      <th style="text-align:left">Tên sản phẩm</th>
-      <th style="width:72px">Thành tiền</th>
-    </tr></thead>
+    <thead>
+      <tr>
+        <th style="width:22px;text-align:center">#</th>
+        <th style="text-align:left">Ten san pham</th>
+        <th style="width:28px;text-align:center">SL</th>
+        <th style="width:34px;text-align:center">DVT</th>
+        <th style="width:70px;text-align:right">Don gia</th>
+        <th style="width:78px;text-align:right">Thanh tien</th>
+      </tr>
+    </thead>
     <tbody>${itemRows}</tbody>
     <tfoot>
       <tr class="total-row">
-        <td colspan="5" style="text-align:right;padding-right:8px">TỔNG CỘNG:</td>
-        <td style="text-align:right;color:#d00">${(o.total || 0).toLocaleString('vi-VN')}₫</td>
+        <td colspan="5" style="text-align:right;padding-right:8px">TONG CONG:</td>
+        <td style="text-align:right">${(o.total || 0).toLocaleString('vi-VN')} d</td>
       </tr>
     </tfoot>
   </table>
-  <div class="footer">
-    <p>Cảm ơn quý khách đã mua hàng! 🙏</p>
-    <p style="margin-top:3px">Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong>.</p>
+
+  <div class="sig">
+    <div class="sig-box"><strong>Nguoi mua hang</strong>(Ky, ghi ro ho ten)</div>
+    <div class="sig-box"><strong>Nguoi ban hang</strong>(Ky, ghi ro ho ten)</div>
   </div>
+
+  <div class="footer">
+    <p>Cam on quy khach da tin tuong va mua hang!</p>
+    <p>Vui long giu hoa don de doi/tra hang trong vong <strong>7 ngay</strong> ke tu ngay mua.</p>
+  </div>
+
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
 </body></html>`;
 
