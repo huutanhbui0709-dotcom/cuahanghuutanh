@@ -774,13 +774,12 @@ function renderOrdersTable() {
           <td style="white-space:nowrap;font-size:.82rem">${formatOrderDate(o.createdAt)}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td style="white-space:nowrap">
-            <div class="row-actions" style="display:grid;grid-template-columns:32px 32px 32px;gap:4px;justify-content:center">
-              <div><button class="btn btn-sm btn-primary" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button></div>
-              <div>${o.status === 'Chờ xác nhận' ? `<button class="btn btn-sm btn-success" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>` : ''}</div>
-              <div>
-                ${o.status === 'Chờ xác nhận' ? `<button class="btn btn-sm btn-danger" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>` : ''}
-                ${o.status === 'Đã huỷ' ? `<button class="btn btn-sm btn-danger" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
-              </div>
+            <div class="row-actions" style="display:flex;gap:4px;justify-content:center;align-items:center">
+              <button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button>
+              ${o.status === 'Chờ xác nhận' ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>` : ''}
+              ${o.status === 'Đã xác nhận' ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>` : ''}
+              ${o.status === 'Chờ xác nhận' ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>` : ''}
+              ${o.status === 'Đã huỷ' ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
             </div>
           </td>
         </tr>`).join('')}
@@ -897,9 +896,121 @@ function viewOrderDetail(id) {
           <button class="btn btn-success" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã xác nhận');closeModal('orderDetailModal')"><i class="fa-solid fa-circle-check"></i> Xác nhận đơn</button>
           <button class="btn btn-danger" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã huỷ');closeModal('orderDetailModal')">✕ Huỷ đơn</button>
         </div>` : ''}
+      ${o.status === 'Đã xác nhận' ? `
+        <div style="display:flex;gap:10px;justify-content:center;padding-top:4px">
+          <button class="btn" style="background:#f97316;color:#fff;padding:10px 28px;justify-content:center" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i> In hóa đơn</button>
+        </div>` : ''}
     </div>
   `;
   document.getElementById('orderDetailModal').classList.add('open');
+}
+
+// ==============================
+// IN HÓA ĐƠN BÁN HÀNG (A5)
+// ==============================
+async function printOrderInvoice(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+
+  // Lấy thông tin cửa hàng từ settings
+  let shopName = 'CỬA HÀNG HỮU TẢNH';
+  let shopPhone = '';
+  let shopAddress = '';
+  try {
+    const res = await fetch('/api/settings');
+    const s = await res.json();
+    if (s.phone)   shopPhone   = s.phone;
+    if (s.address) shopAddress = s.address;
+  } catch (_) {}
+
+  // Định dạng ngày in hóa đơn
+  const now = new Date();
+  const printDate = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
+  const printTime = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+  const itemRows = o.items.map((item, idx) => `
+    <tr>
+      <td style="text-align:center">${idx + 1}</td>
+      <td>${item.ten || ''}</td>
+      <td style="text-align:center">${item.qty}</td>
+      <td style="text-align:center">${item.donvi || ''}</td>
+      <td style="text-align:right">${(item.gia || 0).toLocaleString('vi-VN')}</td>
+      <td style="text-align:right;font-weight:700">${((item.gia || 0) * item.qty).toLocaleString('vi-VN')}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Hóa đơn ${o.id}</title>
+  <style>
+    @page { size: A5; margin: 12mm 14mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; font-size: 11px; color: #111; }
+    .header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #111; padding-bottom: 8px; }
+    .header h1 { font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+    .header p { font-size: 10px; color: #444; margin-top: 2px; }
+    .title { text-align: center; margin: 8px 0 6px; }
+    .title h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+    .title p { font-size: 9px; color: #666; }
+    .info { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 10px; margin-bottom: 8px; padding: 6px 0; border-bottom: 1px dashed #999; }
+    .info span { color: #555; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 10px; }
+    thead tr { background: #111; color: #fff; }
+    thead th { padding: 5px 4px; text-align: center; font-size: 9.5px; }
+    tbody tr:nth-child(even) { background: #f5f5f5; }
+    tbody td { padding: 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    tfoot td { padding: 5px 4px; font-size: 11px; }
+    .total-row { font-weight: 800; font-size: 12px; border-top: 2px solid #111; }
+    .footer { text-align: center; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #999; font-size: 9.5px; color: #555; }
+    .footer strong { color: #111; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${shopName}</h1>
+    ${shopPhone ? `<p>☎ ${shopPhone}${shopAddress ? ' &nbsp;|&nbsp; 📍 ' + shopAddress : ''}</p>` : ''}
+  </div>
+  <div class="title">
+    <h2>Hóa đơn bán hàng</h2>
+    <p>Ngày in: ${printDate} ${printTime}</p>
+  </div>
+  <div class="info">
+    <div><span>Mã đơn:</span> <strong>${o.id}</strong></div>
+    <div><span>Ngày đặt:</span> <strong>${o.createdAt || ''}</strong></div>
+    <div><span>Khách hàng:</span> <strong>${o.customer || 'Khách lẻ'}</strong></div>
+    <div><span>SĐT:</span> <strong>${o.phone || '—'}</strong></div>
+    ${o.address ? `<div style="grid-column:1/-1"><span>Địa chỉ:</span> ${o.address}</div>` : ''}
+    ${o.note ? `<div style="grid-column:1/-1"><span>Ghi chú:</span> ${o.note}</div>` : ''}
+  </div>
+  <table>
+    <thead><tr>
+      <th style="width:24px">#</th>
+      <th style="text-align:left">Tên sản phẩm</th>
+      <th style="width:32px">SL</th>
+      <th style="width:36px">ĐVT</th>
+      <th style="width:64px">Đơn giá</th>
+      <th style="width:72px">Thành tiền</th>
+    </tr></thead>
+    <tbody>${itemRows}</tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="5" style="text-align:right;padding-right:8px">TỔNG CỘNG:</td>
+        <td style="text-align:right;color:#d00">${(o.total || 0).toLocaleString('vi-VN')}₫</td>
+      </tr>
+    </tfoot>
+  </table>
+  <div class="footer">
+    <p>Cảm ơn quý khách đã mua hàng! 🙏</p>
+    <p style="margin-top:3px">Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong>.</p>
+  </div>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+</body></html>`;
+
+  const win = window.open('', '_blank', 'width=600,height=850');
+  win.document.write(html);
+  win.document.close();
 }
 
 // ==============================
