@@ -894,6 +894,23 @@ function viewOrderDetail(id) {
               <td style="font-weight:700;color:var(--primary);white-space:nowrap">${formatPrice(item.gia * item.qty)}</td>
             </tr>`).join('')}
           </tbody>
+          <tfoot><tr><td colspan="5" style="text-align:right;font-weight:700;padding:10px 14px;border-top:2px solid var(--border)">Tổng cộng:</td><td style="font-weight:800;font-size:1.1rem;color:var(--primary);padding:10px 14px;border-top:2px solid var(--border);white-space:nowrap">${formatPrice(o.total)}</td></tr></tfoot>
+        </table>
+      </div>
+      ${o.status === 'Chờ xác nhận' ? `
+        <div style="display:flex;gap:10px;justify-content:center;padding-top:4px">
+          <button class="btn btn-success" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã xác nhận');closeModal('orderDetailModal')"><i class="fa-solid fa-circle-check"></i> Xác nhận đơn</button>
+          <button class="btn btn-danger" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã huỷ');closeModal('orderDetailModal')">✕ Huỷ đơn</button>
+        </div>` : ''}
+      ${o.status === 'Đã xác nhận' ? `
+        <div style="display:flex;gap:10px;justify-content:center;padding-top:4px">
+          <button class="btn" style="background:#f97316;color:#fff;padding:10px 28px;justify-content:center" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i> In hóa đơn</button>
+        </div>` : ''}
+    </div>
+  `;
+  document.getElementById('orderDetailModal').classList.add('open');
+}
+
 // ==============================
 // IN HÓA ĐƠN BÁN HÀNG (A5)
 // ==============================
