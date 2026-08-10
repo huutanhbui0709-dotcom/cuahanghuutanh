@@ -643,12 +643,12 @@ function parseOrderDateTime(str) {
   // Khớp định dạng: "14:46:11 8/8/2026" hoặc "14:46 29/7/2026"
   const m = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (m) {
-    const h   = parseInt(m[1], 10);
+    const h = parseInt(m[1], 10);
     const min = parseInt(m[2], 10);
     const sec = m[3] ? parseInt(m[3], 10) : 0;
-    const d   = parseInt(m[4], 10);
-    const mo  = parseInt(m[5], 10) - 1;
-    const y   = parseInt(m[6], 10);
+    const d = parseInt(m[4], 10);
+    const mo = parseInt(m[5], 10) - 1;
+    const y = parseInt(m[6], 10);
     return new Date(y, mo, d, h, min, sec);
   }
   // Fallback: thử ISO hoặc định dạng khác
@@ -662,12 +662,12 @@ function formatOrderDate(str) {
   if (!str) return '—';
   const m = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (m) {
-    const time = `${m[1].padStart(2,'0')}:${m[2]}`;
-    const date = `${m[4].padStart(2,'0')}/${m[5].padStart(2,'0')}/${m[6]}`;
+    const time = `${m[1].padStart(2, '0')}:${m[2]}`;
+    const date = `${m[4].padStart(2, '0')}/${m[5].padStart(2, '0')}/${m[6]}`;
     return `<div style="text-align:center;line-height:1.5">`
-         + `<span style="font-weight:700;color:var(--text);display:block">${date}</span>`
-         + `<span style="font-size:.72rem;color:var(--muted);display:block">${time}</span>`
-         + `</div>`;
+      + `<span style="font-weight:700;color:var(--text);display:block">${date}</span>`
+      + `<span style="font-size:.72rem;color:var(--muted);display:block">${time}</span>`
+      + `</div>`;
   }
   return str;
 }
@@ -777,15 +777,15 @@ function renderOrdersTable() {
             <div style="display:grid;grid-template-columns:30px 30px 30px;gap:3px;justify-content:center;align-items:center">
               <div><button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button></div>
               <div>${o.status === 'Chờ xác nhận'
-                ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
-                : o.status === 'Đã xác nhận'
-                  ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
-                  : '<span></span>'}</div>
+      ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
+      : o.status === 'Đã xác nhận'
+        ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
+        : '<span></span>'}</div>
               <div>${o.status === 'Chờ xác nhận'
-                ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
-                : o.status === 'Đã huỷ'
-                  ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
-                  : '<span></span>'}</div>
+      ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
+      : o.status === 'Đã huỷ'
+        ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
+        : '<span></span>'}</div>
             </div>
           </td>
         </tr>`).join('')}
@@ -919,20 +919,20 @@ async function printOrderInvoice(id) {
   if (!o) return;
 
   // Lấy thông tin cửa hàng từ settings
-  let shopName = 'CỬA HÀNG HỮU TẢNH';
+  let shopName = 'CỬA HÀNG HỮU TÁNH';
   let shopPhone = '';
   let shopAddress = '';
   try {
     const res = await fetch('/api/settings');
     const s = await res.json();
-    if (s.phone)   shopPhone   = s.phone;
+    if (s.phone) shopPhone = s.phone;
     if (s.address) shopAddress = s.address;
-  } catch (_) {}
+  } catch (_) { }
 
   // Định dạng ngày in hóa đơn
   const now = new Date();
-  const printDate = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
-  const printTime = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  const printDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+  const printTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
   const itemRows = o.items.map((item, idx) => `
     <tr>
@@ -948,12 +948,16 @@ async function printOrderInvoice(id) {
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Hóa đơn ${o.id}</title>
+  <title></title>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    @page { size: A5 portrait; margin: 12mm 14mm; }
+    @page { size: A5 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Be Vietnam Pro', Arial, sans-serif; font-size: 10.5px; color: #000; background: #fff; line-height: 1.6; }
+    body {
+      font-family: 'Be Vietnam Pro', Arial, sans-serif;
+      font-size: 10.5px; color: #000; background: #fff; line-height: 1.6;
+      padding: 12mm 14mm;
+    }
 
     /* HEADER */
     .header { text-align: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid #000; }
@@ -968,7 +972,6 @@ async function printOrderInvoice(id) {
     /* INFO */
     .info-box { border: 1px solid #999; padding: 7px 10px; margin: 8px 0; font-size: 9.5px; }
     .info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; }
-    .info-row.full { grid-template-columns: 1fr; }
     .lbl { color: #555; font-size: 8.5px; }
     .val { font-weight: 600; }
 
@@ -996,37 +999,37 @@ async function printOrderInvoice(id) {
   <div class="header">
     <h1>${shopName}</h1>
     <div class="sub">
-      ${shopPhone ? `Tel: ${shopPhone}` : ''}
+      ${shopPhone ? `ĐT: ${shopPhone}` : ''}
       ${shopPhone && shopAddress ? ' &nbsp;|&nbsp; ' : ''}
-      ${shopAddress ? `Dia chi: ${shopAddress}` : ''}
+      ${shopAddress ? `Địa chỉ: ${shopAddress}` : ''}
     </div>
   </div>
 
   <div class="inv-title">
-    <h2>Hoa don ban hang</h2>
-    <div class="meta">Ngay in: ${printDate} luc ${printTime}</div>
+    <h2>Hóa đơn bán hàng</h2>
+    <div class="meta">Ngày in: ${printDate} lúc ${printTime}</div>
   </div>
 
   <div class="info-box">
     <div class="info-row">
-      <div><div class="lbl">Ma don hang</div><div class="val">${o.id}</div></div>
-      <div><div class="lbl">Ngay dat</div><div class="val">${o.createdAt || '—'}</div></div>
-      <div><div class="lbl">Khach hang</div><div class="val">${o.customer || 'Khach le'}</div></div>
-      <div><div class="lbl">So dien thoai</div><div class="val">${o.phone || '—'}</div></div>
+      <div><div class="lbl">Mã đơn hàng</div><div class="val">${o.id}</div></div>
+      <div><div class="lbl">Ngày đặt</div><div class="val">${o.createdAt || '—'}</div></div>
+      <div><div class="lbl">Khách hàng</div><div class="val">${o.customer || 'Khách lẻ'}</div></div>
+      <div><div class="lbl">Số điện thoại</div><div class="val">${o.phone || '—'}</div></div>
     </div>
-    ${o.address ? `<div style="margin-top:4px"><div class="lbl">Dia chi giao hang</div><div class="val">${o.address}</div></div>` : ''}
-    ${o.note    ? `<div style="margin-top:4px"><div class="lbl">Ghi chu</div><div class="val">${o.note}</div></div>`    : ''}
+    ${o.address ? `<div style="margin-top:4px"><div class="lbl">Địa chỉ giao hàng</div><div class="val">${o.address}</div></div>` : ''}
+    ${o.note ? `<div style="margin-top:4px"><div class="lbl">Ghi chú</div><div class="val">${o.note}</div></div>` : ''}
   </div>
 
   <table>
     <thead>
       <tr>
         <th style="width:22px;text-align:center">#</th>
-        <th style="text-align:left">Ten san pham</th>
+        <th style="text-align:left">Tên sản phẩm</th>
         <th style="width:28px;text-align:center">SL</th>
-        <th style="width:34px;text-align:center">DVT</th>
-        <th style="width:70px;text-align:right">Don gia</th>
-        <th style="width:78px;text-align:right">Thanh tien</th>
+        <th style="width:34px;text-align:center">ĐVT</th>
+        <th style="width:70px;text-align:right">Đơn giá</th>
+        <th style="width:78px;text-align:right">Thành tiền</th>
       </tr>
     </thead>
     <tbody>${itemRows}</tbody>
@@ -1523,7 +1526,7 @@ function filterAndSetInvoiceFiles(filesList) {
     const file = filesList[i];
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.name);
-    
+
     if (isPDF || isImage) {
       if (file.size <= 5 * 1024 * 1024) {
         // Prevent duplicate files based on name and size
@@ -1552,12 +1555,12 @@ function filterAndSetInvoiceFiles(filesList) {
 }
 
 // Paste event listener for clipboard image/pdf import in invoice tab
-document.addEventListener('paste', function(e) {
+document.addEventListener('paste', function (e) {
   const invoiceTab = document.getElementById('tools-tab-invoice');
   if (!invoiceTab || invoiceTab.style.display === 'none') {
     return;
   }
-  
+
   if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
     e.preventDefault();
     filterAndSetInvoiceFiles(e.clipboardData.files);
@@ -2041,12 +2044,12 @@ async function exportSingleInvoiceExcel(index) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    
+
     // Tương đồng định dạng 'Số chứng từ' trên server (Số HĐ bỏ 0 + Serial)
     const invoiceNumStripped = inv.invoiceNumber ? String(inv.invoiceNumber).replace(/^0+/, '') : '';
     const serialStr = inv.serial || '';
     const documentNumber = invoiceNumStripped ? (invoiceNumStripped + serialStr) : (serialStr || 'Invoice');
-    
+
     a.download = `Phieu_Nhap_Kho_${documentNumber}.xlsx`;
     document.body.appendChild(a);
     a.click();
@@ -2075,7 +2078,7 @@ function exportNoImageProductsExcel() {
     showToast('<i class="fa-solid fa-check"></i> Tất cả sản phẩm đều đã có ảnh!', 'success');
     return;
   }
-  
+
   const wsData = noImageList.map((p, index) => ({
     'STT': index + 1,
     'Mã SP': p.ma,
