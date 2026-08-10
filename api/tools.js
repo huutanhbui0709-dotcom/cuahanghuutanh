@@ -1,13 +1,3 @@
-// =====================================================================
-// API TOOLS — Serverless function riêng cho các route ít dùng / heavy
-// Bao gồm: parse-invoice (Gemini), export Excel (ExcelJS), import Excel (xlsx),
-//          import suppliers (xlsx), download-images-zip (archiver)
-//
-// Lý do tách riêng: Các thư viện này (@google/generative-ai, exceljs, xlsx,
-// archiver) rất nặng → tách ra để KHÔNG nằm trong module graph của hot-path
-// function (api/index.js), giảm cold start time cho các request thường xuyên.
-// =====================================================================
-
 'use strict';
 require('dotenv').config();
 
@@ -108,12 +98,12 @@ async function loadSharedState() {
     // Khi dùng fullResults: true, neon trả về { rows: [...], rowCount, fields }
     // thay vì mảng trực tiếp → phải lấy .rows
     const prodRows = prodResult.rows ?? prodResult;
-    const supRows  = supResult.rows  ?? supResult;
-    const setRows  = setResult.rows  ?? setResult;
+    const supRows = supResult.rows ?? supResult;
+    const setRows = setResult.rows ?? setResult;
 
-    if (prodRows.length > 0) products  = JSON.parse(prodRows[0].value);
-    if (supRows.length  > 0) suppliers = JSON.parse(supRows[0].value);
-    if (setRows.length  > 0) settings  = JSON.parse(setRows[0].value);
+    if (prodRows.length > 0) products = JSON.parse(prodRows[0].value);
+    if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
+    if (setRows.length > 0) settings = JSON.parse(setRows[0].value);
 
     console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp`);
   } catch (err) {

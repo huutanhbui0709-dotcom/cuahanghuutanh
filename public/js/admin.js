@@ -774,7 +774,7 @@ function renderOrdersTable() {
           <td style="white-space:nowrap;font-size:.82rem">${formatOrderDate(o.createdAt)}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td style="white-space:nowrap">
-            <div style="display:grid;grid-template-columns:30px 30px 30px;gap:3px;justify-content:center;align-items:center">
+            <div style="display:grid;grid-template-columns:34px 34px 34px;gap:8px;justify-content:center;align-items:center">
               <div><button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button></div>
               <div>${o.status === 'Chờ xác nhận'
       ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
