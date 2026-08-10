@@ -875,7 +875,16 @@ function viewOrderDetail(id) {
       <div class="admin-card" style="border:none;background:var(--bg);padding:16px;border-radius:10px;margin:0">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.875rem">
           <div><strong>Mã đơn:</strong> ${o.id}</div>
-          <div><strong>Ngày đặt:</strong> ${o.createdAt || '—'}</div>
+          <div><strong>Ngày đặt:</strong> ${(() => {
+            if (!o.createdAt) return '—';
+            const m = o.createdAt.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (m) {
+              const time = `${m[1].padStart(2, '0')}:${m[2]}`;
+              const date = `${m[3].padStart(2, '0')}/${m[4].padStart(2, '0')}/${m[5]}`;
+              return `${date} | ${time}`;
+            }
+            return o.createdAt;
+          })()}</div>
           <div><strong>Khách hàng:</strong> ${o.customer}</div>
           <div><strong>SĐT:</strong> ${o.phone}</div>
           <div style="grid-column:1/-1"><strong>Địa chỉ:</strong> ${o.address}</div>
