@@ -875,7 +875,7 @@ function viewOrderDetail(id) {
       <div class="admin-card" style="border:none;background:var(--bg);padding:16px;border-radius:10px;margin:0">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.875rem">
           <div><strong>Mã đơn:</strong> ${o.id}</div>
-          <div><strong>Ngày đặt:</strong> ${formatOrderDate(o.createdAt)}</div>
+          <div><strong>Ngày đặt:</strong> ${o.createdAt || '—'}</div>
           <div><strong>Khách hàng:</strong> ${o.customer}</div>
           <div><strong>SĐT:</strong> ${o.phone}</div>
           <div style="grid-column:1/-1"><strong>Địa chỉ:</strong> ${o.address}</div>
@@ -1055,7 +1055,7 @@ async function printOrderInvoice(id) {
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
 </body></html>`;
 
-  const win = window.open('', '_blank', 'width=600,height=850');
+  const win = window.open('', '_blank', 'width=800,height=1000');
   win.document.write(html);
   win.document.close();
 }
