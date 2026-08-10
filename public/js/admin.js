@@ -774,18 +774,20 @@ function renderOrdersTable() {
           <td style="white-space:nowrap;font-size:.82rem">${formatOrderDate(o.createdAt)}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td style="white-space:nowrap">
-            <div style="display:grid;grid-template-columns:34px 34px 34px;gap:8px;justify-content:center;align-items:center">
-              <div><button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button></div>
-              <div>${o.status === 'Chờ xác nhận'
-      ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
-      : o.status === 'Đã xác nhận'
-        ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
-        : '<span></span>'}</div>
-              <div>${o.status === 'Chờ xác nhận'
-      ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
-      : o.status === 'Đã huỷ'
-        ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
-        : '<span></span>'}</div>
+            <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+              <button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button>
+              ${o.status === 'Chờ xác nhận'
+                ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
+                : o.status === 'Đã xác nhận'
+                  ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
+                  : ''
+              }
+              ${o.status === 'Chờ xác nhận'
+                ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
+                : o.status === 'Đã huỷ'
+                  ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
+                  : ''
+              }
             </div>
           </td>
         </tr>`).join('')}
