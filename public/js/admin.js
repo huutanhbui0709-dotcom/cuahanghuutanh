@@ -949,12 +949,11 @@ async function printOrderInvoice(id) {
 <head>
   <meta charset="UTF-8">
   <title></title>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     @page { size: A5 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Be Vietnam Pro', Arial, sans-serif;
+      font-family: 'Segoe UI', Arial, 'Helvetica Neue', sans-serif;
       font-size: 10.5px; color: #000; background: #fff; line-height: 1.6;
       padding: 12mm 14mm;
     }
@@ -1035,20 +1034,20 @@ async function printOrderInvoice(id) {
     <tbody>${itemRows}</tbody>
     <tfoot>
       <tr class="total-row">
-        <td colspan="5" style="text-align:right;padding-right:8px">TONG CONG:</td>
-        <td style="text-align:right">${(o.total || 0).toLocaleString('vi-VN')} d</td>
+        <td colspan="5" style="text-align:right;padding-right:8px">TỔNG CỘNG:</td>
+        <td style="text-align:right">${(o.total || 0).toLocaleString('vi-VN')} ₫</td>
       </tr>
     </tfoot>
   </table>
 
   <div class="sig">
-    <div class="sig-box"><strong>Nguoi mua hang</strong>(Ky, ghi ro ho ten)</div>
-    <div class="sig-box"><strong>Nguoi ban hang</strong>(Ky, ghi ro ho ten)</div>
+    <div class="sig-box"><strong>Người mua hàng</strong>(Ký, ghi rõ họ tên)</div>
+    <div class="sig-box"><strong>Người bán hàng</strong>(Ký, ghi rõ họ tên)</div>
   </div>
 
   <div class="footer">
-    <p>Cam on quy khach da tin tuong va mua hang!</p>
-    <p>Vui long giu hoa don de doi/tra hang trong vong <strong>7 ngay</strong> ke tu ngay mua.</p>
+    <p>Cảm ơn quý khách đã tin tưởng và mua hàng!</p>
+    <p>Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong> kể từ ngày mua.</p>
   </div>
 
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
