@@ -354,41 +354,17 @@ async function initializeData() {
       // Môi trường Vercel: tất cả data từ Vercel DB, không dùng filesystem
       // ================================================================
       
+      // Luôn đồng bộ schema khi khởi động (idempotent, an toàn)
+      await initDbSchema();
+
       // Chạy song song các truy vấn tải dữ liệu chính để giảm thiểu roundtrip latency
-      let results = await Promise.allSettled([
+      const results = await Promise.allSettled([
         sql`SELECT value FROM app_settings WHERE key = 'products'`,
         sql`SELECT value FROM app_settings WHERE key = 'settings'`,
         sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
         sql`SELECT * FROM orders ORDER BY created_at DESC`,
-        sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`,
-        sql`SELECT 1 FROM stock_receipts LIMIT 1` // Kiểm tra sự tồn tại của bảng stock_receipts để tự động migration
+        sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
       ]);
-
-      // Kiểm tra xem có lỗi "relation does not exist" không (xảy ra khi deploy DB trống lần đầu)
-      let hasRelationError = false;
-      for (const r of results) {
-        if (r.status === 'rejected') {
-          const errMsg = String(r.reason?.message || r.reason);
-          if (errMsg.includes('relation') && errMsg.includes('does not exist')) {
-            hasRelationError = true;
-            break;
-          }
-        }
-      }
-
-      if (hasRelationError) {
-        console.log('⚠️ Phát hiện bảng chưa tồn tại. Tiến hành chạy initDbSchema đồng bộ...');
-        await initDbSchema();
-        // Thử tải lại song song sau khi đã khởi tạo schema
-        results = await Promise.allSettled([
-          sql`SELECT value FROM app_settings WHERE key = 'products'`,
-          sql`SELECT value FROM app_settings WHERE key = 'settings'`,
-          sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
-          sql`SELECT * FROM orders ORDER BY created_at DESC`,
-          sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`,
-          sql`SELECT 1 FROM stock_receipts LIMIT 1`
-        ]);
-      }
 
       const [prodRes, setRes, supRes, orderRes, visitorRes] = results;
 
