@@ -89,25 +89,41 @@ let isInitialized = false;
 let initPromise = null;
 
 async function loadSharedState() {
+  const prodPath = path.join(__dirname, '..', 'data', 'products.json');
+  const supPath = path.join(__dirname, '..', 'data', 'suppliers.json');
+  const setPath = path.join(__dirname, '..', 'data', 'settings.json');
+
+  if (sql && typeof sql === 'function') {
+    try {
+      const [prodResult, supResult, setResult] = await Promise.all([
+        sql`SELECT value FROM app_settings WHERE key = 'products'`,
+        sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
+        sql`SELECT value FROM app_settings WHERE key = 'settings'`,
+      ]);
+      const prodRows = prodResult.rows ?? prodResult;
+      const supRows = supResult.rows ?? supResult;
+      const setRows = setResult.rows ?? setResult;
+
+      if (prodRows.length > 0) products = JSON.parse(prodRows[0].value);
+      if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
+      if (setRows.length > 0) settings = JSON.parse(setRows[0].value);
+
+      console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp từ Vercel DB.`);
+      isInitialized = true;
+      return;
+    } catch (err) {
+      console.error('[tools] Lỗi load shared state từ DB:', err.message);
+    }
+  }
+
+  // Fallback to local files
   try {
-    const [prodResult, supResult, setResult] = await Promise.all([
-      sql`SELECT value FROM app_settings WHERE key = 'products'`,
-      sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
-      sql`SELECT value FROM app_settings WHERE key = 'settings'`,
-    ]);
-    // Khi dùng fullResults: true, neon trả về { rows: [...], rowCount, fields }
-    // thay vì mảng trực tiếp → phải lấy .rows
-    const prodRows = prodResult.rows ?? prodResult;
-    const supRows = supResult.rows ?? supResult;
-    const setRows = setResult.rows ?? setResult;
-
-    if (prodRows.length > 0) products = JSON.parse(prodRows[0].value);
-    if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
-    if (setRows.length > 0) settings = JSON.parse(setRows[0].value);
-
-    console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp`);
+    if (fs.existsSync(prodPath)) products = JSON.parse(fs.readFileSync(prodPath, 'utf8'));
+    if (fs.existsSync(supPath)) suppliers = JSON.parse(fs.readFileSync(supPath, 'utf8'));
+    if (fs.existsSync(setPath)) settings = JSON.parse(fs.readFileSync(setPath, 'utf8'));
+    console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp từ File cục bộ.`);
   } catch (err) {
-    console.error('[tools] Lỗi load shared state từ DB:', err.message);
+    console.error('[tools] Lỗi load shared state từ File cục bộ:', err.message);
   }
   isInitialized = true;
 }

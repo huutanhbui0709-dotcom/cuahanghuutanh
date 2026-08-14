@@ -315,9 +315,16 @@ async function initDbSchema() {
         note TEXT,
         warehouse_name TEXT,
         total_amount NUMERIC DEFAULT 0,
+        invoice_number VARCHAR(100),
+        serial_number VARCHAR(100),
+        tax_code VARCHAR(100),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `;
+    // Thêm cột mới nếu bảng đã tồn tại (idempotent migration)
+    await sql`ALTER TABLE stock_receipts ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)`;
+    await sql`ALTER TABLE stock_receipts ADD COLUMN IF NOT EXISTS serial_number VARCHAR(100)`;
+    await sql`ALTER TABLE stock_receipts ADD COLUMN IF NOT EXISTS tax_code VARCHAR(100)`;
     // Bảng chi tiết phiếu nhập kho
     await sql`
       CREATE TABLE IF NOT EXISTS stock_receipt_items (
@@ -631,6 +638,10 @@ app.use(async (req, res, next) => {
 
 app.use(express.json({ limit: '2mb' }));
 
+// Mount tools sub-app for local development
+const toolsApp = require('./api/tools');
+app.use(toolsApp);
+
 // Hàm trích xuất IP sạch từ request (xử lý trường hợp Azure proxy gửi IP:PORT)
 function extractCleanIp(req) {
   // Ưu tiên x-forwarded-for (IP thật của client qua reverse proxy)
@@ -892,6 +903,128 @@ app.get('/api/orders/:id', async (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
+  const cookies = parseCookies(req);
+  const token = cookies.admin_token;
+  const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+  const isAdmin = (token === expectedToken);
+
+  if (isAdmin) {
+    // --- ADMIN MANUAL ORDER CREATION ---
+    try {
+      const { customer, phone, address, note, items, shippingFee, status } = req.body || {};
+      const cName = String(customer || '').trim();
+      const cPhone = String(phone || '').trim();
+      const cAddress = String(address || '').trim();
+      const cNote = String(note || '').trim();
+      const sFee = parseFloat(shippingFee || 0);
+      const orderStatus = String(status || 'Đã xác nhận').trim();
+
+      if (!cName) {
+        return res.status(400).json({ ok: false, message: 'Tên khách hàng không được để trống.' });
+      }
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ ok: false, message: 'Đơn hàng phải có ít nhất 1 sản phẩm.' });
+      }
+
+      const orderItems = [];
+      for (const raw of items) {
+        const productId = String(raw.productId || raw.ma || '').trim();
+        const sku = String(raw.sku || raw.ma || '').trim();
+        const name = String(raw.name || raw.ten || '').trim();
+        const quantity = parseFloat(raw.quantity !== undefined ? raw.quantity : (raw.qty !== undefined ? raw.qty : 0));
+        const unitPrice = parseFloat(raw.unitPrice !== undefined ? raw.unitPrice : (raw.gia !== undefined ? raw.gia : 0));
+        const itemNote = String(raw.note || '').trim();
+        const donvi = String(raw.donvi || '').trim();
+
+        if (!productId || quantity <= 0) continue;
+
+        orderItems.push({
+          productId,
+          sku,
+          name,
+          quantity,
+          unitPrice,
+          note: itemNote,
+          
+          // Backward compatibility fields
+          ma: productId,
+          ten: name,
+          qty: quantity,
+          gia: unitPrice,
+          donvi
+        });
+      }
+
+      if (orderItems.length === 0) {
+        return res.status(400).json({ ok: false, message: 'Danh sách sản phẩm không hợp lệ.' });
+      }
+
+      const itemsTotal = orderItems.reduce((sum, x) => sum + x.unitPrice * x.quantity, 0);
+      const grandTotal = itemsTotal + sFee;
+
+      const order = {
+        id: 'DH' + Date.now().toString().slice(-8),
+        createdAt: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        customer: cName,
+        phone: cPhone,
+        address: cAddress,
+        note: cNote,
+        items: orderItems,
+        shippingFee: sFee,
+        total: grandTotal,
+        status: orderStatus,
+        deviceId: 'admin',
+        visitorId: 'admin'
+      };
+
+      orders.unshift(order);
+
+      // Lưu đơn hàng
+      if (IS_VERCEL) {
+        await sql`
+          INSERT INTO orders (id, created_at, customer, phone, address, note, items, total, status, device_id, visitor_id)
+          VALUES (${order.id}, ${order.createdAt}, ${order.customer}, ${order.phone}, ${order.address}, ${order.note}, ${JSON.stringify(order.items)}, ${order.total}, ${order.status}, 'admin', 'admin')
+        `;
+      } else {
+        await saveOrders(orders);
+      }
+
+      // Giảm trừ số lượng tồn kho của các sản phẩm tương ứng
+      let productsList = [...products];
+      if (IS_VERCEL) {
+        try {
+          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+          if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+        } catch (e) { /* bỏ qua */ }
+      }
+
+      let updatedCount = 0;
+      for (const item of orderItems) {
+        const targetNorm = normalizeProductCode(item.ma);
+        if (!targetNorm) continue;
+        const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+        if (prod) {
+          prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
+          prod.updatedAt = Date.now();
+          updatedCount++;
+        }
+      }
+
+      if (updatedCount > 0) {
+        products = productsList;
+        await saveProducts(productsList);
+        await broadcastUpdate('products_updated');
+      }
+
+      await broadcastUpdate('orders_updated');
+      return res.json({ ok: true, message: 'Đã tạo và lưu đơn hàng thủ công thành công!', orderId: order.id });
+
+    } catch (err) {
+      console.error('Lỗi khi Admin tạo đơn hàng thủ công:', err);
+      return res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi tạo đơn: ' + err.message });
+    }
+  }
+
   // ─── CHỐNG SPAM ─────────────────────────────────────────────────────────────
   // Cảnh báo khi đặt đơn trong 2 phút qua.
   // Khoá 24 giờ khi đặt >= 5 đơn trong 5 phút.
@@ -1876,8 +2009,8 @@ app.post('/api/admin/inventory/save-receipt', requireAdmin, async (req, res) => 
         `;
       }
     } else {
-      // Local mode
-      receiptId = stockReceipts.length + 1;
+      // Local mode — use max existing ID to avoid duplicates when IDs are non-contiguous
+      receiptId = stockReceipts.length > 0 ? Math.max(...stockReceipts.map(r => r.id || 0)) + 1 : 1;
       const localReceipt = {
         id: receiptId,
         receipt_code: receipt.receipt_code,
@@ -1954,12 +2087,339 @@ app.post('/api/admin/inventory/save-receipt', requireAdmin, async (req, res) => 
   }
 });
 
+// =====================================================================
+// API: LƯU HÓA ĐƠN AI VÀO NHẬP KHO
+// POST /api/admin/inventory/save-from-invoice
+// Body: { invoiceData: { sellerName, serial, invoiceNumber, taxCode,
+//          invoiceDate, products: [{name, unit, quantity, price, amount, taxPercent}] } }
+// =====================================================================
+// Helper functions for invoice mapping and matching
+function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+  if (s1 === s2) return 1.0;
+  const track = Array(s2.length + 1).fill(null).map(() => Array(s1.length + 1).fill(null));
+  for (let i = 0; i <= s1.length; i += 1) track[0][i] = i;
+  for (let j = 0; j <= s2.length; j += 1) track[j][0] = j;
+  for (let j = 1; j <= s2.length; j += 1) {
+    for (let i = 1; i <= s1.length; i += 1) {
+      const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1,
+        track[j - 1][i] + 1,
+        track[j - 1][i - 1] + indicator
+      );
+    }
+  }
+  const distance = track[s2.length][s1.length];
+  const maxLength = Math.max(s1.length, s2.length);
+  if (maxLength === 0) return 1.0;
+  return (maxLength - distance) / maxLength;
+}
+
+function compactName(str) {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/[\s\-×x\/\.]/g, '')
+    .trim();
+}
+
+function parseCleanNumber(val) {
+  if (val === undefined || val === null) return 0;
+  if (typeof val === 'number') return val;
+  let str = String(val).replace(/[^0-9.,-]/g, '').trim();
+  const lastDot = str.lastIndexOf('.');
+  const lastComma = str.lastIndexOf(',');
+  if (lastComma > lastDot) {
+    str = str.replace(/\./g, '').replace(/,/g, '.');
+  } else if (lastDot > lastComma) {
+    str = str.replace(/,/g, '');
+  } else {
+    str = str.replace(/[.,]/g, '');
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
+
+app.post('/api/admin/inventory/save-from-invoice', requireAdmin, async (req, res) => {
+  const { invoiceData } = req.body || {};
+  if (!invoiceData) {
+    return res.status(400).json({ ok: false, message: 'Thiếu dữ liệu hóa đơn.' });
+  }
+
+  try {
+    const invoiceNum = String(invoiceData.invoiceNumber || '').trim();
+    const serial = String(invoiceData.serial || '').trim();
+    const taxCode = String(invoiceData.taxCode || '').trim();
+
+    if (!invoiceNum && !serial) {
+      return res.status(400).json({ ok: false, message: 'Hóa đơn thiếu Số hóa đơn hoặc Ký hiệu (Serial).' });
+    }
+
+    // --- Tạo mã chứng từ từ số HĐ + serial (giống exportSingleInvoiceExcel) ---
+    const invoiceNumStripped = invoiceNum.replace(/^0+/, '');
+    const receipt_code = (invoiceNumStripped + serial) || ('HDAI-' + Date.now());
+
+    // --- Kiểm tra trùng bằng: invoice_number + serial + taxCode ---
+    const dupKey = `${invoiceNum}|${serial}|${taxCode}`.toLowerCase();
+
+    if (IS_VERCEL) {
+      // Kiểm tra trùng theo invoice_number + serial + taxCode
+      const dupCheck = await sql`
+        SELECT id FROM stock_receipts
+        WHERE LOWER(invoice_number) = LOWER(${invoiceNum})
+          AND LOWER(serial_number) = LOWER(${serial})
+          AND LOWER(tax_code) = LOWER(${taxCode})
+        LIMIT 1
+      `;
+      // Kiểm tra trùng theo receipt_code (bắt phiếu cũ không có invoice_number)
+      const dupByCodeCheck = await sql`
+        SELECT id FROM stock_receipts
+        WHERE LOWER(receipt_code) = LOWER(${receipt_code})
+        LIMIT 1
+      `;
+      if (dupCheck.rows.length > 0 || dupByCodeCheck.rows.length > 0) {
+        return res.status(409).json({
+          ok: false,
+          isDuplicate: true,
+          message: `Hóa đơn này [Số HĐ: ${invoiceNum} / Serial: ${serial}] đã được lưu vào hệ thống trước đó!`
+        });
+      }
+    } else {
+      // Kiểm tra trùng theo invoice_number + serial + taxCode
+      const dup = stockReceipts.find(r => {
+        const rKey = `${r.invoice_number || ''}|${r.serial_number || ''}|${r.tax_code || ''}`.toLowerCase();
+        return rKey === dupKey;
+      });
+      // Kiểm tra trùng theo receipt_code (bắt phiếu cũ không có invoice_number)
+      const dupByCode = stockReceipts.find(r =>
+        String(r.receipt_code || '').trim().toLowerCase() === receipt_code.toLowerCase()
+      );
+      if (dup || dupByCode) {
+        return res.status(409).json({
+          ok: false,
+          isDuplicate: true,
+          message: `Hóa đơn này [Số HĐ: ${invoiceNum} / Serial: ${serial}] đã được lưu vào hệ thống trước đó!`
+        });
+      }
+    }
+
+    // --- Load fresh suppliers for matching ---
+    let suppliersList = [...suppliers];
+    if (IS_VERCEL) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+        if (rows.length > 0) suppliersList = JSON.parse(rows[0].value);
+      } catch (e) { /* ignore */ }
+    }
+
+    const normalizeNameStr = (str) => {
+      if (!str) return '';
+      return str.toLowerCase().replace(/\s+/g, ' ').replace(/[.,-]/g, '').trim();
+    };
+
+    const sellerNameNormalized = normalizeNameStr(invoiceData.sellerName);
+    const foundSupplier = suppliersList.find(s => {
+      const supNorm = normalizeNameStr(s.name);
+      if (!supNorm) return false;
+      const sim = calculateSimilarity(supNorm, sellerNameNormalized);
+      return supNorm === sellerNameNormalized || sim >= 0.8 || supNorm.includes(sellerNameNormalized) || sellerNameNormalized.includes(supNorm);
+    });
+
+    let supplierName = invoiceData.sellerName || '';
+    if (foundSupplier) {
+      supplierName = foundSupplier.name;
+    }
+
+    // --- Load fresh products for matching ---
+    let systemProducts = [...products];
+    if (IS_VERCEL) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+        if (rows.length > 0) systemProducts = JSON.parse(rows[0].value);
+      } catch (e) { /* ignore */ }
+    }
+
+    // --- Chuyển đổi sản phẩm hóa đơn sang items nhập kho (khớp sản phẩm giống Excel) ---
+    const rawProducts = invoiceData.products || [];
+    const items = rawProducts.map(p => {
+      const prodNameLower = (p.name || '').toLowerCase().trim();
+      const prodCodeLower = (p.code || '').toLowerCase().trim();
+      const systemMatch = systemProducts.find(sysP => {
+        const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
+        const sysNameLower = (sysP.ten || '').toLowerCase().trim();
+
+        // 1. Khớp chính xác theo mã SP
+        if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
+        // 2. Mã SP có trong tên sản phẩm hóa đơn
+        if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
+        if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
+
+        // 3. So sánh tên rút gọn
+        const prodCompact = compactName(prodNameLower);
+        const sysCompact = compactName(sysNameLower);
+        if (prodCompact && sysCompact) {
+          if (prodCompact === sysCompact) return true;
+          const minLen = Math.min(prodCompact.length, sysCompact.length);
+          if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
+        }
+
+        // 4. Số chứa trong tên (soft guard)
+        const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
+        const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
+        if (prodNums && sysNums && prodNums !== sysNums) return false;
+
+        // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
+        const sim = calculateSimilarity(prodNameLower, sysNameLower);
+        if (sim >= 0.80) return true;
+
+        // 6. Tên nằm trong nhau
+        if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
+          if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
+        }
+        return false;
+      });
+
+      let pCode = 'SP_MOI';
+      let pName = p.name || '';
+      let pUnit = p.unit || 'Cái';
+      if (systemMatch) {
+        pCode = systemMatch.ma;
+        pName = systemMatch.ten;
+        pUnit = systemMatch.donvi || pUnit;
+      }
+
+      const qty = parseCleanNumber(p.quantity);
+      const price = parseCleanNumber(p.price);
+      const amount = parseCleanNumber(p.amount);
+      const taxRate = p.taxPercent !== undefined ? parseCleanNumber(p.taxPercent) : 0;
+
+      return {
+        product_sku: pCode,
+        product_name: pName,
+        unit: pUnit,
+        quantity: qty,
+        unit_price: price,
+        tax_rate: taxRate,
+        total_price: amount,
+        import_cost: price
+      };
+    });
+
+    const totalAmount = items.reduce((s, i) => {
+      const taxAmt = Math.round((i.total_price || 0) * (i.tax_rate || 0) / 100);
+      return s + (i.total_price || 0) + taxAmt;
+    }, 0);
+
+    // --- Build import_date string ---
+    let importDate = '';
+    if (invoiceData.invoiceDate) {
+      const { date, month, year } = invoiceData.invoiceDate;
+      importDate = `${String(date).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+    }
+
+    const receipt = {
+      receipt_code,
+      import_date: importDate,
+      supplier_name: supplierName,
+      note: `Nhập từ hóa đơn GTGT - Số HĐ: ${invoiceNum} / Serial: ${serial}`,
+      warehouse_name: 'Kho chính',
+      total_amount: totalAmount,
+      invoice_number: invoiceNum,
+      serial_number: serial,
+      tax_code: taxCode
+    };
+
+    let receiptId = 0;
+    const createdAt = new Date().toISOString();
+
+    if (IS_VERCEL) {
+      // Cần đảm bảo bảng stock_receipts có cột invoice_number, serial_number, tax_code
+      const receiptResult = await sql`
+        INSERT INTO stock_receipts
+          (receipt_code, import_date, supplier_name, note, warehouse_name, total_amount,
+           invoice_number, serial_number, tax_code, created_at)
+        VALUES
+          (${receipt.receipt_code}, ${receipt.import_date}, ${receipt.supplier_name},
+           ${receipt.note}, ${receipt.warehouse_name}, ${receipt.total_amount},
+           ${invoiceNum}, ${serial}, ${taxCode}, NOW())
+        RETURNING id
+      `;
+      receiptId = receiptResult.rows[0].id;
+
+      for (const item of items) {
+        await sql`
+          INSERT INTO stock_receipt_items
+            (receipt_id, product_sku, product_name, unit, quantity, unit_price, tax_rate, total_price, import_cost)
+          VALUES
+            (${receiptId}, ${item.product_sku}, ${item.product_name}, ${item.unit},
+             ${item.quantity}, ${item.unit_price}, ${item.tax_rate}, ${item.total_price}, ${item.import_cost})
+        `;
+      }
+    } else {
+      // Local JSON mode — use max existing ID to avoid duplicates when IDs are non-contiguous
+      receiptId = stockReceipts.length > 0 ? Math.max(...stockReceipts.map(r => r.id || 0)) + 1 : 1;
+      const localReceipt = {
+        id: receiptId,
+        ...receipt,
+        created_at: createdAt,
+        items
+      };
+      stockReceipts.push(localReceipt);
+      await saveStockReceipts(stockReceipts);
+    }
+
+    // --- Cập nhật tồn kho sản phẩm (chỉ những mặt hàng khớp SKU) ---
+    let productsList = [...products];
+    if (IS_VERCEL) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+        if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+      } catch (e) { /* bỏ qua */ }
+    }
+
+    let updatedCount = 0;
+    for (const item of items) {
+      if (!item.product_sku) continue; // không có SKU → không đối chiếu
+      const tNorm = normalizeProductCode(item.product_sku);
+      const prod = productsList.find(p => normalizeProductCode(p.ma) === tNorm);
+      if (prod) {
+        const oldStock = parseFloat(prod.stock || 0);
+        const oldCost = parseFloat(prod.cost_price || 0);
+        const qty = parseFloat(item.quantity || 0);
+        const price = parseFloat(item.unit_price || 0);
+        const newStock = oldStock + qty;
+        prod.cost_price = newStock > 0
+          ? Math.round(((oldStock * oldCost) + (qty * price)) / newStock)
+          : price;
+        prod.stock = newStock;
+        prod.updatedAt = Date.now();
+        updatedCount++;
+      }
+    }
+    if (updatedCount > 0) {
+      products = productsList;
+      await saveProducts(productsList);
+      await broadcastUpdate('products_updated');
+    }
+
+    res.json({ ok: true, message: 'Đã lưu phiếu nhập kho từ hóa đơn thành công!', receiptId });
+
+  } catch (err) {
+    console.error('Lỗi save-from-invoice:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ: ' + err.message });
+  }
+});
+
 app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
   try {
     if (IS_VERCEL) {
       const { rows } = await sql`
-        SELECT r.*, 
-               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count
+        SELECT r.*,
+               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count,
+               COALESCE((SELECT SUM(sri.total_price * (1 + sri.tax_rate / 100.0))
+                         FROM stock_receipt_items sri WHERE sri.receipt_id = r.id), r.total_amount) as computed_total
         FROM stock_receipts r
         ORDER BY r.created_at DESC, r.id DESC
       `;
@@ -1970,23 +2430,36 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
         supplier_name: r.supplier_name,
         note: r.note,
         warehouse_name: r.warehouse_name,
-        total_amount: Number(r.total_amount),
+        total_amount: Math.round(Number(r.computed_total || r.total_amount)),
         item_count: r.item_count,
         created_at: r.created_at
       }));
       res.json(formatted);
     } else {
-      const formatted = stockReceipts.map(r => ({
-        id: r.id,
-        receipt_code: r.receipt_code,
-        import_date: r.import_date,
-        supplier_name: r.supplier_name,
-        note: r.note,
-        warehouse_name: r.warehouse_name,
-        total_amount: r.total_amount,
-        item_count: r.items ? r.items.length : 0,
-        created_at: r.created_at
-      })).reverse();
+      const formatted = stockReceipts.map(r => {
+        // Tính lại tổng từ items (bao gồm thuế)
+        let computedTotal = 0;
+        if (r.items && r.items.length > 0) {
+          computedTotal = r.items.reduce((s, i) => {
+            const amt = Number(i.total_price || 0);
+            const taxAmt = Math.round(amt * Number(i.tax_rate || 0) / 100);
+            return s + amt + taxAmt;
+          }, 0);
+        } else {
+          computedTotal = r.total_amount || 0;
+        }
+        return {
+          id: r.id,
+          receipt_code: r.receipt_code,
+          import_date: r.import_date,
+          supplier_name: r.supplier_name,
+          note: r.note,
+          warehouse_name: r.warehouse_name,
+          total_amount: computedTotal,
+          item_count: r.items ? r.items.length : 0,
+          created_at: r.created_at
+        };
+      }).reverse();
       res.json(formatted);
     }
   } catch (err) {

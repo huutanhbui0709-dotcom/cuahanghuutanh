@@ -68,7 +68,8 @@
     <div class="admin-layout">
       <div class="admin-sidebar">
         <div class="sidebar-header">
-          <button class="btn btn-outline btn-sm hidden" id="toggleSidebarBtn" onclick="toggleSidebar()" title="Ẩn/Hiện Sidebar">
+          <button class="btn btn-outline btn-sm hidden" id="toggleSidebarBtn" onclick="toggleSidebar()"
+            title="Ẩn/Hiện Sidebar">
             <i class="fa-solid fa-bars"></i>
           </button>
         </div>
@@ -525,6 +526,10 @@
                   style="color: var(--text); border-color: var(--border); padding: 8px 12px; height: 35px;">
                   <i class="fa-solid fa-rotate-left"></i>
                 </button>
+                <button class="btn btn-primary btn-sm" onclick="showCreateOrderModal()"
+                  style="padding: 8px 14px; height: 35px; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> Tạo đơn hàng
+                </button>
                 <button class="btn btn-sm btn-danger" id="deleteAllCancelledBtn" onclick="deleteAllCancelledOrders()"
                   title="Xóa tất cả đơn hàng đã huỷ" style="display:none; padding: 8px 14px; height: 35px;">
                   <i class="fa-solid fa-trash"></i> Xóa tất cả đã huỷ
@@ -828,6 +833,204 @@
       </div>
     </div>
 
+    <!-- ======= CREATE ORDER MODAL (MANUAL) ======= -->
+    <div class="modal-overlay center" id="orderCreateModal">
+      <div class="modal modal-lg" style="max-width: 1400px; width: 95vw;">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-circle-plus"></i> Tạo đơn hàng mới</h3>
+          <button class="modal-close" onclick="closeModal('orderCreateModal')">✕</button>
+        </div>
+        <div class="modal-body"
+          style="max-height: 82vh; overflow: hidden; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+
+          <div style="display: flex; gap: 24px; flex: 1; min-height: 0; overflow: hidden;">
+            <!-- Left Column: Catalog (40%) -->
+            <div
+              style="flex: 0.4; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--border); padding-right: 20px; overflow: hidden; min-height: 0;">
+              <div style="flex: none; display: flex; flex-direction: column; gap: 10px;">
+                <label style="font-weight: 700; display: block; margin-bottom: 2px;"><i
+                    class="fa-solid fa-boxes-stacked"></i> Danh mục sản phẩm</label>
+
+                <!-- Search bar -->
+                <div class="search-wrap" style="position: relative; margin-bottom: 2px;">
+                  <span
+                    style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </span>
+                  <input type="text" id="oc_productSearch" class="form-control"
+                    style="padding: 8px 12px 8px 38px; width: 100%; font-size: 0.85rem;"
+                    placeholder="Tìm theo tên, mã SKU..." oninput="filterCatalogForOrderCreation()" />
+                </div>
+
+                <!-- Filters Row -->
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <select id="oc_categoryFilter" class="form-control"
+                    style="padding: 4px 8px; font-size: 0.8rem; height: 30px; width: auto; background: #fff;"
+                    onchange="filterCatalogForOrderCreation()">
+                    <option value="">Danh mục</option>
+                  </select>
+                  <select id="oc_stockFilter" class="form-control"
+                    style="padding: 4px 8px; font-size: 0.8rem; height: 30px; width: auto; background: #fff;"
+                    onchange="filterCatalogForOrderCreation()">
+                    <option value="">Bộ lọc</option>
+                    <option value="in_stock">Còn hàng</option>
+                    <option value="out_of_stock">Hết hàng</option>
+                  </select>
+
+                  <div
+                    style="margin-left: auto; display: flex; gap: 4px; border: 1px solid var(--border); border-radius: 6px; padding: 2px; background: #f8fafc; flex-shrink: 0;">
+                    <button class="btn btn-sm"
+                      style="padding: 4px 8px; background: var(--primary); color: #fff; border-radius: 4px; border: none; height: 24px; display: inline-flex; align-items: center; justify-content: center;"><i
+                        class="fa-solid fa-table-cells-large" style="font-size: 0.75rem;"></i></button>
+                    <button class="btn btn-sm"
+                      style="padding: 4px 8px; background: transparent; color: var(--muted); border: none; height: 24px; display: inline-flex; align-items: center; justify-content: center;"><i
+                        class="fa-solid fa-list" style="font-size: 0.75rem;"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Grid Catalog Area -->
+              <div id="oc_catalogGrid"
+                style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 2px; min-height: 0;">
+                <!-- Product cards dynamically filled -->
+              </div>
+
+              <!-- Catalog Pagination -->
+              <div id="oc_catalogPagination"
+                style="display: flex; gap: 4px; align-items: center; justify-content: center; padding: 6px 0; margin-top: auto; flex-shrink: 0; border-top: 1px solid var(--border);">
+                <!-- Page numbers dynamically filled -->
+              </div>
+            </div>
+
+            <!-- Right Column: Order Details & Selected Items (60%) -->
+            <div
+              style="flex: 0.6; display: flex; flex-direction: column; gap: 12px; overflow: hidden; min-height: 0; padding-right: 6px;">
+              <!-- Customer Info Grid -->
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px; flex-shrink: 0;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="margin-bottom: 2px; font-size: 0.78rem;">Tên khách hàng *</label>
+                  <input class="form-control" id="oc_customer"
+                    style="padding: 5px 10px; font-size: 0.82rem; height: 32px;" placeholder="Nguyễn Văn A" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="margin-bottom: 2px; font-size: 0.78rem;">Số điện thoại *</label>
+                  <input class="form-control" id="oc_phone" style="padding: 5px 10px; font-size: 0.82rem; height: 32px;"
+                    placeholder="0901234567" />
+                </div>
+                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                  <label style="margin-bottom: 2px; font-size: 0.78rem;">Địa chỉ giao hàng *</label>
+                  <input class="form-control" id="oc_address"
+                    style="padding: 5px 10px; font-size: 0.82rem; height: 32px;"
+                    placeholder="123 Đường ABC, Quận XYZ, TP..." />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="margin-bottom: 2px; font-size: 0.78rem;">Ghi chú đơn hàng</label>
+                  <input class="form-control" id="oc_note" style="padding: 5px 10px; font-size: 0.82rem; height: 32px;"
+                    placeholder="Giao giờ hành chính..." />
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="margin-bottom: 2px; font-size: 0.78rem;">Trạng thái</label>
+                  <select class="form-control" id="oc_status"
+                    style="padding: 5px 10px; font-size: 0.82rem; height: 32px;">
+                    <option value="Đã xác nhận" selected>Đã xác nhận</option>
+                    <option value="Chờ xác nhận">Chờ xác nhận</option>
+                    <option value="Đã huỷ">Đã huỷ</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Giỏ hàng của đơn -->
+              <div
+                style="flex: 1; display: flex; flex-direction: column; min-height: 0; border: 2px solid #3b82f6; border-radius: 12px; background: #fff; overflow: hidden;">
+                <!-- Cart Header -->
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; background: #fff;">
+                  <span
+                    style="font-weight: 700; font-size: 0.9rem; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-cart-shopping" style="color: #3b82f6;"></i>
+                    Giỏ hàng của đơn <span id="oc_cartCountBadge" style="font-weight: normal; color: #64748b;">(0 sản
+                      phẩm)</span>
+                  </span>
+                  <button class="btn btn-sm" onclick="clearAllManualOrderItems()"
+                    style="color: #ef4444; border: 1px solid #fca5a5; font-size: 0.78rem; padding: 3px 8px; display: flex; align-items: center; gap: 4px; background: #fff; font-weight: 600; cursor: pointer; border-radius: 6px;">
+                    <i class="fa-solid fa-trash-can"></i> Xóa tất cả
+                  </button>
+                </div>
+
+                <!-- Table Scrollable Area -->
+                <div style="flex: 1; overflow-y: auto; position: relative;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                    <thead
+                      style="position: sticky; top: 0; background: #f8fafc; z-index: 10; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 0 rgba(0,0,0,0.05);">
+                      <tr>
+                        <th
+                          style="padding: 8px 4px; text-align: center; width: 40px; color: #475569; font-weight: 600;">
+                          STT</th>
+                        <th style="padding: 8px; text-align: left; color: #475569; font-weight: 600;">Sản phẩm</th>
+                        <th
+                          style="padding: 8px 4px; text-align: center; width: 60px; color: #475569; font-weight: 600;">
+                          ĐVT</th>
+                        <th
+                          style="padding: 8px 6px; text-align: right; width: 105px; color: #475569; font-weight: 600;">
+                          Đơn giá</th>
+                        <th
+                          style="padding: 8px 4px; text-align: center; width: 95px; color: #475569; font-weight: 600;">
+                          Số lượng</th>
+                        <th
+                          style="padding: 8px 6px; text-align: right; width: 110px; color: #475569; font-weight: 600;">
+                          Thành tiền</th>
+                        <th
+                          style="padding: 8px 4px; text-align: center; width: 50px; color: #475569; font-weight: 600;">
+                          Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody id="oc_itemsTableBody">
+                      <!-- Dynamic rows populated via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Summary (outside 2-col, always visible) -->
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; flex-shrink: 0;">
+            <!-- Left: Tổng tiền hàng -->
+            <div style="font-size: 0.85rem; color: #475569;">
+              <span>Tổng tiền hàng:</span>
+              <span id="oc_itemsTotal" style="font-weight: 700; color: #1e293b; margin-left: 4px;">0₫</span>
+            </div>
+
+            <!-- Middle: Phí vận chuyển -->
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #475569;">
+              <span>Phí vận chuyển:</span>
+              <div style="position: relative; display: inline-block;">
+                <input type="number" id="oc_shippingFee" class="form-control"
+                  style="width: 80px; text-align: right; padding: 2px 16px 2px 6px; font-size: 0.82rem; height: 26px; border-radius: 6px;"
+                  value="0" min="0" oninput="calculateManualGrandTotal()" />
+                <span
+                  style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #94a3b8; pointer-events: none;">đ</span>
+              </div>
+            </div>
+
+            <!-- Right: Tổng thanh toán -->
+            <div style="font-size: 0.9rem; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+              <strong>Tổng thanh toán:</strong>
+              <span id="oc_totalAmount" style="font-weight: 800; color: #2563eb; font-size: 1.3rem;">0₫</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer"
+          style="display: flex; justify-content: flex-end; gap: 12px; background: #fff; padding: 15px 20px; border-top: 1px solid var(--border);">
+          <button class="btn btn-outline" style="color: black;" onclick="closeModal('orderCreateModal')">Hủy</button>
+          <button class="btn btn-primary" onclick="submitManualOrder()">Lưu đơn hàng</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ======= ORDER DETAIL MODAL ======= -->
     <div class="modal-overlay center" id="orderDetailModal">
       <div class="modal modal-lg">
@@ -843,7 +1046,7 @@
 
     <!-- ======= INVENTORY RECEIPT DETAIL MODAL ======= -->
     <div class="modal-overlay center" id="inventoryReceiptModal">
-      <div class="modal modal-lg">
+      <div class="modal modal-xl">
         <div class="modal-header">
           <h3><i class="fa-solid fa-warehouse"></i> Chi tiết phiếu nhập kho</h3>
           <button class="modal-close" onclick="closeModal('inventoryReceiptModal')">
@@ -857,7 +1060,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="js/admin.js?v=2.2"></script>
+    <script src="js/admin.js?v=3.4"></script>
 </body>
 
 </html>
