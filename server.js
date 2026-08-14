@@ -353,7 +353,8 @@ async function initializeData() {
         sql`SELECT value FROM app_settings WHERE key = 'settings'`,
         sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
         sql`SELECT * FROM orders ORDER BY created_at DESC`,
-        sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
+        sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`,
+        sql`SELECT 1 FROM stock_receipts LIMIT 1` // Kiểm tra sự tồn tại của bảng stock_receipts để tự động migration
       ]);
 
       // Kiểm tra xem có lỗi "relation does not exist" không (xảy ra khi deploy DB trống lần đầu)
@@ -377,7 +378,8 @@ async function initializeData() {
           sql`SELECT value FROM app_settings WHERE key = 'settings'`,
           sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
           sql`SELECT * FROM orders ORDER BY created_at DESC`,
-          sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
+          sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`,
+          sql`SELECT 1 FROM stock_receipts LIMIT 1`
         ]);
       }
 
