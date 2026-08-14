@@ -3,7 +3,7 @@
 // ==============================
 let products = [];
 let cart = [];
-let currentType = ''; // selected category (empty = all)
+let currentType = 'bestseller'; // default: show best sellers first
 
 const ITEMS_PER_PAGE = 24;
 let currentPage = 1;
@@ -159,8 +159,12 @@ function getFilteredProducts() {
     return match && matchType;
   });
   if (sort === 'name_asc') list.sort((a, b) => a.ten.localeCompare(b.ten, 'vi'));
-  if (sort === 'price_asc') list.sort((a, b) => a.gia - b.gia);
-  if (sort === 'price_desc') list.sort((a, b) => b.gia - a.gia);
+  else if (sort === 'price_asc') list.sort((a, b) => a.gia - b.gia);
+  else if (sort === 'price_desc') list.sort((a, b) => b.gia - a.gia);
+  else {
+    // Default: bestsellers first, then rest in original order
+    list.sort((a, b) => (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0));
+  }
   return list;
 }
 

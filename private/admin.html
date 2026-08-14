@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1.1" />
+  <link rel="stylesheet" href="css/style.css?v=1.6" />
 </head>
 
 <body>
@@ -67,29 +67,32 @@
   <div class="hidden" id="adminView">
     <div class="admin-layout">
       <div class="admin-sidebar">
-        <div class="admin-sidebar-item active" onclick="adminTab('dashboard', this)">
-          <i class="fa-solid fa-chart-simple"></i> Tổng quan
+        <div class="sidebar-header">
+          <button class="btn btn-outline btn-sm hidden" id="toggleSidebarBtn" onclick="toggleSidebar()" title="Ẩn/Hiện Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('products', this)">
-          <i class="fa-solid fa-box"></i> Sản phẩm
+        <div class="admin-sidebar-item active" onclick="adminTab('dashboard', this)" title="Tổng quan">
+          <i class="fa-solid fa-chart-simple"></i> <span>Tổng quan</span>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('import', this)">
-          <i class="fa-solid fa-file-import"></i> Import
+        <div class="admin-sidebar-item" onclick="adminTab('products', this)" title="Sản phẩm">
+          <i class="fa-solid fa-box"></i> <span>Sản phẩm</span>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('orders', this)">
-          <i class="fa-solid fa-clipboard-list"></i> Đơn hàng
+        <div class="admin-sidebar-item" onclick="adminTab('inventory', this)" title="Nhập kho">
+          <i class="fa-solid fa-warehouse"></i> <span>Nhập kho</span>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('slides', this)">
-          <i class="fa-regular fa-image"></i> Quản lý Slide
+
+        <div class="admin-sidebar-item" onclick="adminTab('orders', this)" title="Đơn hàng">
+          <i class="fa-solid fa-clipboard-list"></i> <span>Đơn hàng</span>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('settings', this)">
-          <i class="fa-solid fa-gear"></i> Cài đặt Footer
+        <div class="admin-sidebar-item" onclick="adminTab('suppliers', this)" title="Nhà cung cấp">
+          <i class="fa-solid fa-truck-field"></i> <span>Nhà cung cấp</span>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('suppliers', this)">
-          <i class="fa-solid fa-truck-field"></i> Nhà cung cấp
+        <div class="admin-sidebar-item" onclick="adminTab('slides', this)" title="Quản lý Slide">
+          <i class="fa-regular fa-image"></i> <span>Quản lý Slide</span>
         </div>
-        <div class="admin-sidebar-item" onclick="adminTab('tools', this)">
-          <i class="fa-solid fa-screwdriver-wrench"></i> Công cụ
+        <div class="admin-sidebar-item" onclick="adminTab('tools', this)" title="Công cụ">
+          <i class="fa-solid fa-screwdriver-wrench"></i> <span>Công cụ</span>
         </div>
       </div>
       <div class="admin-content">
@@ -113,174 +116,363 @@
 
         <!-- PRODUCTS -->
         <div class="admin-tab" id="tab-products">
-          <div class="admin-card">
-            <div style="
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  margin-bottom: 16px;
-                  flex-wrap: wrap;
-                  gap: 10px;
-                ">
-              <div class="admin-card-title" style="margin: 0">
-                <i class="fa-solid fa-box"></i> Danh sách sản phẩm (<span id="adminProductCount">0</span> kết quả)
-              </div>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <div style="position: relative;">
-                  <span
-                    style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                  </span>
-                  <input type="text" id="adminSearch" class="form-control"
-                    style="width: 220px; padding: 7px 12px 7px 32px;" placeholder="Tìm sản phẩm..."
-                    oninput="adminPage = 1; renderAdminTable()" />
+          <!-- Sub-tabs -->
+          <div class="tools-tabs"
+            style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px; flex-wrap: wrap;">
+            <button class="btn btn-sm product-sub-tab-btn btn-primary" id="productSubTabBtn-list"
+              onclick="switchProductSubTab('list', this)">
+              <i class="fa-solid fa-box"></i> Danh sách sản phẩm
+            </button>
+            <button class="btn btn-sm product-sub-tab-btn btn-outline" style="color: black;"
+              id="productSubTabBtn-import" onclick="switchProductSubTab('import', this)">
+              <i class="fa-solid fa-file-import"></i> Import & Đồng bộ
+            </button>
+          </div>
+
+          <!-- Sub-tab: Danh sách sản phẩm -->
+          <div id="product-sub-tab-list">
+            <div class="admin-card">
+              <div style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 16px;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                  ">
+                <div class="admin-card-title" style="margin: 0">
+                  <i class="fa-solid fa-box"></i> Danh sách sản phẩm (<span id="adminProductCount">0</span> kết quả)
                 </div>
-                <select class="filter-select" id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()"
-                  style="padding: 7px 12px; font-size: 0.85rem;">
-                  <option value="">Tất cả loại</option>
-                </select>
-                <select class="filter-select" id="adminStatusFilter" onchange="adminPage = 1; renderAdminTable()"
-                  style="padding: 7px 12px; font-size: 0.85rem;">
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="Đang theo dõi">Đang theo dõi</option>
-                  <option value="Ngừng theo dõi">Ngừng theo dõi</option>
-                </select>
-                <select class="filter-select" id="adminBestSellerFilter" onchange="adminPage = 1; renderAdminTable()"
-                  style="padding: 7px 12px; font-size: 0.85rem;">
-                  <option value="">Tất cả nổi bật</option>
-                  <option value="yes">Bán chạy</option>
-                  <option value="no">Không bán chạy</option>
-                </select>
-                <select class="filter-select" id="adminImageFilter" onchange="adminPage = 1; renderAdminTable()"
-                  style="padding: 7px 12px; font-size: 0.85rem;">
-                  <option value="">Tất cả ảnh</option>
-                  <option value="yes">Đã có ảnh</option>
-                  <option value="no">Chưa có ảnh</option>
-                </select>
-                <button class="btn btn-success btn-sm" onclick="exportNoImageProductsExcel()"
-                  title="Xuất Excel SP chưa ảnh">
-                  <i class="fa-solid fa-file-excel"></i> Xuất SP chưa ảnh
-                </button>
-                <button class="btn btn-primary btn-sm" onclick="openProductModal()">
-                  <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <div style="position: relative;">
+                    <span
+                      style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="adminSearch" class="form-control"
+                      style="width: 220px; padding: 7px 12px 7px 32px;" placeholder="Tìm sản phẩm..."
+                      oninput="adminPage = 1; renderAdminTable()" />
+                  </div>
+                  <select class="filter-select" id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()"
+                    style="padding: 7px 12px; font-size: 0.85rem;">
+                    <option value="">Tất cả loại</option>
+                  </select>
+                  <select class="filter-select" id="adminStatusFilter" onchange="adminPage = 1; renderAdminTable()"
+                    style="padding: 7px 12px; font-size: 0.85rem;">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Đang theo dõi">Đang theo dõi</option>
+                    <option value="Ngừng theo dõi">Ngừng theo dõi</option>
+                  </select>
+                  <select class="filter-select" id="adminBestSellerFilter" onchange="adminPage = 1; renderAdminTable()"
+                    style="padding: 7px 12px; font-size: 0.85rem;">
+                    <option value="">Tất cả nổi bật</option>
+                    <option value="yes">Bán chạy</option>
+                    <option value="no">Không bán chạy</option>
+                  </select>
+                  <select class="filter-select" id="adminImageFilter" onchange="adminPage = 1; renderAdminTable()"
+                    style="padding: 7px 12px; font-size: 0.85rem;">
+                    <option value="">Tất cả ảnh</option>
+                    <option value="yes">Đã có ảnh</option>
+                    <option value="no">Chưa có ảnh</option>
+                  </select>
+                  <button class="btn btn-success btn-sm" onclick="exportNoImageProductsExcel()"
+                    title="Xuất Excel SP chưa ảnh">
+                    <i class="fa-solid fa-file-excel"></i> Xuất SP chưa ảnh
+                  </button>
+                  <button class="btn btn-primary btn-sm" onclick="openProductModal()">
+                    <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+                  </button>
+                </div>
+              </div>
+              <div class="table-wrap" id="adminTable"></div>
+              <div class="pagination" id="adminPagination"></div>
+            </div>
+          </div>
+
+          <!-- Sub-tab: Import & Đồng bộ -->
+          <div id="product-sub-tab-import" style="display: none;">
+            <div class="admin-card">
+              <div class="admin-card-title">
+                <i class="fa-solid fa-file-import"></i> Import sản phẩm từ file Excel
+              </div>
+              <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+                ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                <div class="upload-zone-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                <div class="upload-zone-text">
+                  Kéo thả file Excel vào đây hoặc nhấn để chọn file
+                </div>
+                <div class="upload-zone-hint">
+                  Hỗ trợ .xlsx — Cột bắt buộc: <strong>Mã hàng hóa</strong>,
+                  <strong>Tên hàng hóa</strong>
+                </div>
+              </div>
+              <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none"
+                onchange="handleFileUpload(event)" />
+              <div id="uploadResult" style="margin-top: 16px"></div>
+            </div>
+
+            <div class="admin-card">
+              <div class="admin-card-title">
+                <i class="fa-solid fa-folder-open"></i> Import Thư mục ảnh sản phẩm
+              </div>
+              <div class="upload-zone" id="folderUploadZone" onclick="document.getElementById('folderInput').click()"
+                ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)"
+                ondrop="handleFolderDrop(event)">
+                <div class="upload-zone-icon"><i class="fa-solid fa-images"></i></div>
+                <div class="upload-zone-text" id="folderUploadText">
+                  Kéo thả thư mục chứa ảnh sản phẩm vào đây hoặc nhấn để chọn thư mục
+                </div>
+                <div class="upload-zone-hint">
+                  Các file ảnh phải được đặt tên theo <strong>Mã hàng hóa</strong> (Ví dụ: SP001.jpg, SP002.png)
+                </div>
+              </div>
+              <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none"
+                onchange="handleFolderUpload(event)" />
+              <div id="folderUploadResult" style="margin-top: 16px"></div>
+              <div
+                style="margin-top:14px;padding:12px 14px;background:#fef9c3;border-radius:8px;border:1px solid #fde047;font-size:.82rem;color:#713f12;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <span><i class="fa-solid fa-broom"></i> <strong>Dọn ảnh broken:</strong> Quét DB và xoá URL ảnh không
+                  tồn
+                  tại trên R2, giúp filter "Chưa có ảnh" hoạt động chính xác.</span>
+                <button id="btnCleanupBrokenImages" onclick="cleanupBrokenImages()"
+                  style="flex-shrink:0;padding:6px 14px;border-radius:6px;border:none;background:#854d0e;color:#fff;font-size:.82rem;cursor:pointer;font-weight:600">
+                  <i class="fa-solid fa-broom"></i> Dọn ảnh lỗi
                 </button>
               </div>
             </div>
-            <div class="table-wrap" id="adminTable"></div>
-            <div class="pagination" id="adminPagination"></div>
+
+            <div class="admin-card">
+              <div class="admin-card-title"><i class="fa-solid fa-circle-info"></i> Hướng dẫn định dạng Excel</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cột</th>
+                    <th>Tên cột</th>
+                    <th>Bắt buộc</th>
+                    <th>Ví dụ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>A</td>
+                    <td>STT</td>
+                    <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                    <td>1, 2, 3...</td>
+                  </tr>
+                  <tr>
+                    <td>B</td>
+                    <td>Mã hàng hóa</td>
+                    <td><span class="badge badge-red">Bắt buộc</span></td>
+                    <td>SP000001</td>
+                  </tr>
+                  <tr>
+                    <td>C</td>
+                    <td>Tên hàng hóa</td>
+                    <td><span class="badge badge-red">Bắt buộc</span></td>
+                    <td>Ống nước PVC 21</td>
+                  </tr>
+                  <tr>
+                    <td>D</td>
+                    <td>Giá bán</td>
+                    <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                    <td>50000</td>
+                  </tr>
+                  <tr>
+                    <td>E</td>
+                    <td>Đơn vị tính</td>
+                    <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                    <td>Cái, Mét, Bộ...</td>
+                  </tr>
+                  <tr>
+                    <td>F</td>
+                    <td>Loại/Nhóm hàng hóa</td>
+                    <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                    <td>Hàng hóa thường</td>
+                  </tr>
+                  <tr>
+                    <td>G</td>
+                    <td>Trạng thái</td>
+                    <td><span class="badge badge-blue">Tuỳ chọn</span></td>
+                    <td>Đang theo dõi</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p style="margin-top: 12px; font-size: 0.8rem; color: var(--muted)">
+                <i class="fa-solid fa-lightbulb"></i> Hệ thống tự động kiểm tra mã SP, nếu mã đã tồn tại sẽ bỏ qua
+                (không thêm trùng).
+              </p>
+            </div>
           </div>
         </div>
 
-        <!-- IMPORT -->
-        <div class="admin-tab" id="tab-import">
-          <div class="admin-card">
-            <div class="admin-card-title">
-              <i class="fa-solid fa-file-import"></i> Import sản phẩm từ file Excel
-            </div>
-            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
-              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-              <div class="upload-zone-icon"><i class="fa-solid fa-chart-simple"></i></div>
-              <div class="upload-zone-text">
-                Kéo thả file Excel vào đây hoặc nhấn để chọn file
-              </div>
-              <div class="upload-zone-hint">
-                Hỗ trợ .xlsx — Cột bắt buộc: <strong>Mã hàng hóa</strong>,
-                <strong>Tên hàng hóa</strong>
-              </div>
-            </div>
-            <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none"
-              onchange="handleFileUpload(event)" />
-            <div id="uploadResult" style="margin-top: 16px"></div>
+
+        <!-- INVENTORY -->
+        <div class="admin-tab" id="tab-inventory">
+          <!-- SUBTABS -->
+          <div class="tools-tabs"
+            style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px; flex-wrap: wrap;">
+            <button class="btn btn-sm inventory-tab-btn btn-primary" onclick="switchInventoryTab('history', this)">
+              <i class="fa-solid fa-history"></i> Lịch sử nhập kho
+            </button>
+            <button class="btn btn-sm inventory-tab-btn btn-outline" style="color: black;"
+              onclick="switchInventoryTab('import', this)">
+              <i class="fa-solid fa-file-excel"></i> Import Phiếu nhập kho (Excel)
+            </button>
           </div>
 
-          <div class="admin-card">
-            <div class="admin-card-title">
-              <i class="fa-solid fa-folder-open"></i> Import Thư mục ảnh sản phẩm
-            </div>
-            <div class="upload-zone" id="folderUploadZone" onclick="document.getElementById('folderInput').click()"
-              ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)"
-              ondrop="handleFolderDrop(event)">
-              <div class="upload-zone-icon"><i class="fa-solid fa-images"></i></div>
-              <div class="upload-zone-text" id="folderUploadText">
-                Kéo thả thư mục chứa ảnh sản phẩm vào đây hoặc nhấn để chọn thư mục
+          <!-- LỊCH SỬ NHẬP KHO -->
+          <div id="inventory-tab-history" class="inventory-tab-content">
+            <div class="admin-card">
+              <div class="admin-card-title"
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <span><i class="fa-solid fa-history"></i> Nhập kho mua hàng</span>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <input type="text" class="filter-input" id="inventorySearchFilter"
+                    placeholder="Tìm kiếm chứng từ, NCC..." oninput="inventoryPage = 1; filterInventoryHistory()"
+                    style="padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; width: 220px;" />
+
+                  <select class="filter-select" id="inventoryTimePresetFilter" onchange="handleTimePresetChange()"
+                    style="padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; height: 34px;">
+                    <option value="all">Tất cả thời gian</option>
+                    <option value="today">Hôm nay</option>
+                    <option value="yesterday">Hôm qua</option>
+                    <option value="7days">7 ngày qua</option>
+                    <option value="30days">30 ngày qua</option>
+                    <option value="thisMonth" selected>Tháng này</option>
+                    <option value="lastMonth">Tháng trước</option>
+                    <option value="thisYear">Năm nay</option>
+                    <option value="custom">Tùy chọn...</option>
+                  </select>
+
+                  <div id="inventoryCustomDateRange" style="display: none; align-items: center; gap: 6px;">
+                    <input type="date" class="filter-input" id="inventoryStartDate"
+                      onchange="inventoryPage = 1; filterInventoryHistory()"
+                      style="padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; height: 34px;" />
+                    <span style="color: var(--muted); font-size: .85rem;">đến</span>
+                    <input type="date" class="filter-input" id="inventoryEndDate"
+                      onchange="inventoryPage = 1; filterInventoryHistory()"
+                      style="padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; height: 34px;" />
+                  </div>
+                </div>
               </div>
-              <div class="upload-zone-hint">
-                Các file ảnh phải được đặt tên theo <strong>Mã hàng hóa</strong> (Ví dụ: SP001.jpg, SP002.png)
+              <!-- Summary Top -->
+              <div id="inventoryHistorySummaryTop"
+                style="display:none; margin-bottom: 12px; padding: 12px 16px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); display: flex; gap: 24px; align-items: center; flex-wrap: wrap; font-size: .875rem;">
+                <span><i class="fa-solid fa-receipt" style="color:var(--primary)"></i> <strong
+                    id="inventorySummaryCountTop">0</strong> phiếu nhập</span>
+                <span><i class="fa-solid fa-coins" style="color:var(--danger)"></i> Tổng giá trị: <strong
+                    id="inventorySummaryTotalTop" style="color:var(--danger);">0đ</strong></span>
               </div>
-            </div>
-            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none"
-              onchange="handleFolderUpload(event)" />
-            <div id="folderUploadResult" style="margin-top: 16px"></div>
-            <div style="margin-top:14px;padding:12px 14px;background:#fef9c3;border-radius:8px;border:1px solid #fde047;font-size:.82rem;color:#713f12;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <span><i class="fa-solid fa-broom"></i> <strong>Dọn ảnh broken:</strong> Quét DB và xoá URL ảnh không tồn tại trên R2, giúp filter "Chưa có ảnh" hoạt động chính xác.</span>
-              <button id="btnCleanupBrokenImages" onclick="cleanupBrokenImages()"
-                style="flex-shrink:0;padding:6px 14px;border-radius:6px;border:none;background:#854d0e;color:#fff;font-size:.82rem;cursor:pointer;font-weight:600">
-                <i class="fa-solid fa-broom"></i> Dọn ảnh lỗi
-              </button>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Mã chứng từ</th>
+                      <th>Ngày nhập</th>
+                      <th>Nhà cung cấp</th>
+                      <th>Kho</th>
+                      <th>Tổng tiền</th>
+                      <th>Số mặt hàng</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryHistoryTableBody">
+                    <tr>
+                      <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">Đang tải lịch sử
+                        nhập kho...</td>
+                    </tr>
+                  </tbody>
+                  <tfoot id="inventoryHistoryTableFoot"></tfoot>
+                </table>
+              </div>
+              <div class="pagination" id="inventoryPagination" style="margin-top: 10px;"></div>
             </div>
           </div>
 
+          <!-- IMPORT PHIẾU NHẬP KHO -->
+          <div id="inventory-tab-import" class="inventory-tab-content" style="display: none;">
+            <div class="admin-card">
+              <div class="admin-card-title">
+                <i class="fa-solid fa-file-excel"></i> Import Phiếu nhập kho từ MISA / Excel
+              </div>
+              <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
+                Tải lên tệp Excel "PHIẾU NHẬP KHO MUA HÀNG" để kiểm tra và cập nhật tồn kho, giá vốn bình quân cho các
+                sản phẩm.
+              </p>
 
-          <div class="admin-card">
-            <div class="admin-card-title"><i class="fa-solid fa-circle-info"></i> Hướng dẫn định dạng Excel</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Cột</th>
-                  <th>Tên cột</th>
-                  <th>Bắt buộc</th>
-                  <th>Ví dụ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>A</td>
-                  <td>STT</td>
-                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
-                  <td>1, 2, 3...</td>
-                </tr>
-                <tr>
-                  <td>B</td>
-                  <td>Mã hàng hóa</td>
-                  <td><span class="badge badge-red">Bắt buộc</span></td>
-                  <td>SP000001</td>
-                </tr>
-                <tr>
-                  <td>C</td>
-                  <td>Tên hàng hóa</td>
-                  <td><span class="badge badge-red">Bắt buộc</span></td>
-                  <td>Ống nước PVC 21</td>
-                </tr>
-                <tr>
-                  <td>D</td>
-                  <td>Giá bán</td>
-                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
-                  <td>50000</td>
-                </tr>
-                <tr>
-                  <td>E</td>
-                  <td>Đơn vị tính</td>
-                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
-                  <td>Cái, Mét, Bộ...</td>
-                </tr>
-                <tr>
-                  <td>F</td>
-                  <td>Loại/Nhóm hàng hóa</td>
-                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
-                  <td>Hàng hóa thường</td>
-                </tr>
-                <tr>
-                  <td>G</td>
-                  <td>Trạng thái</td>
-                  <td><span class="badge badge-blue">Tuỳ chọn</span></td>
-                  <td>Đang theo dõi</td>
-                </tr>
-              </tbody>
-            </table>
-            <p style="margin-top: 12px; font-size: 0.8rem; color: var(--muted)">
-              <i class="fa-solid fa-lightbulb"></i> Hệ thống tự động kiểm tra mã SP, nếu mã đã tồn tại sẽ bỏ qua
-              (không thêm trùng).
-            </p>
+              <div class="upload-zone" id="inventoryUploadZone"
+                onclick="document.getElementById('inventoryExcelInput').click()"
+                ondragover="handleInventoryDragOver(event)" ondragleave="handleInventoryDragLeave(event)"
+                ondrop="handleInventoryDrop(event)">
+                <div class="upload-zone-icon"><i class="fa-solid fa-file-excel" style="color: #10b981;"></i></div>
+                <div class="upload-zone-text" id="inventoryUploadText">
+                  Kéo thả file Excel Phiếu nhập kho vào đây hoặc nhấn để chọn file
+                </div>
+                <div class="upload-zone-hint">
+                  Hỗ trợ .xlsx, .xls (PHIẾU NHẬP KHO MUA HÀNG)
+                </div>
+              </div>
+              <input type="file" id="inventoryExcelInput" accept=".xlsx,.xls" style="display: none"
+                onchange="handleInventoryFileSelect(event)" />
+
+              <div id="inventoryUploadStatus" style="margin-top: 16px; display: none;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--primary);"></i>
+                  <span id="inventoryStatusText">Đang phân tích file Excel...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview parsed receipt -->
+            <div id="inventoryPreviewContainer" style="margin-top: 20px; display: none;">
+              <!-- Metadata preview card -->
+              <div class="admin-card" style="margin-bottom: 20px;">
+                <div class="admin-card-title"
+                  style="display: flex; justify-content: space-between; align-items: center;">
+                  <span><i class="fa-solid fa-circle-info"></i> Thông tin phiếu nhập</span>
+                  <button class="btn btn-success btn-sm" onclick="saveStockReceipt()">
+                    <i class="fa-solid fa-floppy-disk"></i> Xác nhận lưu vào DB
+                  </button>
+                </div>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 10px;">
+                  <div><strong>Mã chứng từ:</strong> <span id="prevReceiptCode"></span></div>
+                  <div><strong>Ngày nhập:</strong> <span id="prevImportDate"></span></div>
+                  <div><strong>Nhà cung cấp:</strong> <span id="prevSupplierName"></span></div>
+                  <div><strong>Kho nhập:</strong> <span id="prevWarehouseName"></span></div>
+                  <div><strong>Tổng tiền thanh toán:</strong> <span id="prevTotalAmount"
+                      style="color: var(--danger); font-weight: bold;"></span></div>
+                  <div style="grid-column: 1 / -1;"><strong>Diễn giải:</strong> <span id="prevNote"></span></div>
+                </div>
+              </div>
+
+              <!-- Items preview list -->
+              <div class="admin-card">
+                <div class="admin-card-title">
+                  <i class="fa-solid fa-boxes-stacked"></i> Danh sách hàng hóa trong phiếu nhập
+                </div>
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Mã SKU</th>
+                        <th>Tên hàng hóa</th>
+                        <th>ĐVT</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Thuế suất</th>
+                        <th>Thành tiền</th>
+                        <th>Trạng thái hệ thống</th>
+                      </tr>
+                    </thead>
+                    <tbody id="inventoryPreviewTableBody">
+                      <!-- Render dynamic items -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -344,38 +536,7 @@
           </div>
         </div>
 
-        <!-- SETTINGS -->
-        <div class="admin-tab" id="tab-settings">
-          <div class="admin-card">
-            <div class="admin-card-title"><i class="fa-solid fa-gear"></i> Cấu hình thông tin Footer</div>
-            <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Thay đổi thông tin liên hệ và bản đồ hiển
-              thị ở Footer trang chủ.</p>
 
-            <div class="form-group">
-              <label><i class="fa-solid fa-location-dot"></i> Địa chỉ cửa hàng</label>
-              <input class="form-control" id="sf_address"
-                placeholder="Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ" />
-            </div>
-            <div class="form-group">
-              <label><i class="fa-solid fa-phone"></i> Số điện thoại</label>
-              <input class="form-control" id="sf_phone" placeholder="0945 592 209" />
-            </div>
-            <div class="form-group">
-              <label><i class="fa-solid fa-envelope"></i> Email liên hệ</label>
-              <input class="form-control" id="sf_email" placeholder="diennuochuutanh@gmail.com" />
-            </div>
-            <div class="form-group">
-              <label><i class="fa-solid fa-map"></i> Link bản đồ (Iframe src hoặc URL chia sẻ)</label>
-              <input class="form-control" id="sf_mapUrl" placeholder="https://maps.google.com/maps?q=..." />
-              <span style="font-size: .75rem; color: var(--muted); margin-top: 4px; display: block;">
-                Mẹo: Bạn có thể nhập địa chỉ trực tiếp, liên kết chia sẻ hoặc mã nhúng iframe của Google Maps.
-              </span>
-            </div>
-            <button class="btn btn-primary" style="padding: 10px 20px; margin-top: 8px;" onclick="saveSettingsForm()">
-              <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
-            </button>
-          </div>
-        </div>
 
         <!-- SUPPLIERS -->
         <div class="admin-tab" id="tab-suppliers">
@@ -465,6 +626,10 @@
             <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;"
               onclick="switchToolsTab('zip-images', this)">
               <i class="fa-solid fa-file-zipper"></i> Sao lưu hình ảnh
+            </button>
+            <button class="btn btn-sm tools-tab-btn btn-outline" style="color: black;"
+              onclick="switchToolsTab('footer-settings', this)">
+              <i class="fa-solid fa-gear"></i> Cài đặt Footer
             </button>
           </div>
 
@@ -562,6 +727,40 @@
                 </button>
               </div>
             </div>
+
+            <!-- CÀI ĐẶT FOOTER (Ẩn mặc định) -->
+            <div id="tools-tab-footer-settings" class="tools-tab-content" style="display: none;">
+              <div class="admin-card">
+                <div class="admin-card-title"><i class="fa-solid fa-gear"></i> Cấu hình thông tin Footer</div>
+                <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Thay đổi thông tin liên hệ và bản đồ
+                  hiển thị ở Footer trang chủ.</p>
+
+                <div class="form-group">
+                  <label><i class="fa-solid fa-location-dot"></i> Địa chỉ cửa hàng</label>
+                  <input class="form-control" id="sf_address"
+                    placeholder="Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ" />
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-phone"></i> Số điện thoại</label>
+                  <input class="form-control" id="sf_phone" placeholder="0945 592 209" />
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-envelope"></i> Email liên hệ</label>
+                  <input class="form-control" id="sf_email" placeholder="diennuochuutanh@gmail.com" />
+                </div>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-map"></i> Link bản đồ (Iframe src hoặc URL chia sẻ)</label>
+                  <input class="form-control" id="sf_mapUrl" placeholder="https://maps.google.com/maps?q=..." />
+                  <span style="font-size: .75rem; color: var(--muted); margin-top: 4px; display: block;">
+                    Mẹo: Bạn có thể nhập địa chỉ trực tiếp, liên kết chia sẻ hoặc mã nhúng iframe của Google Maps.
+                  </span>
+                </div>
+                <button class="btn btn-primary" style="padding: 10px 20px; margin-top: 8px;"
+                  onclick="saveSettingsForm()">
+                  <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -642,8 +841,23 @@
       </div>
     </div>
 
+    <!-- ======= INVENTORY RECEIPT DETAIL MODAL ======= -->
+    <div class="modal-overlay center" id="inventoryReceiptModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-warehouse"></i> Chi tiết phiếu nhập kho</h3>
+          <button class="modal-close" onclick="closeModal('inventoryReceiptModal')">
+            ✕
+          </button>
+        </div>
+        <div class="modal-body" id="inventoryReceiptDetailBody" style="max-height: 70vh; overflow-y: auto;">
+          <!-- Render dynamically via JS -->
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="js/admin.js?v=1.1"></script>
+    <script src="js/admin.js?v=2.1"></script>
 </body>
 
 </html>

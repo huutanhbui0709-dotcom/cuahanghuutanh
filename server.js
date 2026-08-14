@@ -28,7 +28,8 @@ const multer = require('multer');
 const { uploadImageFile, deleteImageFile, listFiles } = require('./lib/storage');
 const { sendOrderNotification } = require('./lib/mailer');
 const { neon } = require('@neondatabase/serverless');
-const sql = neon(process.env.POSTGRES_URL || process.env.DATABASE_URL, { fullResults: true });
+const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const sql = dbUrl ? neon(dbUrl, { fullResults: true }) : null;
 
 const IS_VERCEL = !!process.env.VERCEL;
 
@@ -52,6 +53,7 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const SPAM_DEVICES_FILE = path.join(DATA_DIR, 'spam_devices.json');
 const SUPPLIERS_FILE = path.join(DATA_DIR, 'suppliers.json');
+const STOCK_RECEIPTS_FILE = path.join(DATA_DIR, 'stock_receipts.json');
 const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
 
 const IMG_DIR = path.join(DATA_DIR, 'public_img');
@@ -236,6 +238,7 @@ let settings = {
 };
 let spamDevices = [];
 let suppliers = [];
+let stockReceipts = [];
 
 const deviceOrderAttempts = new Map();
 const blockedDevices = new Map();
@@ -247,6 +250,7 @@ const saveOrders = makeQueuedWriter(ORDERS_FILE, null); // orders ghi trực ti�
 const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'settings');
 const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, null); // visitor_activity ghi trực tiếp
 const saveSuppliers = makeQueuedWriter(SUPPLIERS_FILE, 'suppliers');
+const saveStockReceipts = makeQueuedWriter(STOCK_RECEIPTS_FILE, null);
 
 // seedImagesFromPublic() removed — images are now stored in Vercel Blob, not local FS.
 
@@ -299,6 +303,34 @@ async function initDbSchema() {
       CREATE TABLE IF NOT EXISTS last_updates (
         topic VARCHAR(50) PRIMARY KEY,
         updated_at BIGINT NOT NULL
+      );
+    `;
+    // Bảng phiếu nhập kho
+    await sql`
+      CREATE TABLE IF NOT EXISTS stock_receipts (
+        id SERIAL PRIMARY KEY,
+        receipt_code VARCHAR(100),
+        import_date VARCHAR(100),
+        supplier_name TEXT,
+        note TEXT,
+        warehouse_name TEXT,
+        total_amount NUMERIC DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `;
+    // Bảng chi tiết phiếu nhập kho
+    await sql`
+      CREATE TABLE IF NOT EXISTS stock_receipt_items (
+        id SERIAL PRIMARY KEY,
+        receipt_id INTEGER REFERENCES stock_receipts(id) ON DELETE CASCADE,
+        product_sku VARCHAR(100),
+        product_name TEXT,
+        unit VARCHAR(50),
+        quantity NUMERIC DEFAULT 0,
+        unit_price NUMERIC DEFAULT 0,
+        tax_rate NUMERIC DEFAULT 0,
+        total_price NUMERIC DEFAULT 0,
+        import_cost NUMERIC DEFAULT 0
       );
     `;
     console.log('✅ Vercel DB tables initialized successfully.');
@@ -495,12 +527,17 @@ async function initializeData() {
         await fsp.writeFile(SUPPLIERS_FILE, '[]', 'utf8');
       }
 
+      if (!(await existsAsync(STOCK_RECEIPTS_FILE))) {
+        await fsp.writeFile(STOCK_RECEIPTS_FILE, '[]', 'utf8');
+      }
+
       // Load vào RAM
       products = await readJSONAsync(PRODUCTS_FILE, []);
       settings = await readJSONAsync(SETTINGS_FILE, settings);
       suppliers = await readJSONAsync(SUPPLIERS_FILE, []);
       orders = await readJSONAsync(ORDERS_FILE, []);
       spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
+      stockReceipts = await readJSONAsync(STOCK_RECEIPTS_FILE, []);
 
       blockedDevices.clear();
       spamDevices.forEach(entry => {
@@ -1500,13 +1537,553 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
     }
   }
 
-  try {
-    await saveProducts(products);
-    await broadcastUpdate('products_updated');
-  } catch (err) {
-    return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
-  }
   res.json({ ok: true, added, updated, errors });
+});
+
+// =====================================================================
+// API NHẬP KHO (INVENTORY STOCK INFLOW)
+// =====================================================================
+
+const uploadExcelFile = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: function (req, file, cb) {
+    if (/\.(xlsx|xls)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file Excel (.xlsx hoặc .xls).'));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+function parseCleanNumber(val) {
+  if (val === undefined || val === null) return 0;
+  if (typeof val === 'number') return val;
+  let str = String(val).replace(/[^0-9.,-]/g, '').trim();
+  const lastDot = str.lastIndexOf('.');
+  const lastComma = str.lastIndexOf(',');
+  if (lastComma > lastDot) {
+    str = str.replace(/\./g, '').replace(/,/g, '.');
+  } else if (lastDot > lastComma) {
+    str = str.replace(/,/g, '');
+  } else {
+    str = str.replace(/[.,]/g, '');
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
+
+app.post('/api/admin/inventory/import-receipt', requireAdmin, uploadExcelFile.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ ok: false, message: 'Vui lòng tải lên file Excel phiếu nhập kho.' });
+  }
+
+  try {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
+
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      return res.status(400).json({ ok: false, message: 'File Excel không có sheet nào.' });
+    }
+
+    // ── Helper: parse one sheet ────────────────────────────────────────
+    function parseSheet(worksheet, sheetLabel) {
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      if (!rawData || rawData.length === 0) return null;
+
+      let receipt_code = '';
+      let import_date = '';
+
+      // A5 (row index 4, col 0)
+      if (rawData[4] && rawData[4][0]) {
+        const cellVal = rawData[4][0];
+        if (cellVal instanceof Date) {
+          const d = cellVal.getDate().toString().padStart(2, '0');
+          const m = (cellVal.getMonth() + 1).toString().padStart(2, '0');
+          const y = cellVal.getFullYear();
+          import_date = `${d}/${m}/${y}`;
+        } else {
+          import_date = String(cellVal).trim();
+        }
+      }
+
+      let supplier_name = '';
+      let note = '';
+      let warehouse_name = '';
+
+      const cleanVal = (str) => {
+        if (!str) return '';
+        return String(str).replace(/^[:\-\s\+]+|[:\-\s\+]+$/g, '').trim();
+      };
+
+      // Scan first 15 rows for header metadata
+      for (let r = 0; r < Math.min(rawData.length, 15); r++) {
+        const row = rawData[r];
+        if (!row) continue;
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim();
+          if (!val) continue;
+          const valLower = val.toLowerCase();
+
+          // Receipt code
+          if (valLower.includes('số:') || valLower.includes('số phiếu:') || valLower.includes('số chứng từ:')) {
+            const match = val.match(/(?:số|số phiếu|số chứng từ)\s*[:\-\s]*\s*([^\s,;]+)/i);
+            if (match && match[1]) {
+              receipt_code = match[1].trim();
+            } else {
+              const nextVal = String(row[c + 1] || '').trim();
+              if (nextVal) receipt_code = nextVal;
+            }
+          }
+
+          // Date (fallback)
+          if (!import_date) {
+            if (valLower.includes('ngày') && valLower.includes('tháng') && valLower.includes('năm')) {
+              import_date = val.trim();
+            } else if (['ngày', 'ngày ct', 'ngày chứng từ', 'ngày lập'].includes(valLower)) {
+              const nextVal = String(row[c + 1] || '').trim();
+              if (nextVal) import_date = nextVal;
+            }
+          }
+
+          // Supplier
+          if (valLower.includes('nhà cung cấp') || valLower.includes('đơn vị giao')) {
+            const match = val.match(/(?:nhà cung cấp|đơn vị giao)\s*[:\-\s]*\s*(.*)/i);
+            if (match && match[1] && match[1].trim()) {
+              supplier_name = match[1].trim();
+            } else {
+              const nextVal = String(row[c + 1] || '').trim();
+              if (nextVal) supplier_name = nextVal;
+            }
+          }
+
+          // Note
+          if (valLower.includes('diễn giải') || valLower.includes('lý do nhập') || valLower.includes('nội dung')) {
+            const match = val.match(/(?:diễn giải|lý do nhập|nội dung)\s*[:\-\s]*\s*(.*)/i);
+            if (match && match[1] && match[1].trim()) {
+              note = match[1].trim();
+            } else {
+              const nextVal = String(row[c + 1] || '').trim();
+              if (nextVal) note = nextVal;
+            }
+          }
+
+          // Warehouse
+          if (valLower.startsWith('kho:') || valLower.includes('kho nhập') || valLower.includes('vào kho') || valLower.includes('nhập tại kho')) {
+            const match = val.match(/(?:kho|kho nhập|vào kho|nhập tại kho)\s*[:\-\s]*\s*(.*)/i);
+            if (match && match[1] && match[1].trim()) {
+              warehouse_name = match[1].trim();
+            } else {
+              const nextVal = String(row[c + 1] || '').trim();
+              if (nextVal) warehouse_name = nextVal;
+            }
+          }
+        }
+      }
+
+      receipt_code = cleanVal(receipt_code);
+      import_date  = cleanVal(import_date);
+      supplier_name = cleanVal(supplier_name);
+      note = cleanVal(note);
+      warehouse_name = cleanVal(warehouse_name);
+
+      // Find header row
+      let headerRowIdx = -1;
+      let colMap = { sku: -1, name: -1, unit: -1, quantity: -1, price: -1, amount: -1, taxRate: -1, totalAmount: -1 };
+
+      for (let r = 0; r < Math.min(rawData.length, 30); r++) {
+        const row = rawData[r];
+        if (!row) continue;
+        let skuIdx=-1, nameIdx=-1, unitIdx=-1, qtyIdx=-1, priceIdx=-1, amtIdx=-1, taxIdx=-1, totalAmtIdx=-1;
+
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').toLowerCase().trim();
+          if (!val) continue;
+          if (val.includes('mã sku') || val === 'mã hàng' || val === 'mã hàng hóa' || val === 'mã hàng hoá' || val === 'mã vật tư' || val === 'mã sp' || val === 'mã sản phẩm') {
+            skuIdx = c;
+          } else if (val.includes('tên hàng hóa') || val.includes('tên hàng hoá') || val.includes('tên hàng') || val === 'tên vật tư' || val === 'tên sản phẩm' || val === 'tên sp') {
+            nameIdx = c;
+          } else if (val.includes('đơn vị tính') || val === 'đvt' || val === 'đơn vị') {
+            unitIdx = c;
+          } else if (val === 'số lượng' || val === 'sl' || val.includes('số lượng')) {
+            qtyIdx = c;
+          } else if (val === 'đơn giá' || val === 'đơn giá mua' || val.includes('đơn giá')) {
+            priceIdx = c;
+          } else if (val === 'thành tiền' || val.includes('thành tiền')) {
+            amtIdx = c;
+          } else if (val.includes('thuế suất') || val.includes('% thuế') || val === 'thuế (%)' || val === 'thuế suất (%)' || val === 'thuế') {
+            taxIdx = c;
+          } else if (val.includes('tiền thanh toán') || val.includes('giá trị nhập kho') || val === 'thanh toán' || val.includes('tổng cộng tiền') || val.includes('tổng tiền') || val.includes('tiền thanh toán / giá trị nhập kho')) {
+            totalAmtIdx = c;
+          }
+        }
+
+        if ((skuIdx !== -1 || nameIdx !== -1) && qtyIdx !== -1) {
+          headerRowIdx = r;
+          colMap = { sku: skuIdx, name: nameIdx, unit: unitIdx, quantity: qtyIdx, price: priceIdx, amount: amtIdx, taxRate: taxIdx, totalAmount: totalAmtIdx };
+          break;
+        }
+      }
+
+      if (headerRowIdx === -1) return null; // Not a product sheet
+
+      const items = [];
+      let total_amount = 0;
+
+      for (let r = headerRowIdx + 1; r < rawData.length; r++) {
+        const row = rawData[r];
+        if (!row) continue;
+
+        // Stop when STT column (A, index 0) is no longer a valid number
+        const sttNum = parseInt(row[0], 10);
+        if (isNaN(sttNum) || sttNum <= 0) break;
+
+        const sku = colMap.sku !== -1 ? String(row[colMap.sku] || '').trim() : '';
+        if (!sku) continue;
+
+        const name = colMap.name !== -1 ? String(row[colMap.name] || '').trim() : '';
+        const unit = colMap.unit !== -1 ? String(row[colMap.unit] || '').trim() : '';
+        const quantity = colMap.quantity !== -1 ? parseCleanNumber(row[colMap.quantity]) : 0;
+        const unitPrice = colMap.price !== -1 ? parseCleanNumber(row[colMap.price]) : 0;
+        const amount = colMap.amount !== -1 ? parseCleanNumber(row[colMap.amount]) : (quantity * unitPrice);
+
+        let taxRate = 0;
+        if (colMap.taxRate !== -1) {
+          const rawTax = String(row[colMap.taxRate] || '').trim();
+          if (rawTax) {
+            if (rawTax.includes('%')) {
+              taxRate = parseCleanNumber(rawTax.replace('%', ''));
+            } else {
+              const taxVal = parseCleanNumber(rawTax);
+              taxRate = (taxVal > 0 && taxVal <= 1) ? taxVal * 100 : taxVal;
+            }
+          }
+        }
+
+        const totalAmount = colMap.totalAmount !== -1
+          ? parseCleanNumber(row[colMap.totalAmount])
+          : (amount + Math.round(amount * taxRate / 100));
+        const importCost = quantity > 0 ? (totalAmount / quantity) : 0;
+
+        total_amount += totalAmount;
+
+        const existingProduct = products.find(p => normalizeProductCode(p.ma) === normalizeProductCode(sku));
+        items.push({
+          product_sku: sku,
+          product_name: name,
+          unit,
+          quantity,
+          unit_price: unitPrice,
+          tax_rate: taxRate,
+          total_price: totalAmount,
+          import_cost: importCost,
+          system_match: !!existingProduct,
+          current_stock: existingProduct ? (existingProduct.stock || 0) : 0,
+          current_cost: existingProduct ? (existingProduct.cost_price || 0) : 0
+        });
+      }
+
+      if (items.length === 0) return null; // Empty product list — skip this sheet
+
+      return {
+        sheet_name: sheetLabel,
+        receipt: {
+          receipt_code: receipt_code || ('PNK-' + sheetLabel.replace(/\s/g, '')),
+          import_date: import_date || new Date().toLocaleDateString('vi-VN'),
+          supplier_name: supplier_name || 'Nhà cung cấp vãng lai',
+          note: note || '',
+          warehouse_name: warehouse_name || 'Kho chính',
+          total_amount
+        },
+        items
+      };
+    }
+    // ── End helper ─────────────────────────────────────────────────────
+
+    const parsedReceipts = [];
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName];
+      const parsed = parseSheet(worksheet, sheetName);
+      if (parsed) parsedReceipts.push(parsed);
+    }
+
+    if (parsedReceipts.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Không tìm thấy dữ liệu phiếu nhập kho hợp lệ trong file. Cần có cột Mã hàng/Mã SKU, Tên hàng, Số lượng.' });
+    }
+
+    // Return all parsed receipts; also keep legacy `receipt` + `items` pointing to the first receipt
+    const first = parsedReceipts[0];
+    res.json({
+      ok: true,
+      total_sheets: workbook.SheetNames.length,
+      parsed_sheets: parsedReceipts.length,
+      receipts: parsedReceipts,       // full array for multi-sheet UI
+      receipt: first.receipt,         // backward compat
+      items: first.items              // backward compat
+    });
+
+  } catch (err) {
+    console.error('Lỗi khi phân tích file Excel nhập kho:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi phân tích file Excel: ' + err.message });
+  }
+});
+
+app.post('/api/admin/inventory/save-receipt', requireAdmin, async (req, res) => {
+  const { receipt, items } = req.body || {};
+  if (!receipt || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ ok: false, message: 'Dữ liệu phiếu nhập kho không hợp lệ.' });
+  }
+
+  try {
+    const targetCode = String(receipt.receipt_code || '').trim();
+    if (!targetCode) {
+      return res.status(400).json({ ok: false, message: 'Mã chứng từ không được để trống.' });
+    }
+
+    // Kiểm tra trùng Mã chứng từ
+    if (IS_VERCEL) {
+      const checkResult = await sql`
+        SELECT id FROM stock_receipts WHERE LOWER(TRIM(receipt_code)) = LOWER(TRIM(${targetCode})) LIMIT 1
+      `;
+      if (checkResult.rows.length > 0) {
+        return res.status(400).json({ ok: false, message: `Mã chứng từ "${targetCode}" đã tồn tại trong hệ thống. Không thể lưu trùng.` });
+      }
+    } else {
+      const exists = stockReceipts.some(r => String(r.receipt_code || '').trim().toLowerCase() === targetCode.toLowerCase());
+      if (exists) {
+        return res.status(400).json({ ok: false, message: `Mã chứng từ "${targetCode}" đã tồn tại trong hệ thống. Không thể lưu trùng.` });
+      }
+    }
+
+    // 1. Save receipt and items to Database (or local JSON)
+    let receiptId = 0;
+    const createdAt = new Date().toISOString();
+
+    if (IS_VERCEL) {
+      const receiptResult = await sql`
+        INSERT INTO stock_receipts (receipt_code, import_date, supplier_name, note, warehouse_name, total_amount, created_at)
+        VALUES (${receipt.receipt_code}, ${receipt.import_date}, ${receipt.supplier_name}, ${receipt.note}, ${receipt.warehouse_name}, ${receipt.total_amount}, NOW())
+        RETURNING id
+      `;
+      receiptId = receiptResult.rows[0].id;
+
+      for (const item of items) {
+        await sql`
+          INSERT INTO stock_receipt_items (receipt_id, product_sku, product_name, unit, quantity, unit_price, tax_rate, total_price, import_cost)
+          VALUES (${receiptId}, ${item.product_sku}, ${item.product_name}, ${item.unit}, ${item.quantity}, ${item.unit_price}, ${item.tax_rate}, ${item.total_price}, ${item.import_cost})
+        `;
+      }
+    } else {
+      // Local mode
+      receiptId = stockReceipts.length + 1;
+      const localReceipt = {
+        id: receiptId,
+        receipt_code: receipt.receipt_code,
+        import_date: receipt.import_date,
+        supplier_name: receipt.supplier_name,
+        note: receipt.note,
+        warehouse_name: receipt.warehouse_name,
+        total_amount: receipt.total_amount,
+        created_at: createdAt,
+        items: items.map(item => ({
+          product_sku: item.product_sku,
+          product_name: item.product_name,
+          unit: item.unit,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate,
+          total_price: item.total_price,
+          import_cost: item.import_cost
+        }))
+      };
+      stockReceipts.push(localReceipt);
+      await saveStockReceipts(stockReceipts);
+    }
+
+    // 2. Update products inventory and average cost price
+    let productsUpdatedCount = 0;
+    
+    // Read fresh products on Vercel to avoid cache race conditions
+    let productsList = [...products];
+    if (IS_VERCEL) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+        if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+      } catch (err) {
+        console.error('Lỗi đọc products từ DB trong save-receipt:', err);
+      }
+    }
+
+    for (const item of items) {
+      const targetNorm = normalizeProductCode(item.product_sku);
+      if (!targetNorm) continue;
+      
+      const product = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+      if (product) {
+        const oldStock = parseFloat(product.stock || 0);
+        const oldCost = parseFloat(product.cost_price || 0);
+        const addedQty = parseFloat(item.quantity || 0);
+        const addedPrice = parseFloat(item.unit_price || 0);
+        
+        const newStock = oldStock + addedQty;
+        if (newStock > 0) {
+          // Average weighted cost price
+          product.cost_price = Math.round(((oldStock * oldCost) + (addedQty * addedPrice)) / newStock);
+        } else {
+          product.cost_price = addedPrice;
+        }
+        product.stock = newStock;
+        product.updatedAt = Date.now();
+        productsUpdatedCount++;
+      }
+    }
+
+    if (productsUpdatedCount > 0) {
+      products = productsList;
+      await saveProducts(productsList);
+      await broadcastUpdate('products_updated');
+    }
+
+    res.json({ ok: true, message: 'Nhập kho thành công!', receiptId });
+
+  } catch (err) {
+    console.error('Lỗi khi lưu phiếu nhập kho:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi lưu phiếu nhập kho: ' + err.message });
+  }
+});
+
+app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
+  try {
+    if (IS_VERCEL) {
+      const { rows } = await sql`
+        SELECT r.*, 
+               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count
+        FROM stock_receipts r
+        ORDER BY r.created_at DESC, r.id DESC
+      `;
+      const formatted = rows.map(r => ({
+        id: r.id,
+        receipt_code: r.receipt_code,
+        import_date: r.import_date,
+        supplier_name: r.supplier_name,
+        note: r.note,
+        warehouse_name: r.warehouse_name,
+        total_amount: Number(r.total_amount),
+        item_count: r.item_count,
+        created_at: r.created_at
+      }));
+      res.json(formatted);
+    } else {
+      const formatted = stockReceipts.map(r => ({
+        id: r.id,
+        receipt_code: r.receipt_code,
+        import_date: r.import_date,
+        supplier_name: r.supplier_name,
+        note: r.note,
+        warehouse_name: r.warehouse_name,
+        total_amount: r.total_amount,
+        item_count: r.items ? r.items.length : 0,
+        created_at: r.created_at
+      })).reverse();
+      res.json(formatted);
+    }
+  } catch (err) {
+    console.error('Lỗi lấy lịch sử nhập kho:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi hệ thống: ' + err.message });
+  }
+});
+
+app.get('/api/admin/inventory/receipts/:id', requireAdmin, async (req, res) => {
+  const receiptId = parseInt(req.params.id);
+  if (isNaN(receiptId)) {
+    return res.status(400).json({ ok: false, message: 'Mã phiếu nhập không hợp lệ.' });
+  }
+
+  try {
+    if (IS_VERCEL) {
+      const receiptRes = await sql`SELECT * FROM stock_receipts WHERE id = ${receiptId}`;
+      if (receiptRes.rows.length === 0) {
+        return res.status(404).json({ ok: false, message: 'Không tìm thấy phiếu nhập kho.' });
+      }
+      const receipt = receiptRes.rows[0];
+      const itemsRes = await sql`SELECT * FROM stock_receipt_items WHERE receipt_id = ${receiptId}`;
+      
+      res.json({
+        ok: true,
+        receipt: {
+          id: receipt.id,
+          receipt_code: receipt.receipt_code,
+          import_date: receipt.import_date,
+          supplier_name: receipt.supplier_name,
+          note: receipt.note,
+          warehouse_name: receipt.warehouse_name,
+          total_amount: Number(receipt.total_amount),
+          created_at: receipt.created_at
+        },
+        items: itemsRes.rows.map(item => ({
+          product_sku: item.product_sku,
+          product_name: item.product_name,
+          unit: item.unit,
+          quantity: Number(item.quantity),
+          unit_price: Number(item.unit_price),
+          tax_rate: Number(item.tax_rate),
+          total_price: Number(item.total_price),
+          import_cost: Number(item.import_cost)
+        }))
+      });
+    } else {
+      const receipt = stockReceipts.find(r => r.id === receiptId);
+      if (!receipt) {
+        return res.status(404).json({ ok: false, message: 'Không tìm thấy phiếu nhập kho.' });
+      }
+      res.json({
+        ok: true,
+        receipt: {
+          id: receipt.id,
+          receipt_code: receipt.receipt_code,
+          import_date: receipt.import_date,
+          supplier_name: receipt.supplier_name,
+          note: receipt.note,
+          warehouse_name: receipt.warehouse_name,
+          total_amount: receipt.total_amount,
+          created_at: receipt.created_at
+        },
+        items: receipt.items
+      });
+    }
+  } catch (err) {
+    console.error('Lỗi lấy chi tiết phiếu nhập kho:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi hệ thống: ' + err.message });
+  }
+});
+
+app.delete('/api/admin/inventory/receipts/:id', requireAdmin, async (req, res) => {
+  const receiptId = parseInt(req.params.id);
+  if (isNaN(receiptId)) {
+    return res.status(400).json({ ok: false, message: 'Mã phiếu nhập không hợp lệ.' });
+  }
+
+  try {
+    if (IS_VERCEL) {
+      const check = await sql`SELECT id FROM stock_receipts WHERE id = ${receiptId}`;
+      if (check.rows.length === 0) {
+        return res.status(404).json({ ok: false, message: 'Không tìm thấy chứng từ nhập kho.' });
+      }
+      await sql`DELETE FROM stock_receipts WHERE id = ${receiptId}`;
+    } else {
+      const index = stockReceipts.findIndex(r => r.id === receiptId);
+      if (index === -1) {
+        return res.status(404).json({ ok: false, message: 'Không tìm thấy chứng từ nhập kho.' });
+      }
+      stockReceipts.splice(index, 1);
+      await saveStockReceipts(stockReceipts);
+    }
+
+    res.json({ ok: true, message: 'Xóa chứng từ nhập kho thành công!' });
+  } catch (err) {
+    console.error('Lỗi khi xóa chứng từ nhập kho:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi khi xóa chứng từ: ' + err.message });
+  }
 });
 
 // Hàm chuẩn hóa mã SP dùng chung giữa import-images và cleanup.
@@ -1702,5 +2279,23 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
 app.get('/api/suppliers', requireAdmin, (req, res) => {
   res.json(suppliers);
 });
+
+// =====================================================================
+// KHỞI ĐỘNG SERVER (chỉ chạy khi KHÔNG ở trên Vercel)
+// =====================================================================
+if (!IS_VERCEL) {
+  // Bắt lỗi không mong muốn để tránh thoát im lặng
+  process.on('uncaughtException', (err) => {
+    console.error('❌ uncaughtException:', err);
+  });
+  process.on('unhandledRejection', (reason) => {
+    console.error('❌ unhandledRejection:', reason);
+  });
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    console.log(`🔑 Trang quản trị: http://localhost:${PORT}${ADMIN_PATH}`);
+  });
+}
 
 module.exports = app;

@@ -15,9 +15,9 @@ const cookieParser = require('cookie');
 const express = require('express');
 const multer = require('multer');
 
-// ── Database (Neon HTTP driver — không cần TCP handshake) ─────────────
 const { neon } = require('@neondatabase/serverless');
-const sql = neon(process.env.POSTGRES_URL || process.env.DATABASE_URL, { fullResults: true });
+const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const sql = dbUrl ? neon(dbUrl, { fullResults: true }) : null;
 
 // ── Storage (Cloudflare R2) ───────────────────────────────────────────
 const { uploadImageFile, listFiles } = require('../lib/storage');

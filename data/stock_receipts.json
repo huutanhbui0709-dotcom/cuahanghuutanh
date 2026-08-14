@@ -1,0 +1,3386 @@
+[
+  {
+    "id": 1,
+    "receipt_code": "28971",
+    "import_date": "18/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 4 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 18/07/2026",
+    "warehouse_name": "Kho chính",
+    "total_amount": 2882827,
+    "created_at": "2026-08-14T03:39:53.042Z",
+    "items": [
+      {
+        "product_sku": "SONPHUNT224XANHD",
+        "product_name": "OWEN SƠN PHUN T224 XANH DƯƠNG AX 400ML 12L/T",
+        "unit": "Lon",
+        "quantity": 48,
+        "unit_price": 24024,
+        "tax_rate": 8,
+        "total_price": 1153131,
+        "import_cost": 24023.5625
+      },
+      {
+        "product_sku": "SONPHUNT211DOCO4",
+        "product_name": "OWEN SƠN PHUN T211 ĐỎ CỜ 400ML (12L/t)",
+        "unit": "Lon",
+        "quantity": 12,
+        "unit_price": 24024,
+        "tax_rate": 8,
+        "total_price": 288283,
+        "import_cost": 24023.583333333332
+      },
+      {
+        "product_sku": "SONPHUNT220XAMGH",
+        "product_name": "OWEN SƠN PHUN T220 XÁM GHI 400ML (12L/t)",
+        "unit": "Lon",
+        "quantity": 24,
+        "unit_price": 24024,
+        "tax_rate": 8,
+        "total_price": 576565,
+        "import_cost": 24023.541666666668
+      },
+      {
+        "product_sku": "SONPHUNT300NHUBA",
+        "product_name": "OWEN SƠN PHUN T300 NHŨ BẠC 400ML (12L/t)",
+        "unit": "Lon",
+        "quantity": 36,
+        "unit_price": 24024,
+        "tax_rate": 8,
+        "total_price": 864848,
+        "import_cost": 24023.555555555555
+      },
+      {
+        "product_sku": "SONPHUNT300NHUBA",
+        "product_name": "OWEN SƠN PHUN T300 NHŨ BẠC 400ML (12L/t)",
+        "unit": "Lon",
+        "quantity": 12,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 0,
+        "import_cost": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "receipt_code": "2C26MAB",
+    "import_date": "04/04/2026",
+    "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 2C26MAB ngày 04/04/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2512000,
+    "created_at": "2026-08-14T03:53:11.564Z",
+    "items": [
+      {
+        "product_sku": "SP000014",
+        "product_name": "Sơn dạng xịt 380 gram (1 thùng 12 lon)",
+        "unit": "Lon",
+        "quantity": 60,
+        "unit_price": 25000,
+        "tax_rate": 0,
+        "total_price": 1500000,
+        "import_cost": 25000
+      },
+      {
+        "product_sku": "SP000052",
+        "product_name": "Kìm hiệu Luxtop size 8\"",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 13400,
+        "tax_rate": 0,
+        "total_price": 268000,
+        "import_cost": 13400
+      },
+      {
+        "product_sku": "SP000066",
+        "product_name": "VÒNG MIỆNG 13MM",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 5000,
+        "tax_rate": 0,
+        "total_price": 150000,
+        "import_cost": 5000
+      },
+      {
+        "product_sku": "SP079594",
+        "product_name": "ty ren 12",
+        "unit": "Cây",
+        "quantity": 10,
+        "unit_price": 13000,
+        "tax_rate": 0,
+        "total_price": 130000,
+        "import_cost": 13000
+      },
+      {
+        "product_sku": "SP079593",
+        "product_name": "ty ren 10",
+        "unit": "Cây",
+        "quantity": 10,
+        "unit_price": 11000,
+        "tax_rate": 0,
+        "total_price": 110000,
+        "import_cost": 11000
+      },
+      {
+        "product_sku": "SP079592",
+        "product_name": "ty ren 8",
+        "unit": "Cây",
+        "quantity": 10,
+        "unit_price": 9000,
+        "tax_rate": 0,
+        "total_price": 90000,
+        "import_cost": 9000
+      },
+      {
+        "product_sku": "SP079591",
+        "product_name": "Khung cưa đỏ rẻ",
+        "unit": "Cây",
+        "quantity": 12,
+        "unit_price": 22000,
+        "tax_rate": 0,
+        "total_price": 264000,
+        "import_cost": 22000
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "receipt_code": "NK042026_L8",
+    "import_date": "09/04/2026",
+    "supplier_name": "HỘ KINH DOANH NGUYỄN TRIỀU ANH",
+    "note": "Nhập kho tháng 04/2026 Lần 8",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1980000,
+    "created_at": "2026-08-14T03:53:11.575Z",
+    "items": [
+      {
+        "product_sku": "SP000003",
+        "product_name": "Bộ Sen Tắm",
+        "unit": "Bộ",
+        "quantity": 20,
+        "unit_price": 58000,
+        "tax_rate": 0,
+        "total_price": 1160000,
+        "import_cost": 58000
+      },
+      {
+        "product_sku": "SP000004",
+        "product_name": "Đầu Vòi Xịt Bằng Nhựa",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 30000,
+        "tax_rate": 0,
+        "total_price": 600000,
+        "import_cost": 30000
+      },
+      {
+        "product_sku": "SP000006",
+        "product_name": "Dây xả dài loại 1",
+        "unit": "Sợi",
+        "quantity": 20,
+        "unit_price": 6500,
+        "tax_rate": 0,
+        "total_price": 130000,
+        "import_cost": 6500
+      },
+      {
+        "product_sku": "SP000005",
+        "product_name": "Dây xả ngắn loại 1",
+        "unit": "Sợi",
+        "quantity": 20,
+        "unit_price": 4500,
+        "tax_rate": 0,
+        "total_price": 90000,
+        "import_cost": 4500
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "receipt_code": "NK032026_L2",
+    "import_date": "19/03/2026",
+    "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
+    "note": "Nhập kho tháng 03/2026 Lần 2",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 3023968,
+    "created_at": "2026-08-14T03:53:11.632Z",
+    "items": [
+      {
+        "product_sku": "MK-107Đ",
+        "product_name": "Đá cắt sắt, bằng đá nhámkết khối, sử dụng cắt sắt, kimloại, Model:MK-107Đ.",
+        "unit": "Viên",
+        "quantity": 100,
+        "unit_price": 3240,
+        "tax_rate": 8,
+        "total_price": 324000,
+        "import_cost": 3240
+      },
+      {
+        "product_sku": "MK139",
+        "product_name": "Lưỡi cưa đĩa bằng thép hợp kim, sử dụng cho máy cắt gạch, đá hoa cương, Model:MK139",
+        "unit": "Viên",
+        "quantity": 10,
+        "unit_price": 47500,
+        "tax_rate": 8,
+        "total_price": 474995,
+        "import_cost": 47499.5
+      },
+      {
+        "product_sku": "MK168",
+        "product_name": "Lưỡi cưa đĩa bằng thép hợp kim, sử dụng cho máy cắt gạch, đá hoa cương. Model:MK168",
+        "unit": "Viên",
+        "quantity": 10,
+        "unit_price": 62500,
+        "tax_rate": 8,
+        "total_price": 624996,
+        "import_cost": 62499.6
+      },
+      {
+        "product_sku": "MK179",
+        "product_name": "Lưỡi cưa đĩa bằng thép hợp kim, sử dụng cho máy cắt gạch, đá hoa cương, Model:MK179.",
+        "unit": "Viên",
+        "quantity": 10,
+        "unit_price": 54999,
+        "tax_rate": 8,
+        "total_price": 549990,
+        "import_cost": 54999
+      },
+      {
+        "product_sku": "MK18",
+        "product_name": "Lưỡi cưa bằng thép hợp kim, sử dụng cho máy cắt gạch, đá hoa cương, Model:MK18.",
+        "unit": "Viên",
+        "quantity": 10,
+        "unit_price": 42499,
+        "tax_rate": 8,
+        "total_price": 424991,
+        "import_cost": 42499.1
+      },
+      {
+        "product_sku": "MK-224",
+        "product_name": "Lưỡi cưa đĩa bằng thép hợp kim, sử dụng cho máy cắt gạch, đá hoa cương, Model:MK-224.",
+        "unit": "Viên",
+        "quantity": 10,
+        "unit_price": 62500,
+        "tax_rate": 8,
+        "total_price": 624996,
+        "import_cost": 62499.6
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "receipt_code": "NK052026_L8",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 8",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 9999974,
+    "created_at": "2026-08-14T03:53:11.646Z",
+    "items": [
+      {
+        "product_sku": "PVC-Udn60x1,8",
+        "product_name": "Ống PVC-U dn60x1,8x4m-NĐPN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 25974,
+        "tax_rate": 8,
+        "total_price": 2597400,
+        "import_cost": 25974
+      },
+      {
+        "product_sku": "PVC-Udn90x2,6",
+        "product_name": "Ống PVC-U dn90x2,6x4m-NĐ-(I)- PN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 40,
+        "unit_price": 54756,
+        "tax_rate": 8,
+        "total_price": 2190240,
+        "import_cost": 54756
+      },
+      {
+        "product_sku": "uPVC27A",
+        "product_name": "Ống uPVC 27 A",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 9704,
+        "tax_rate": 8,
+        "total_price": 1940760,
+        "import_cost": 9703.8
+      },
+      {
+        "product_sku": "uPVC34B",
+        "product_name": "Ống uPVC 34 B",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 10833,
+        "tax_rate": 8,
+        "total_price": 1083348,
+        "import_cost": 10833.48
+      },
+      {
+        "product_sku": "COMONG90",
+        "product_name": "Co mỏng 90",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 18684,
+        "tax_rate": 8,
+        "total_price": 373680,
+        "import_cost": 18684
+      },
+      {
+        "product_sku": "CODAY49",
+        "product_name": "Co dày 49",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 11416,
+        "tax_rate": 8,
+        "total_price": 228312,
+        "import_cost": 11415.6
+      },
+      {
+        "product_sku": "NOIDAY27",
+        "product_name": "Măng song dày 27 (Nối)",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 2371,
+        "tax_rate": 8,
+        "total_price": 71118,
+        "import_cost": 2370.6
+      },
+      {
+        "product_sku": "RANGNGOAIDAY49",
+        "product_name": "Măng song răng ngoài dày 49",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 9583,
+        "tax_rate": 8,
+        "total_price": 191657,
+        "import_cost": 9582.85
+      },
+      {
+        "product_sku": "LUPPEGIENG49",
+        "product_name": "Luppe giếng 49",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 39312,
+        "tax_rate": 8,
+        "total_price": 196560,
+        "import_cost": 39312
+      },
+      {
+        "product_sku": "LUPPEGIENG42TJ",
+        "product_name": "Luppe giếng 42 E1112-S (TJ)",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 29360,
+        "tax_rate": 8,
+        "total_price": 146799,
+        "import_cost": 29359.8
+      },
+      {
+        "product_sku": "NOIDAY27",
+        "product_name": "Măng song dày 27 (Nối)",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 2357,
+        "tax_rate": 8,
+        "total_price": 117828,
+        "import_cost": 2356.56
+      },
+      {
+        "product_sku": "COPVC90ST",
+        "product_name": "Co pvc 90 ST",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 11146,
+        "tax_rate": 8,
+        "total_price": 222912,
+        "import_cost": 11145.6
+      },
+      {
+        "product_sku": "COMONG114",
+        "product_name": "Co mỏng 114",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 31968,
+        "tax_rate": 8,
+        "total_price": 639360,
+        "import_cost": 31968
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "receipt_code": "NK052026_L6",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 6",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 19340986,
+    "created_at": "2026-08-14T03:53:11.663Z",
+    "items": [
+      {
+        "product_sku": "ONGNUOC114MONG",
+        "product_name": "ỐNG NHỰA PHI 114 LOẠI MỎNG",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 17172,
+        "tax_rate": 8,
+        "total_price": 1717200,
+        "import_cost": 17172
+      },
+      {
+        "product_sku": "ONGNUOC140MONG",
+        "product_name": "ỐNG NHỰA PHI 140 LOẠI MỎNG",
+        "unit": "",
+        "quantity": 100,
+        "unit_price": 28566,
+        "tax_rate": 8,
+        "total_price": 2856600,
+        "import_cost": 28566
+      },
+      {
+        "product_sku": "ONGNUOC200MONG",
+        "product_name": "ỐNG NHỰA PHI 200 LOẠI MỎNG",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 51624,
+        "tax_rate": 8,
+        "total_price": 5162400,
+        "import_cost": 51624
+      },
+      {
+        "product_sku": "ONGNUOC60DAY",
+        "product_name": "ỐNG NHỰA PHI 60 LOẠI DÀY",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 9612,
+        "tax_rate": 8,
+        "total_price": 961200,
+        "import_cost": 9612
+      },
+      {
+        "product_sku": "ONGNUOC90MONG",
+        "product_name": "ỐNG NHỰA PHI 90 LOẠI MỎNG",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 11772,
+        "tax_rate": 8,
+        "total_price": 1177200,
+        "import_cost": 11772
+      },
+      {
+        "product_sku": "PVC-Udn90x2,6",
+        "product_name": "Ống PVC-U dn90x2,6x4m-NĐ-(I)- PN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 40,
+        "unit_price": 54972,
+        "tax_rate": 8,
+        "total_price": 2198880,
+        "import_cost": 54972
+      },
+      {
+        "product_sku": "PVC-Udn60x1,8",
+        "product_name": "Ống PVC-U dn60x1,8x4m-NĐPN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 40,
+        "unit_price": 26406,
+        "tax_rate": 8,
+        "total_price": 1056240,
+        "import_cost": 26406
+      },
+      {
+        "product_sku": "PVC-Udn49x2,1",
+        "product_name": "Ống PVC-U dn49x2,1x4m-NĐPN9-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 40,
+        "unit_price": 23652,
+        "tax_rate": 8,
+        "total_price": 946080,
+        "import_cost": 23652
+      },
+      {
+        "product_sku": "PVC-Udn42x1,9",
+        "product_name": "Ống PVC-U dn42x1,9x4m-NĐPN9-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 80,
+        "unit_price": 18742,
+        "tax_rate": 8,
+        "total_price": 1499386,
+        "import_cost": 18742.325
+      },
+      {
+        "product_sku": "PVC-Udn27x1,6",
+        "product_name": "Ống PVC-U dn27x1,6x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 10260,
+        "tax_rate": 8,
+        "total_price": 1026000,
+        "import_cost": 10260
+      },
+      {
+        "product_sku": "PVC-Udn21x1,3",
+        "product_name": "Ống PVC-U dn21x1,3x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 7398,
+        "tax_rate": 8,
+        "total_price": 739800,
+        "import_cost": 7398
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "receipt_code": "NK042026_L6",
+    "import_date": "09/04/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 04/2026 Lần 6",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 632383,
+    "created_at": "2026-08-14T03:53:11.681Z",
+    "items": [
+      {
+        "product_sku": "NN102WM",
+        "product_name": "Hộp nổi đôi hàng Wide",
+        "unit": "Cái",
+        "quantity": 60,
+        "unit_price": 10540,
+        "tax_rate": 8,
+        "total_price": 632383,
+        "import_cost": 10539.716666666667
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "receipt_code": "NK032026_L3",
+    "import_date": "25/03/2026",
+    "supplier_name": "CÔNG TY TNHH 2TV HOÀNG MINH DI",
+    "note": "Nhập kho tháng 03/2026 Lần 3",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1766943,
+    "created_at": "2026-08-14T03:53:11.705Z",
+    "items": [
+      {
+        "product_sku": "OCAM-4E26",
+        "product_name": "Ổ cắm 4 cửa E26",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 28999,
+        "tax_rate": 8,
+        "total_price": 289991,
+        "import_cost": 28999.1
+      },
+      {
+        "product_sku": "OCAM-3E15",
+        "product_name": "Ổ cắm 3 cửa E15",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 19899,
+        "tax_rate": 8,
+        "total_price": 397980,
+        "import_cost": 19899
+      },
+      {
+        "product_sku": "DUOIDENDN12",
+        "product_name": "Đuôi đèn bóng nhót ĐN12 (120c/H)",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 3100,
+        "tax_rate": 8,
+        "total_price": 61992,
+        "import_cost": 3099.6
+      },
+      {
+        "product_sku": "PHICHCAMP3000W2+",
+        "product_name": "Phích cắm siêu chịu tải P3000W2+ (120c/T)",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 15999,
+        "tax_rate": 8,
+        "total_price": 319982,
+        "import_cost": 15999.1
+      },
+      {
+        "product_sku": "OCAM-102200W4",
+        "product_name": "Ổ cắm 10 cửa lõi sứ chịu nhiệt 2200W 10Y-4",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 155000,
+        "tax_rate": 8,
+        "total_price": 309999,
+        "import_cost": 154999.5
+      },
+      {
+        "product_sku": "OCAM-102200W2",
+        "product_name": "Ổ cắm 10 cửa lõi sứ chịu nhiệt 2200W 10Y-2",
+        "unit": "Cái",
+        "quantity": 3,
+        "unit_price": 129000,
+        "tax_rate": 8,
+        "total_price": 386999,
+        "import_cost": 128999.66666666667
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "receipt_code": "NK052026_L5",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 5",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 9999806,
+    "created_at": "2026-08-14T03:53:11.724Z",
+    "items": [
+      {
+        "product_sku": "PVC-Udn21x1,3",
+        "product_name": "Ống PVC-U dn21x1,3x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 180,
+        "unit_price": 6935,
+        "tax_rate": 8,
+        "total_price": 1248242,
+        "import_cost": 6934.677777777778
+      },
+      {
+        "product_sku": "PVC-Udn27x1,6",
+        "product_name": "Ống PVC-U dn27x1,6x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 9828,
+        "tax_rate": 8,
+        "total_price": 1965600,
+        "import_cost": 9828
+      },
+      {
+        "product_sku": "PVC-Udn34x1,9",
+        "product_name": "Ống PVC-U dn34x1,9x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 14385,
+        "tax_rate": 8,
+        "total_price": 2876904,
+        "import_cost": 14384.52
+      },
+      {
+        "product_sku": "PVC-Udn42x1,9",
+        "product_name": "Ống PVC-U dn42x1,9x4m-NĐPN9-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 18311,
+        "tax_rate": 8,
+        "total_price": 1831140,
+        "import_cost": 18311.4
+      },
+      {
+        "product_sku": "PVC-Udn60x1,8",
+        "product_name": "Ống PVC-U dn60x1,8x4m-NĐPN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 80,
+        "unit_price": 25974,
+        "tax_rate": 8,
+        "total_price": 2077920,
+        "import_cost": 25974
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "receipt_code": "NK012026_L5",
+    "import_date": "29/01/2026",
+    "supplier_name": "CÔNG TY TNHH SẢN XUẤT THƯƠNG MẠI DỊCH VỤ V.I.P",
+    "note": "Nhập kho tháng 01/2026 Lần 5",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1762560,
+    "created_at": "2026-08-14T03:53:11.752Z",
+    "items": [
+      {
+        "product_sku": "SILICONA500-XAM",
+        "product_name": "Keo silicone A500 HD-BOND Xám Xingfa",
+        "unit": "Chai",
+        "quantity": 24,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 725760,
+        "import_cost": 30240
+      },
+      {
+        "product_sku": "SONXITTRANG",
+        "product_name": "Sơn xịt trắng AE200 400ml",
+        "unit": "Lon",
+        "quantity": 12,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 259200,
+        "import_cost": 21600
+      },
+      {
+        "product_sku": "SONXITDENMO",
+        "product_name": "Sơn xịt đen mờ AE212 400ml",
+        "unit": "Lon",
+        "quantity": 12,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 259200,
+        "import_cost": 21600
+      },
+      {
+        "product_sku": "SONXITDEN",
+        "product_name": "Sơn xịt đen AE210 400ml",
+        "unit": "Lon",
+        "quantity": 12,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 259200,
+        "import_cost": 21600
+      },
+      {
+        "product_sku": "SONXITDANANG",
+        "product_name": "Sơn xịt đa năng SPK 39 Black 400 ml",
+        "unit": "Chai",
+        "quantity": 12,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 259200,
+        "import_cost": 21600
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "receipt_code": "NK052026_L18",
+    "import_date": "09/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 18",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 247137,
+    "created_at": "2026-08-14T03:53:11.765Z",
+    "items": [
+      {
+        "product_sku": "NA101TM",
+        "product_name": "Hộp đế âm đơn, có tán, kèm vít",
+        "unit": "Cuộn",
+        "quantity": 30,
+        "unit_price": 3531,
+        "tax_rate": 8,
+        "total_price": 105916,
+        "import_cost": 3530.5333333333333
+      },
+      {
+        "product_sku": "NA102TM",
+        "product_name": "Đế âm đôi, có tán, kèm vít",
+        "unit": "",
+        "quantity": 20,
+        "unit_price": 7061,
+        "tax_rate": 8,
+        "total_price": 141221,
+        "import_cost": 7061.05
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "receipt_code": "NK042026_L7",
+    "import_date": "09/04/2026",
+    "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
+    "note": "Nhập kho tháng 04/2026 Lần 7",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2512000,
+    "created_at": "2026-08-14T03:53:11.792Z",
+    "items": [
+      {
+        "product_sku": "SP000014",
+        "product_name": "Sơn dạng xịt 380 gram (1 thùng 12 lon)",
+        "unit": "Lon",
+        "quantity": 60,
+        "unit_price": 25000,
+        "tax_rate": 0,
+        "total_price": 1500000,
+        "import_cost": 25000
+      },
+      {
+        "product_sku": "SP000052",
+        "product_name": "Kìm hiệu Luxtop size 8\"",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 13400,
+        "tax_rate": 0,
+        "total_price": 268000,
+        "import_cost": 13400
+      },
+      {
+        "product_sku": "SP000066",
+        "product_name": "VÒNG MIỆNG 13MM",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 5000,
+        "tax_rate": 0,
+        "total_price": 150000,
+        "import_cost": 5000
+      },
+      {
+        "product_sku": "SP079594",
+        "product_name": "ty ren 12",
+        "unit": "Cây",
+        "quantity": 10,
+        "unit_price": 13000,
+        "tax_rate": 0,
+        "total_price": 130000,
+        "import_cost": 13000
+      },
+      {
+        "product_sku": "SP079593",
+        "product_name": "ty ren 10",
+        "unit": "Cây",
+        "quantity": 10,
+        "unit_price": 11000,
+        "tax_rate": 0,
+        "total_price": 110000,
+        "import_cost": 11000
+      },
+      {
+        "product_sku": "SP079592",
+        "product_name": "ty ren 8",
+        "unit": "Cây",
+        "quantity": 10,
+        "unit_price": 9000,
+        "tax_rate": 0,
+        "total_price": 90000,
+        "import_cost": 9000
+      },
+      {
+        "product_sku": "SP079591",
+        "product_name": "Khung cưa đỏ rẻ",
+        "unit": "Cây",
+        "quantity": 12,
+        "unit_price": 22000,
+        "tax_rate": 0,
+        "total_price": 264000,
+        "import_cost": 22000
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "receipt_code": "NK052026_L2",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 2",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 8605440,
+    "created_at": "2026-08-14T03:53:11.813Z",
+    "items": [
+      {
+        "product_sku": "DIENCUONVSC-2.5",
+        "product_name": "VSC - Oval 2.5",
+        "unit": "Mét",
+        "quantity": 400,
+        "unit_price": 12460,
+        "tax_rate": 8,
+        "total_price": 4983984,
+        "import_cost": 12459.96
+      },
+      {
+        "product_sku": "DIENCUONVSC-4.0",
+        "product_name": "VSC - Oval 4.0",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 18107,
+        "tax_rate": 8,
+        "total_price": 3621456,
+        "import_cost": 18107.28
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "receipt_code": "NK012026_L2",
+    "import_date": "19/01/2026",
+    "supplier_name": "ĐIỆN GIA DỤNG KHẮC TÍNH",
+    "note": "Nhập kho tháng 01/2026 lần 2",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1305000,
+    "created_at": "2026-08-14T03:53:11.833Z",
+    "items": [
+      {
+        "product_sku": "DENTRANGTRI220V",
+        "product_name": "Đèn lồng dùng khung bằng nhựa tổng hợp, dùng đện 220V, dùng bóng DIOT LED phát quang, kích thước phi (30-60)cm+-10%, không phải loại quang điện mới 100%",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 0,
+        "tax_rate": 0,
+        "total_price": 440000,
+        "import_cost": 88000
+      },
+      {
+        "product_sku": "DAYDIENLED5V-12",
+        "product_name": "Dây đèn led, diện áp: 5V-12, dài 3-5m+/-10%",
+        "unit": "Chiếc",
+        "quantity": 50,
+        "unit_price": 0,
+        "tax_rate": 0,
+        "total_price": 575000,
+        "import_cost": 11500
+      },
+      {
+        "product_sku": "DENCHUPHUC",
+        "product_name": "Đèn lồng chữ Phúc",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 0,
+        "tax_rate": 0,
+        "total_price": 110000,
+        "import_cost": 22000
+      },
+      {
+        "product_sku": "LONGDEN30-100",
+        "product_name": "Lồng đèn truyền thống size 30-100cm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 0,
+        "tax_rate": 0,
+        "total_price": 180000,
+        "import_cost": 18000
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "receipt_code": "NK052026_L14",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 14",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 4999968,
+    "created_at": "2026-08-14T03:53:11.852Z",
+    "items": [
+      {
+        "product_sku": "ONP200DAY",
+        "product_name": "ỐNG NHỰA PHI 200 LOẠI DÀY",
+        "unit": "Mét",
+        "quantity": 60,
+        "unit_price": 83333,
+        "tax_rate": 8,
+        "total_price": 4999968,
+        "import_cost": 83332.8
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "receipt_code": "NK052026_L4",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 4",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 411331,
+    "created_at": "2026-08-14T03:53:11.870Z",
+    "items": [
+      {
+        "product_sku": "FRG20WM",
+        "product_name": "Ống luồn dây mềm phi 20 màu\ntrắng, 50m",
+        "unit": "Cuộn",
+        "quantity": 3,
+        "unit_price": 137110,
+        "tax_rate": 8,
+        "total_price": 411331,
+        "import_cost": 137110.33333333334
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "receipt_code": "NK052026_L1",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1206036,
+    "created_at": "2026-08-14T03:53:11.896Z",
+    "items": [
+      {
+        "product_sku": "WNV5001-7W",
+        "product_name": "WNV5001-7W - Công tắc B FULL",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 8659,
+        "tax_rate": 8,
+        "total_price": 432972,
+        "import_cost": 8659.44
+      },
+      {
+        "product_sku": "DAYDOI2x0.75",
+        "product_name": "Cadivi - Dây VCmd/LF-2x0.75 (2x24/0.2) - 0.6/1kV",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 7731,
+        "tax_rate": 8,
+        "total_price": 773064,
+        "import_cost": 7730.64
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "receipt_code": "NK042026_L3",
+    "import_date": "09/04/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 04/2026 Lần 3",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 10000001,
+    "created_at": "2026-08-14T03:53:11.911Z",
+    "items": [
+      {
+        "product_sku": "PVC-Udn114x3,1",
+        "product_name": "Ống PVC-U dn114x3,1x4m-NĐ",
+        "unit": "Mét",
+        "quantity": 80,
+        "unit_price": 90066,
+        "tax_rate": 8,
+        "total_price": 7205242,
+        "import_cost": 90065.525
+      },
+      {
+        "product_sku": "PVC-Udn21x1,7",
+        "product_name": "Ống PVC-U dn21x1,7x4m-NĐ",
+        "unit": "Mét",
+        "quantity": 340,
+        "unit_price": 7970,
+        "tax_rate": 8,
+        "total_price": 2709936,
+        "import_cost": 7970.4
+      },
+      {
+        "product_sku": "COPVC21DAY",
+        "product_name": "Co PVC 21 dày ( PN 15, BM )",
+        "unit": "Cái",
+        "quantity": 34,
+        "unit_price": 2495,
+        "tax_rate": 8,
+        "total_price": 84823,
+        "import_cost": 2494.794117647059
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "receipt_code": "6301C26TAA",
+    "import_date": "27/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000630 ngày 27/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2307960,
+    "created_at": "2026-08-14T03:53:11.929Z",
+    "items": [
+      {
+        "product_sku": "COV-22-RS",
+        "product_name": "Đầu phun áp lực chất lỏng 1HP Hiệu Con ong vàng Model COV-22-RS",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1225800,
+        "tax_rate": 8,
+        "total_price": 1225800,
+        "import_cost": 1225800
+      },
+      {
+        "product_sku": "YMS-303G2",
+        "product_name": "Dụng cụ đo cân bằng laser YMS-303G2",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1082160,
+        "tax_rate": 8,
+        "total_price": 1082160,
+        "import_cost": 1082160
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "receipt_code": "NK052026_L7",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 7",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2500103,
+    "created_at": "2026-08-14T03:53:11.949Z",
+    "items": [
+      {
+        "product_sku": "ONP300DAY",
+        "product_name": "Ống nhựa phi 300 loại dày",
+        "unit": "Mét",
+        "quantity": 12,
+        "unit_price": 162000,
+        "tax_rate": 8,
+        "total_price": 1944000,
+        "import_cost": 162000
+      },
+      {
+        "product_sku": "LOIBMP114",
+        "product_name": "Lơi 114 Bình Minh",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 37456,
+        "tax_rate": 8,
+        "total_price": 374555,
+        "import_cost": 37455.5
+      },
+      {
+        "product_sku": "LOIP114ST",
+        "product_name": "Lơi 114 ST",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 18155,
+        "tax_rate": 8,
+        "total_price": 181548,
+        "import_cost": 18154.8
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "receipt_code": "NK042026_L2",
+    "import_date": "09/04/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 04/2026 Lần 2",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 9999936,
+    "created_at": "2026-08-14T03:53:11.967Z",
+    "items": [
+      {
+        "product_sku": "ONGNUOC220DAY",
+        "product_name": "ỐNG NHỰA PHI 220 LOẠI DÀY",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 71280,
+        "tax_rate": 8,
+        "total_price": 7128000,
+        "import_cost": 71280
+      },
+      {
+        "product_sku": "PVC-Udn49x2,1",
+        "product_name": "Ống PVC-U dn49x2,1x4m-NĐPN9-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 88,
+        "unit_price": 23652,
+        "tax_rate": 8,
+        "total_price": 2081376,
+        "import_cost": 23652
+      },
+      {
+        "product_sku": "PVC-Udn27x1,6",
+        "product_name": "Ống PVC-U dn27x1,6x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 80,
+        "unit_price": 9882,
+        "tax_rate": 8,
+        "total_price": 790560,
+        "import_cost": 9882
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "receipt_code": "NK052026_L10",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 10",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 425952,
+    "created_at": "2026-08-14T03:53:11.983Z",
+    "items": [
+      {
+        "product_sku": "COPVC21DAY",
+        "product_name": "Co PVC 21 dày ( PN 15, BM )",
+        "unit": "Cái",
+        "quantity": 100,
+        "unit_price": 2554,
+        "tax_rate": 8,
+        "total_price": 255420,
+        "import_cost": 2554.2
+      },
+      {
+        "product_sku": "PVCUdn21-PN15",
+        "product_name": "T PVC-U dn21-PN15",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 3411,
+        "tax_rate": 8,
+        "total_price": 170532,
+        "import_cost": 3410.64
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "receipt_code": "2481C26TAA",
+    "import_date": "20/04/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000248 ngày 20/04/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 5752080,
+    "created_at": "2026-08-14T03:53:12.003Z",
+    "items": [
+      {
+        "product_sku": "YMS-DBT0832G2",
+        "product_name": "Máy đục bê tông điện YMS-DBT0832G2",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 1263600,
+        "tax_rate": 8,
+        "total_price": 2527200,
+        "import_cost": 1263600
+      },
+      {
+        "product_sku": "YMS-TD100G2",
+        "product_name": "Máy mài cầm tay điện YMS-TD100G2",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 403920,
+        "tax_rate": 8,
+        "total_price": 2019600,
+        "import_cost": 403920
+      },
+      {
+        "product_sku": "YMS-303G2",
+        "product_name": "Dụng cụ đo cân bằng laser YMS-303G2",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1086480,
+        "tax_rate": 8,
+        "total_price": 1086480,
+        "import_cost": 1086480
+      },
+      {
+        "product_sku": "TYK002",
+        "product_name": "Phụ kiện của thiết bị đo độ đường thẳng bằng tia laser: Bộ sạc pin, Model: TYK002",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 23760,
+        "tax_rate": 8,
+        "total_price": 23760,
+        "import_cost": 23760
+      },
+      {
+        "product_sku": "TYK001",
+        "product_name": "Phụ kiện của thiết bị đo độ đường thẳng bằng tia laser: Bộ sạc pin, Model: TYK001",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 47520,
+        "tax_rate": 8,
+        "total_price": 95040,
+        "import_cost": 47520
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "receipt_code": "5641C26TAA",
+    "import_date": "01/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000564 ngày 01/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 11350800,
+    "created_at": "2026-08-14T03:53:12.021Z",
+    "items": [
+      {
+        "product_sku": "OKAWA20-DP",
+        "product_name": "Máy phun thuốc trừ côn trùng 12V12Ah OKAWA 20-DP (vàng)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 779760,
+        "tax_rate": 8,
+        "total_price": 7797600,
+        "import_cost": 779760
+      },
+      {
+        "product_sku": "MKP1013BG2W",
+        "product_name": "Máy khoan pin YMS-MKP1013BG2W",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1684800,
+        "tax_rate": 8,
+        "total_price": 1684800,
+        "import_cost": 1684800
+      },
+      {
+        "product_sku": "YMS-GKT21V-55N",
+        "product_name": "Máy khoan cầm tay pin YMS-GKT21V-55N",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 939600,
+        "tax_rate": 8,
+        "total_price": 939600,
+        "import_cost": 939600
+      },
+      {
+        "product_sku": "YMS-CTN180",
+        "product_name": "Máy chà tường điện YMS-CTN180",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 928800,
+        "tax_rate": 8,
+        "total_price": 928800,
+        "import_cost": 928800
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "receipt_code": "NK012026_L1",
+    "import_date": "19/01/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 01/2026 lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1316002,
+    "created_at": "2026-08-14T03:53:12.043Z",
+    "items": [
+      {
+        "product_sku": "CADIVIDOI1,5",
+        "product_name": "Dây điện đôi Cadivi (1,5)",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 1316002,
+        "import_cost": 13160.02
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "receipt_code": "NK052026_L9",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 9",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 10000001,
+    "created_at": "2026-08-14T03:53:12.063Z",
+    "items": [
+      {
+        "product_sku": "PVC-Udn60x1,8",
+        "product_name": "Ống PVC-U dn60x1,8x4m-NĐPN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 26873,
+        "tax_rate": 8,
+        "total_price": 2687256,
+        "import_cost": 26872.56
+      },
+      {
+        "product_sku": "PVC-Udn90x2,6",
+        "product_name": "Ống PVC-U dn90x2,6x4m-NĐ-(I)- PN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 40,
+        "unit_price": 56862,
+        "tax_rate": 8,
+        "total_price": 2274480,
+        "import_cost": 56862
+      },
+      {
+        "product_sku": "PVC-Udn34x1,9",
+        "product_name": "Ống PVC-U dn34x1,9x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 48,
+        "unit_price": 14658,
+        "tax_rate": 8,
+        "total_price": 703572,
+        "import_cost": 14657.75
+      },
+      {
+        "product_sku": "PVC-Udn27x1,6",
+        "product_name": "Ống PVC-U dn27x1,6x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 10109,
+        "tax_rate": 8,
+        "total_price": 2021760,
+        "import_cost": 10108.8
+      },
+      {
+        "product_sku": "RACCO60",
+        "product_name": "Rắc co 60",
+        "unit": "Bộ",
+        "quantity": 3,
+        "unit_price": 63223,
+        "tax_rate": 8,
+        "total_price": 189670,
+        "import_cost": 63223.333333333336
+      },
+      {
+        "product_sku": "COPVC90ST",
+        "product_name": "Co pvc 90 ST",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 11867,
+        "tax_rate": 8,
+        "total_price": 237341,
+        "import_cost": 11867.05
+      },
+      {
+        "product_sku": "COMONG90",
+        "product_name": "Co mỏng 90",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 22866,
+        "tax_rate": 8,
+        "total_price": 457315,
+        "import_cost": 22865.75
+      },
+      {
+        "product_sku": "COMONG114",
+        "product_name": "Co mỏng 114",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 47523,
+        "tax_rate": 8,
+        "total_price": 950465,
+        "import_cost": 47523.25
+      },
+      {
+        "product_sku": "LUPPEGIENG49",
+        "product_name": "Luppe giếng 49",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 43109,
+        "tax_rate": 8,
+        "total_price": 215546,
+        "import_cost": 43109.2
+      },
+      {
+        "product_sku": "LUPPEGIENG42TJ",
+        "product_name": "Luppe giếng 42 E1112-S (TJ)",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 33354,
+        "tax_rate": 8,
+        "total_price": 166768,
+        "import_cost": 33353.6
+      },
+      {
+        "product_sku": "RANGNGOAIDAY49",
+        "product_name": "Măng song răng ngoài dày 49",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 9583,
+        "tax_rate": 8,
+        "total_price": 95828,
+        "import_cost": 9582.8
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "receipt_code": "NK042026_L4",
+    "import_date": "09/04/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 04/2026 Lần 4",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2484874,
+    "created_at": "2026-08-14T03:53:12.090Z",
+    "items": [
+      {
+        "product_sku": "WEV68040SW",
+        "product_name": "Mặt cho 4 thiết bị trắng tuyết",
+        "unit": "Cái",
+        "quantity": 40,
+        "unit_price": 21959,
+        "tax_rate": 8,
+        "total_price": 878342,
+        "import_cost": 21958.55
+      },
+      {
+        "product_sku": "WEV68030SW",
+        "product_name": "Mặt màu trắng dùng cho 3 thiết bị",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 11181,
+        "tax_rate": 8,
+        "total_price": 111812,
+        "import_cost": 11181.2
+      },
+      {
+        "product_sku": "WEV68060SW",
+        "product_name": "Mặt cho 6 thiết bị trắng tuyết",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 21959,
+        "tax_rate": 8,
+        "total_price": 219586,
+        "import_cost": 21958.6
+      },
+      {
+        "product_sku": "NN101WM",
+        "product_name": "Hộp nổi đơn hàng Wide",
+        "unit": "Cái",
+        "quantity": 100,
+        "unit_price": 7061,
+        "tax_rate": 8,
+        "total_price": 706104,
+        "import_cost": 7061.04
+      },
+      {
+        "product_sku": "WEV5001SW",
+        "product_name": "Công tắc B loại nhỏ màu trắng tuyết",
+        "unit": "Cái",
+        "quantity": 40,
+        "unit_price": 14226,
+        "tax_rate": 8,
+        "total_price": 569030,
+        "import_cost": 14225.75
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "receipt_code": "NK052026_L11",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 11",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2530980,
+    "created_at": "2026-08-14T03:53:12.107Z",
+    "items": [
+      {
+        "product_sku": "PVC-Udn21x1,7",
+        "product_name": "Ống PVC-U dn21x1,7x4m-NĐ",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 7582,
+        "tax_rate": 8,
+        "total_price": 1516320,
+        "import_cost": 7581.6
+      },
+      {
+        "product_sku": "PVCUdn21x1/2",
+        "product_name": "Nối ren ngoài PVC-U dn21x1,2- PN15",
+        "unit": "Cái",
+        "quantity": 110,
+        "unit_price": 1706,
+        "tax_rate": 8,
+        "total_price": 187704,
+        "import_cost": 1706.4
+      },
+      {
+        "product_sku": "VANPVC21BM",
+        "product_name": "Van nước PVC 21(PN12,BM)",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 16539,
+        "tax_rate": 8,
+        "total_price": 826956,
+        "import_cost": 16539.12
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "receipt_code": "285691C26TAA",
+    "import_date": "16/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00028569 ngày 16/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 3265920,
+    "created_at": "2026-08-14T03:53:12.127Z",
+    "items": [
+      {
+        "product_sku": "DIENCUONVSC-1.5",
+        "product_name": "VSC - Oval 1.5",
+        "unit": "Mét",
+        "quantity": 400,
+        "unit_price": 8165,
+        "tax_rate": 8,
+        "total_price": 3265920,
+        "import_cost": 8164.8
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "receipt_code": "296131C26TAA",
+    "import_date": "23/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00029613 ngày 23/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 569732,
+    "created_at": "2026-08-14T03:53:12.148Z",
+    "items": [
+      {
+        "product_sku": "BS1113TV",
+        "product_name": "BS1113TV - Bộ ngắt mạch an toàn HB 30A",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 56973,
+        "tax_rate": 8,
+        "total_price": 569732,
+        "import_cost": 56973.2
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "receipt_code": "NK012026_L4",
+    "import_date": "29/01/2026",
+    "supplier_name": "CÔNG TY TNHH MỘT THÀNH VIÊN THƯƠNG MẠI XÂY DỰNG NGỌC THANH THANH",
+    "note": "Nhập kho tháng 01/2026 Lần 4",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1084160,
+    "created_at": "2026-08-14T03:53:12.169Z",
+    "items": [
+      {
+        "product_sku": "QTSENKOTC1626",
+        "product_name": "QUẠT TREO SENKO TC1626",
+        "unit": "Cái",
+        "quantity": 4,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 1084160,
+        "import_cost": 271040
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "receipt_code": "NK032026_L4",
+    "import_date": "17/03/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DUY MINH PHÁT",
+    "note": "Nhập kho tháng 03/2026 Lần 4",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 4001847,
+    "created_at": "2026-08-14T03:53:12.186Z",
+    "items": [
+      {
+        "product_sku": "KIMBAMDINHRUT9.5",
+        "product_name": "Kìm bấm đinh rút COROLLA 9.5 inch",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 68183,
+        "tax_rate": 8,
+        "total_price": 681826,
+        "import_cost": 68182.6
+      },
+      {
+        "product_sku": "LUOICUATHEP110x30T",
+        "product_name": "Lưỡi cưa đĩa bằng thép 110x30T, đường kính 110mm, 30 răng",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 24797,
+        "tax_rate": 8,
+        "total_price": 247968,
+        "import_cost": 24796.8
+      },
+      {
+        "product_sku": "MOLETCHINH10IN",
+        "product_name": "Mỏ lết răng điều chỉnh COROLLA 10 inch",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 79985,
+        "tax_rate": 8,
+        "total_price": 799848,
+        "import_cost": 79984.8
+      },
+      {
+        "product_sku": "MOLETCHINH12IN",
+        "product_name": "Mỏ lết răng điều chỉnh COROLLA 12 inch",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 98158,
+        "tax_rate": 8,
+        "total_price": 981580,
+        "import_cost": 98158
+      },
+      {
+        "product_sku": "MUIDUCDET14",
+        "product_name": "Mũi đục bê tông đầu dẹt COROLLA 14mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 16466,
+        "tax_rate": 8,
+        "total_price": 164657,
+        "import_cost": 16465.7
+      },
+      {
+        "product_sku": "DAOROCGIAY18",
+        "product_name": "Dao rọc giấy COROLLA 18mm (Vỏ nhôm)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 22108,
+        "tax_rate": 8,
+        "total_price": 221076,
+        "import_cost": 22107.6
+      },
+      {
+        "product_sku": "DAMAIINOX-100*6",
+        "product_name": "Đá mài kim loại, mài inox COROLLA 100*6mm (Xanh)",
+        "unit": "Viên",
+        "quantity": 20,
+        "unit_price": 5092,
+        "tax_rate": 8,
+        "total_price": 101844,
+        "import_cost": 5092.2
+      },
+      {
+        "product_sku": "KEOCATONG42-VUA",
+        "product_name": "Dụng cụ cắt ống nhựa (Kéo cắt ống) COROLLA 42mm, Cỡ: vừa",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 52785,
+        "tax_rate": 8,
+        "total_price": 527850,
+        "import_cost": 52785
+      },
+      {
+        "product_sku": "SUNGSILOCON9IN",
+        "product_name": "Dụng cụ bơm keo silicone 9 inch COROLLA CB350201",
+        "unit": "Cái",
+        "quantity": 13,
+        "unit_price": 21169,
+        "tax_rate": 8,
+        "total_price": 275198,
+        "import_cost": 21169.076923076922
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "receipt_code": "NK062026_L12",
+    "import_date": "15/06/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DUY MINH PHÁT",
+    "note": "Nhập kho tháng 06/2026 Lần 12",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1757862,
+    "created_at": "2026-08-14T03:53:12.220Z",
+    "items": [
+      {
+        "product_sku": "MUIKHOAN08HSS-4341",
+        "product_name": "Mũi khoan inox HSS-4341 COROLLA 8mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 19375,
+        "tax_rate": 8,
+        "total_price": 193752,
+        "import_cost": 19375.2
+      },
+      {
+        "product_sku": "MUIKHOANSAT6",
+        "product_name": "Mũi khoan kim loại, inox, sắt thép COROLLA 6mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 10360,
+        "tax_rate": 8,
+        "total_price": 103604,
+        "import_cost": 10360.4
+      },
+      {
+        "product_sku": "MUIKHOANSAT4.2",
+        "product_name": "Mũi khoan kim loại, inox, sắt thép COROLLA 4.2mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 5830,
+        "tax_rate": 8,
+        "total_price": 58298,
+        "import_cost": 5829.8
+      },
+      {
+        "product_sku": "DATCAT16MMVANG",
+        "product_name": "Đá cắt kim loại COROLLA 107*1.2*16mm, Màu: Vàng",
+        "unit": "Viên",
+        "quantity": 100,
+        "unit_price": 4102,
+        "tax_rate": 8,
+        "total_price": 410184,
+        "import_cost": 4101.84
+      },
+      {
+        "product_sku": "CUASAT300MM",
+        "product_name": "Cưa sắt cầm tay COROLLA, Kt 12 inch (300mm)",
+        "unit": "Cái",
+        "quantity": 12,
+        "unit_price": 39020,
+        "tax_rate": 8,
+        "total_price": 468245,
+        "import_cost": 39020.416666666664
+      },
+      {
+        "product_sku": "TOVIT2CHIEU100",
+        "product_name": "Tô vít hai chiều COROLLA 100mm",
+        "unit": "Cái",
+        "quantity": 12,
+        "unit_price": 13376,
+        "tax_rate": 8,
+        "total_price": 160510,
+        "import_cost": 13375.833333333334
+      },
+      {
+        "product_sku": "TOVIT2CHIEU150",
+        "product_name": "Tô vít hai chiều COROLLA 150mm",
+        "unit": "Cái",
+        "quantity": 12,
+        "unit_price": 14126,
+        "tax_rate": 8,
+        "total_price": 169517,
+        "import_cost": 14126.416666666666
+      },
+      {
+        "product_sku": "TOVIT2CHIEU200",
+        "product_name": "Tô vít hai chiều COROLLA 200mm",
+        "unit": "Cái",
+        "quantity": 12,
+        "unit_price": 16146,
+        "tax_rate": 8,
+        "total_price": 193752,
+        "import_cost": 16146
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "receipt_code": "NK042026_L5",
+    "import_date": "09/04/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 04/2026 Lần 5",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1532000,
+    "created_at": "2026-08-14T03:53:12.232Z",
+    "items": [
+      {
+        "product_sku": "NKT1886N",
+        "product_name": "Bình đun siêu tốc inox,1.8L,\nbóng, mới",
+        "unit": "Cái",
+        "quantity": 3,
+        "unit_price": 149000,
+        "tax_rate": 8,
+        "total_price": 447000,
+        "import_cost": 149000
+      },
+      {
+        "product_sku": "NKT2241B",
+        "product_name": "Bình đun siêu tốc inox\n2.2L,màu xanh",
+        "unit": "Cái",
+        "quantity": 3,
+        "unit_price": 189000,
+        "tax_rate": 8,
+        "total_price": 567000,
+        "import_cost": 189000
+      },
+      {
+        "product_sku": "NKT1702",
+        "product_name": "Bình đun siêu tốc thủy tinh,\n1.7L, 2 nút",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 259000,
+        "tax_rate": 8,
+        "total_price": 518000,
+        "import_cost": 259000
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "receipt_code": "NK012026_L3",
+    "import_date": "19/01/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ MTV TÂN QUỐC TRUNG",
+    "note": "Nhập kho tháng 01/2026 Lần 3",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2587994,
+    "created_at": "2026-08-14T03:53:12.251Z",
+    "items": [
+      {
+        "product_sku": "XR.N015.020.BH76358020.21",
+        "product_name": "Xe rùa XR.N015.020.BH76358020.21",
+        "unit": "Chiếc",
+        "quantity": 1,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 594000,
+        "import_cost": 594000
+      },
+      {
+        "product_sku": "XR.T032.020.BH76358020.11",
+        "product_name": "Xe rùa XR.T032.020.BH76358020.11",
+        "unit": "Chiếc",
+        "quantity": 1,
+        "unit_price": 0,
+        "tax_rate": 10,
+        "total_price": 583000,
+        "import_cost": 583000
+      },
+      {
+        "product_sku": "LS600201",
+        "product_name": "Lưỡi dao rọc giấy dài 9cm, LS600201. Hiệu LS+",
+        "unit": "Cái",
+        "quantity": 600,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 112752,
+        "import_cost": 187.92
+      },
+      {
+        "product_sku": "KEOPVC25G",
+        "product_name": "Keo dán Pvc 25 gr (BM)",
+        "unit": "Tuýp",
+        "quantity": 100,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 449820,
+        "import_cost": 4498.2
+      },
+      {
+        "product_sku": "BITTRON60ST",
+        "product_name": "Bít tròn 60 ST",
+        "unit": "Cái",
+        "quantity": 100,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 233820,
+        "import_cost": 2338.2
+      },
+      {
+        "product_sku": "CHENCUOC100MM",
+        "product_name": "Chén cước bằng sắt JH 100mm",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 92880,
+        "import_cost": 4644
+      },
+      {
+        "product_sku": "XENG0.9KG",
+        "product_name": "Xẻng 0.9kg/cái",
+        "unit": "Cái",
+        "quantity": 24,
+        "unit_price": 0,
+        "tax_rate": 10,
+        "total_price": 353760,
+        "import_cost": 14740
+      },
+      {
+        "product_sku": "LS600103",
+        "product_name": "Dao rọc giấy 229, LS600103. Hiệu LS+",
+        "unit": "Cái",
+        "quantity": 72,
+        "unit_price": 0,
+        "tax_rate": 8,
+        "total_price": 167962,
+        "import_cost": 2332.8055555555557
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "receipt_code": "NK052026_L13",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 13",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 9999936,
+    "created_at": "2026-08-14T03:53:12.267Z",
+    "items": [
+      {
+        "product_sku": "PVC-Udn21x1,3",
+        "product_name": "Ống PVC-U dn21x1,3x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 6855,
+        "tax_rate": 8,
+        "total_price": 1370952,
+        "import_cost": 6854.76
+      },
+      {
+        "product_sku": "PVC-Udn27x1,6",
+        "product_name": "Ống PVC-U dn27x1,6x4m-NĐPN12-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 9720,
+        "tax_rate": 8,
+        "total_price": 1944000,
+        "import_cost": 9720
+      },
+      {
+        "product_sku": "PVC-Udn42x1,9",
+        "product_name": "Ống PVC-U dn42x1,9x4m-NĐPN9-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 18360,
+        "tax_rate": 8,
+        "total_price": 3672000,
+        "import_cost": 18360
+      },
+      {
+        "product_sku": "PVC-Udn60x1,8",
+        "product_name": "Ống PVC-U dn60x1,8x4m-NĐPN6-TCCS207:2022/BM",
+        "unit": "Mét",
+        "quantity": 116,
+        "unit_price": 25974,
+        "tax_rate": 8,
+        "total_price": 3012984,
+        "import_cost": 25974
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "receipt_code": "NK052026_L15",
+    "import_date": "09/05/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DUY MINH PHÁT",
+    "note": "Nhập kho tháng 05/2026 Lần 15",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2910221,
+    "created_at": "2026-08-14T03:53:12.289Z",
+    "items": [
+      {
+        "product_sku": "LUOICUATHEP110x40T",
+        "product_name": "Lưỡi cưa đĩa bằng thép 110x40T, đường kính 110mm, 40 răng hai chiều, hiệu COROLLA",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 39557,
+        "tax_rate": 8,
+        "total_price": 395572,
+        "import_cost": 39557.2
+      },
+      {
+        "product_sku": "KIMSIET10",
+        "product_name": "Kìm chết siết ốc COROLLA 10 inch, tay trơn",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 45657,
+        "tax_rate": 8,
+        "total_price": 456570,
+        "import_cost": 45657
+      },
+      {
+        "product_sku": "DACAT1251XANH",
+        "product_name": "Đá cắt kim loại COROLLA 1251.222.23mm (Xanh)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 4615,
+        "tax_rate": 8,
+        "total_price": 46148,
+        "import_cost": 4614.8
+      },
+      {
+        "product_sku": "MUIKHOAN12HSS-4341",
+        "product_name": "Mũi khoan inox HSS-4341 COROLLA 12mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 42876,
+        "tax_rate": 8,
+        "total_price": 428760,
+        "import_cost": 42876
+      },
+      {
+        "product_sku": "MUIKHOAN08HSS-4341",
+        "product_name": "Mũi khoan inox HSS-4341 COROLLA 8mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 19375,
+        "tax_rate": 8,
+        "total_price": 193752,
+        "import_cost": 19375.2
+      },
+      {
+        "product_sku": "MUIKHOANSAT6",
+        "product_name": "Mũi khoan kim loại, inox, sắt thép COROLLA 6mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 10360,
+        "tax_rate": 8,
+        "total_price": 103604,
+        "import_cost": 10360.4
+      },
+      {
+        "product_sku": "MUIKHOANSAT4.2",
+        "product_name": "Mũi khoan kim loại, inox, sắt thép COROLLA 4.2mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 5830,
+        "tax_rate": 8,
+        "total_price": 58298,
+        "import_cost": 5829.8
+      },
+      {
+        "product_sku": "MUIDUCDET14",
+        "product_name": "Mũi đục bê tông đầu dẹt COROLLA 14mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 20720,
+        "tax_rate": 8,
+        "total_price": 207198,
+        "import_cost": 20719.8
+      },
+      {
+        "product_sku": "MUIDUCNHON14",
+        "product_name": "Mũi đục bê tông đầu nhọn COROLLA 14mm",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 20720,
+        "tax_rate": 8,
+        "total_price": 207198,
+        "import_cost": 20719.8
+      },
+      {
+        "product_sku": "CUATAYMINI233",
+        "product_name": "Cưa tay mini COROLLA 233mm tay gỗ",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 15250,
+        "tax_rate": 8,
+        "total_price": 152496,
+        "import_cost": 15249.6
+      },
+      {
+        "product_sku": "KIMBAM9.5",
+        "product_name": "Kìm bấm đinh rút COROLLA 9.5 inch",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 61085,
+        "tax_rate": 8,
+        "total_price": 610848,
+        "import_cost": 61084.8
+      },
+      {
+        "product_sku": "BANCHAISAT23",
+        "product_name": "Bàn chải đánh rỉ (chổi đánh rỉ) cầm tay, dây thép, độ dài 23cm COROLLA",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 4978,
+        "tax_rate": 8,
+        "total_price": 49777,
+        "import_cost": 4977.7
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "receipt_code": "NK052026_L16",
+    "import_date": "09/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 16",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 907200,
+    "created_at": "2026-08-14T03:53:12.305Z",
+    "items": [
+      {
+        "product_sku": "FPC20M",
+        "product_name": "Ống luồn dây điện phi 20 x 2.92M",
+        "unit": "Cây",
+        "quantity": 50,
+        "unit_price": 18144,
+        "tax_rate": 8,
+        "total_price": 907200,
+        "import_cost": 18144
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "receipt_code": "NK052026_L12",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 05/2026 Lần 12",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 9999998,
+    "created_at": "2026-08-14T03:53:12.324Z",
+    "items": [
+      {
+        "product_sku": "UPVC90A",
+        "product_name": "Ống uPVC 90 A",
+        "unit": "Mét",
+        "quantity": 80,
+        "unit_price": 41000,
+        "tax_rate": 8,
+        "total_price": 3280003,
+        "import_cost": 41000.0375
+      },
+      {
+        "product_sku": "uPVC27A",
+        "product_name": "Ống uPVC 27 A",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 8977,
+        "tax_rate": 8,
+        "total_price": 1795392,
+        "import_cost": 8976.96
+      },
+      {
+        "product_sku": "UPVC34A",
+        "product_name": "Ống uPVC 34 A",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 10756,
+        "tax_rate": 8,
+        "total_price": 1075572,
+        "import_cost": 10755.72
+      },
+      {
+        "product_sku": "UPVC42A",
+        "product_name": "Ống uPVC 42 A",
+        "unit": "Mét",
+        "quantity": 120,
+        "unit_price": 14030,
+        "tax_rate": 8,
+        "total_price": 1683634,
+        "import_cost": 14030.283333333333
+      },
+      {
+        "product_sku": "UPVC49A",
+        "product_name": "Ống uPVC 49 A",
+        "unit": "Mét",
+        "quantity": 80,
+        "unit_price": 18436,
+        "tax_rate": 8,
+        "total_price": 1474848,
+        "import_cost": 18435.6
+      },
+      {
+        "product_sku": "CODAY27",
+        "product_name": "Co dày 27",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 3279,
+        "tax_rate": 8,
+        "total_price": 163944,
+        "import_cost": 3278.88
+      },
+      {
+        "product_sku": "PVC90MONGBM",
+        "product_name": "Co PVC 90 mỏng (PN6, BM)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 21762,
+        "tax_rate": 8,
+        "total_price": 217620,
+        "import_cost": 21762
+      },
+      {
+        "product_sku": "COPVCUdn114-PN6",
+        "product_name": "Co PVC-U dn114-PN6",
+        "unit": "Cái",
+        "quantity": 7,
+        "unit_price": 44141,
+        "tax_rate": 8,
+        "total_price": 308985,
+        "import_cost": 44140.71428571428
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "receipt_code": "NK022026_L1",
+    "import_date": "23/02/2026",
+    "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
+    "note": "Nhập kho tháng 02/2026 Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2500103,
+    "created_at": "2026-08-14T03:53:12.342Z",
+    "items": [
+      {
+        "product_sku": "ONP300DAY",
+        "product_name": "Ống nhựa phi 300 loại dày",
+        "unit": "Mét",
+        "quantity": 12,
+        "unit_price": 162000,
+        "tax_rate": 8,
+        "total_price": 1944000,
+        "import_cost": 162000
+      },
+      {
+        "product_sku": "LOIBMP114",
+        "product_name": "Lơi 114 Bình Minh",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 37456,
+        "tax_rate": 8,
+        "total_price": 374555,
+        "import_cost": 37455.5
+      },
+      {
+        "product_sku": "LOIP114ST",
+        "product_name": "Lơi 114 ST",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 18155,
+        "tax_rate": 8,
+        "total_price": 181548,
+        "import_cost": 18154.8
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "receipt_code": "8321C26THA",
+    "import_date": "15/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ THIẾT BỊ ĐIỆN QUỐC HÙNG",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCQUOCHUNG - Số HĐ: 832 ngày 15/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 6784799,
+    "created_at": "2026-08-14T03:53:12.357Z",
+    "items": [
+      {
+        "product_sku": "NN102WM",
+        "product_name": "Hộp nổi đôi hàng Wide",
+        "unit": "Cái",
+        "quantity": 60,
+        "unit_price": 10260,
+        "tax_rate": 8,
+        "total_price": 615600,
+        "import_cost": 10260
+      },
+      {
+        "product_sku": "QTSENKOTC1626",
+        "product_name": "QUẠT TREO SENKO TC1626",
+        "unit": "Cái",
+        "quantity": 4,
+        "unit_price": 272580,
+        "tax_rate": 8,
+        "total_price": 1090320,
+        "import_cost": 272580
+      },
+      {
+        "product_sku": "TD105",
+        "product_name": "Quạt trần đảo Senko TD105",
+        "unit": "Cây",
+        "quantity": 2,
+        "unit_price": 321254,
+        "tax_rate": 8,
+        "total_price": 642509,
+        "import_cost": 321254.5
+      },
+      {
+        "product_sku": "LTS1633",
+        "product_name": "Quạt lở Senko LTS1633",
+        "unit": "Cây",
+        "quantity": 2,
+        "unit_price": 350460,
+        "tax_rate": 8,
+        "total_price": 700920,
+        "import_cost": 350460
+      },
+      {
+        "product_sku": "WNV1081-7W",
+        "product_name": "Ổ cắm FULL có màn che",
+        "unit": "Cái",
+        "quantity": 100,
+        "unit_price": 15601,
+        "tax_rate": 8,
+        "total_price": 1560060,
+        "import_cost": 15600.6
+      },
+      {
+        "product_sku": "WNV5001-7W",
+        "product_name": "WNV5001-7W - Công tắc B FULL",
+        "unit": "Cái",
+        "quantity": 100,
+        "unit_price": 8802,
+        "tax_rate": 8,
+        "total_price": 880200,
+        "import_cost": 8802
+      },
+      {
+        "product_sku": "WEV1081SW",
+        "product_name": "Ổ cắm wide có màn che WEV1081SW",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 25904,
+        "tax_rate": 8,
+        "total_price": 1295190,
+        "import_cost": 25903.8
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "receipt_code": "NK052026_L3",
+    "import_date": "01/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 3",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 222048,
+    "created_at": "2026-08-14T03:53:12.373Z",
+    "items": [
+      {
+        "product_sku": "NPA0420",
+        "product_name": "Tê cho ống phi 20",
+        "unit": "Cái",
+        "quantity": 100,
+        "unit_price": 2220,
+        "tax_rate": 8,
+        "total_price": 222048,
+        "import_cost": 2220.48
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "receipt_code": "8551C26TTT",
+    "import_date": "28/07/2026",
+    "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC THANHTHANGMEKONG - Số HĐ: 00000855 ngày 28/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 9785060,
+    "created_at": "2026-08-14T03:53:12.390Z",
+    "items": [
+      {
+        "product_sku": "DUIDENNHUAKNT",
+        "product_name": "Đui đèn nhựa KNT",
+        "unit": "Cái",
+        "quantity": 200,
+        "unit_price": 7225,
+        "tax_rate": 8,
+        "total_price": 1445037,
+        "import_cost": 7225.185
+      },
+      {
+        "product_sku": "MK39",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 2000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK39",
+        "unit": "Bộ",
+        "quantity": 20,
+        "unit_price": 99000,
+        "tax_rate": 8,
+        "total_price": 1980007,
+        "import_cost": 99000.35
+      },
+      {
+        "product_sku": "MK112",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 2000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK112",
+        "unit": "Bộ",
+        "quantity": 20,
+        "unit_price": 99000,
+        "tax_rate": 8,
+        "total_price": 1980007,
+        "import_cost": 99000.35
+      },
+      {
+        "product_sku": "DENMK179",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 2000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK179",
+        "unit": "Bộ",
+        "quantity": 20,
+        "unit_price": 99000,
+        "tax_rate": 8,
+        "total_price": 1980007,
+        "import_cost": 99000.35
+      },
+      {
+        "product_sku": "QUATTREOSENKOL1638",
+        "product_name": "Quạt treo Senko L1638",
+        "unit": "Cây",
+        "quantity": 8,
+        "unit_price": 300000,
+        "tax_rate": 8,
+        "total_price": 2400002,
+        "import_cost": 300000.25
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "receipt_code": "NK062026_L13",
+    "import_date": "15/06/2026",
+    "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
+    "note": "Nhập kho tháng 06/2026 Lần 13",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 89770566,
+    "created_at": "2026-08-14T03:53:12.408Z",
+    "items": [
+      {
+        "product_sku": "MK-107Đ",
+        "product_name": "Đá cắt sắt, bằng đá nhámkết khối, sử dụng cắt sắt, kimloại, Model:MK-107Đ.",
+        "unit": "Viên",
+        "quantity": 1000,
+        "unit_price": 3240,
+        "tax_rate": 8,
+        "total_price": 3240000,
+        "import_cost": 3240
+      },
+      {
+        "product_sku": "MKS107",
+        "product_name": "Đá cắt sắt, bằng đá nhám kết khối, sử dụng cắt sắt, kim loại, Model: MKS107. Hiệu MEKOMAX",
+        "unit": "Viên",
+        "quantity": 1000,
+        "unit_price": 2808,
+        "tax_rate": 8,
+        "total_price": 2808000,
+        "import_cost": 2808
+      },
+      {
+        "product_sku": "MKK3-6",
+        "product_name": "Mũi khoan xoắn chéo bằng thép hợp kim màu vàng, dùng để khoan gạch, loại 6mm, MKK3-6, hiệu MEKOMAX",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 14832,
+        "tax_rate": 8,
+        "total_price": 444962,
+        "import_cost": 14832.066666666668
+      },
+      {
+        "product_sku": "MKK2-6",
+        "product_name": "Mũi khoan lệch tâm bằng thép hợp kim màu xanh dùng để khoan gạch, loại 6mm, MKK2-6, hiệu MEKOMAX",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 13392,
+        "tax_rate": 8,
+        "total_price": 401760,
+        "import_cost": 13392
+      },
+      {
+        "product_sku": "MKK2-8",
+        "product_name": "Mũi khoan lệch tâm bằng thép hợp kim màu xanh dùng để khoan gạch, loại 8mm, MKK2-8, hiệu MEKOMAX",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 17856,
+        "tax_rate": 8,
+        "total_price": 178560,
+        "import_cost": 17856
+      },
+      {
+        "product_sku": "MKK1-8",
+        "product_name": "Mũi khoan tam giác xoắn bằng thép hợp kim màu đen dùng để khoan gạch, loại 8mm, MKK1-8, hiệu MEKOMAX",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 11880,
+        "tax_rate": 8,
+        "total_price": 356400,
+        "import_cost": 11880
+      },
+      {
+        "product_sku": "MKK1-6",
+        "product_name": "Mũi khoan tam giác xoắn bằng thép hợp kim màu đen dùng để khoan gạch, loại 6mm, MKK1-6, hiệu MEKOMAX",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 8640,
+        "tax_rate": 8,
+        "total_price": 259200,
+        "import_cost": 8640
+      },
+      {
+        "product_sku": "MK112",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 2000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK112",
+        "unit": "Bộ",
+        "quantity": 10,
+        "unit_price": 116760,
+        "tax_rate": 8,
+        "total_price": 1167600,
+        "import_cost": 116760
+      },
+      {
+        "product_sku": "DENMK179",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 2000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK179",
+        "unit": "Bộ",
+        "quantity": 10,
+        "unit_price": 116760,
+        "tax_rate": 8,
+        "total_price": 1167600,
+        "import_cost": 116760
+      },
+      {
+        "product_sku": "MK39",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 2000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK39",
+        "unit": "Bộ",
+        "quantity": 10,
+        "unit_price": 116760,
+        "tax_rate": 8,
+        "total_price": 1167600,
+        "import_cost": 116760
+      },
+      {
+        "product_sku": "MK152",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 4000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK152",
+        "unit": "Bộ",
+        "quantity": 3,
+        "unit_price": 189000,
+        "tax_rate": 8,
+        "total_price": 567000,
+        "import_cost": 189000
+      },
+      {
+        "product_sku": "DENMK168",
+        "product_name": "Đèn pin HEADLIGHTS (Bao gồm 1 đèn, pin sạc 4000mah, 1 bộ sạc). Hiệu: MEKOMAX Model: MK168",
+        "unit": "Bộ",
+        "quantity": 3,
+        "unit_price": 189000,
+        "tax_rate": 8,
+        "total_price": 567000,
+        "import_cost": 189000
+      },
+      {
+        "product_sku": "TRUNHOM40W",
+        "product_name": "Trụ nhôm B3 Mekomax 40W",
+        "unit": "Cái",
+        "quantity": 60,
+        "unit_price": 102000,
+        "tax_rate": 8,
+        "total_price": 6119999,
+        "import_cost": 101999.98333333334
+      },
+      {
+        "product_sku": "TRUNHOM50W",
+        "product_name": "Trụ nhôm B3 Mekomax 50W",
+        "unit": "Cái",
+        "quantity": 60,
+        "unit_price": 123000,
+        "tax_rate": 8,
+        "total_price": 7380000,
+        "import_cost": 123000
+      },
+      {
+        "product_sku": "ODAIMEKOTRANG1C3M",
+        "product_name": "Ổ Dài Mekomax Trắng 1ct 3m",
+        "unit": "Cái",
+        "quantity": 11,
+        "unit_price": 71273,
+        "tax_rate": 8,
+        "total_price": 784000,
+        "import_cost": 71272.72727272728
+      },
+      {
+        "product_sku": "ODAIMEKOTRANG2C3",
+        "product_name": "Ổ Dài Mekomax Trắng 2ct 3m",
+        "unit": "Cái",
+        "quantity": 11,
+        "unit_price": 78545,
+        "tax_rate": 8,
+        "total_price": 864000,
+        "import_cost": 78545.45454545454
+      },
+      {
+        "product_sku": "ODAIMEKOTRANG2C5",
+        "product_name": "Ổ Dài Mekomax Trắng 2ct 5m",
+        "unit": "Cái",
+        "quantity": 22,
+        "unit_price": 85818,
+        "tax_rate": 8,
+        "total_price": 1888000,
+        "import_cost": 85818.18181818182
+      },
+      {
+        "product_sku": "OQUAYMEKO5M",
+        "product_name": "Ổ Quay Mekomax 5m",
+        "unit": "Cái",
+        "quantity": 11,
+        "unit_price": 71273,
+        "tax_rate": 8,
+        "total_price": 784000,
+        "import_cost": 71272.72727272728
+      },
+      {
+        "product_sku": "KS-B003-21",
+        "product_name": "Van bi xi tay inox 21 KS-B003(21MM)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 30200,
+        "tax_rate": 8,
+        "total_price": 302000,
+        "import_cost": 30200
+      },
+      {
+        "product_sku": "KS-B003-27",
+        "product_name": "Van bi xi tay inox 27 KS-B003(27MM)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 35800,
+        "tax_rate": 8,
+        "total_price": 358000,
+        "import_cost": 35800
+      },
+      {
+        "product_sku": "VANNHUASANFY60",
+        "product_name": "Van nhựa sanfu 60",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 76400,
+        "tax_rate": 8,
+        "total_price": 764000,
+        "import_cost": 76400
+      },
+      {
+        "product_sku": "VANNHUATAYDO114",
+        "product_name": "Van nhựa tay đỏ 114",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 492600,
+        "tax_rate": 8,
+        "total_price": 985200,
+        "import_cost": 492600
+      },
+      {
+        "product_sku": "LEDBUPTRUNHOM20W",
+        "product_name": "Đèn led búp trụ bọc nhôm Mekomax 20W",
+        "unit": "Cái",
+        "quantity": 200,
+        "unit_price": 25200,
+        "tax_rate": 8,
+        "total_price": 5039999,
+        "import_cost": 25199.995
+      },
+      {
+        "product_sku": "LEDBUPTRUNHOM30W",
+        "product_name": "Đèn led búp trụ bọc nhôm Mekomax 30W",
+        "unit": "Cái",
+        "quantity": 200,
+        "unit_price": 34000,
+        "tax_rate": 8,
+        "total_price": 6800000,
+        "import_cost": 34000
+      },
+      {
+        "product_sku": "LEDBUPTRUNHOM40W",
+        "product_name": "Đèn led búp trụ bọc nhôm Mekomax 40W",
+        "unit": "Cái",
+        "quantity": 120,
+        "unit_price": 47000,
+        "tax_rate": 8,
+        "total_price": 5639999,
+        "import_cost": 46999.99166666667
+      },
+      {
+        "product_sku": "LEDBUPTRUNHOM50W",
+        "product_name": "Đèn led búp trụ bọc nhôm Mekomax 50W",
+        "unit": "Cái",
+        "quantity": 120,
+        "unit_price": 56400,
+        "tax_rate": 8,
+        "total_price": 6767999,
+        "import_cost": 56399.99166666667
+      },
+      {
+        "product_sku": "LEDBUPTRUNHOM60W",
+        "product_name": "Đèn led búp trụ bọc nhôm Mekomax 60W",
+        "unit": "Cái",
+        "quantity": 120,
+        "unit_price": 69600,
+        "tax_rate": 8,
+        "total_price": 8352000,
+        "import_cost": 69600
+      },
+      {
+        "product_sku": "KS87003Y",
+        "product_name": "Đầu xịt cò xi vàng kem KS87003Y",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 24500,
+        "tax_rate": 8,
+        "total_price": 122500,
+        "import_cost": 24500
+      },
+      {
+        "product_sku": "VANNHUATAYDO90",
+        "product_name": "Van nhựa tay đỏ 90",
+        "unit": "Cái",
+        "quantity": 5,
+        "unit_price": 269500,
+        "tax_rate": 8,
+        "total_price": 1347500,
+        "import_cost": 269500
+      },
+      {
+        "product_sku": "KS81006",
+        "product_name": "Vòi nước bằng nhựa KS81006 (21MM)",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 12500,
+        "tax_rate": 8,
+        "total_price": 250000,
+        "import_cost": 12500
+      },
+      {
+        "product_sku": "TRUNHOM20W",
+        "product_name": "Trụ nhômB3 Mekomax 20W",
+        "unit": "Bóng",
+        "quantity": 200,
+        "unit_price": 59000,
+        "tax_rate": 8,
+        "total_price": 11799998,
+        "import_cost": 58999.99
+      },
+      {
+        "product_sku": "LEDNHOMNK30W",
+        "product_name": "ĐÈN LED BÚP TRỤ NHÔM NGUYÊN KHỐI 30W",
+        "unit": "Cái",
+        "quantity": 150,
+        "unit_price": 73971,
+        "tax_rate": 8,
+        "total_price": 11095690,
+        "import_cost": 73971.26666666666
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "receipt_code": "NK042026_L1",
+    "import_date": "09/04/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 04/2026 Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 4880736,
+    "created_at": "2026-08-14T03:53:12.435Z",
+    "items": [
+      {
+        "product_sku": "DIENCUONVSC-4.0",
+        "product_name": "VSC - Oval 4.0",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 18325,
+        "tax_rate": 8,
+        "total_price": 1832544,
+        "import_cost": 18325.44
+      },
+      {
+        "product_sku": "DIENCUONVSC-1.5",
+        "product_name": "VSC - Oval 1.5",
+        "unit": "Mét",
+        "quantity": 400,
+        "unit_price": 7620,
+        "tax_rate": 8,
+        "total_price": 3048192,
+        "import_cost": 7620.48
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "receipt_code": "NK052026_L17",
+    "import_date": "09/05/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 05/2026 Lần 17",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 708029,
+    "created_at": "2026-08-14T03:53:12.462Z",
+    "items": [
+      {
+        "product_sku": "TP-Rga",
+        "product_name": "TP - Rgà 20 L2",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 80911,
+        "tax_rate": 8,
+        "total_price": 161821,
+        "import_cost": 80910.5
+      },
+      {
+        "product_sku": "FRG20WM",
+        "product_name": "Ống luồn dây mềm phi 20 màu\ntrắng, 50m",
+        "unit": "Cuộn",
+        "quantity": 2,
+        "unit_price": 137111,
+        "tax_rate": 8,
+        "total_price": 274221,
+        "import_cost": 137110.5
+      },
+      {
+        "product_sku": "TP - MCB",
+        "product_name": "TP - MCB có nắp 75Cái/thùng",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 13599,
+        "tax_rate": 8,
+        "total_price": 271987,
+        "import_cost": 13599.35
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "receipt_code": "NK062026_L11",
+    "import_date": "01/06/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 06/2026 Lần 11",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 247137,
+    "created_at": "2026-08-14T03:53:12.478Z",
+    "items": [
+      {
+        "product_sku": "NA101TM",
+        "product_name": "Hộp đế âm đơn, có tán, kèm vít",
+        "unit": "Cuộn",
+        "quantity": 30,
+        "unit_price": 3531,
+        "tax_rate": 8,
+        "total_price": 105916,
+        "import_cost": 3530.5333333333333
+      },
+      {
+        "product_sku": "NA102TM",
+        "product_name": "Đế âm đôi, có tán, kèm vít",
+        "unit": "",
+        "quantity": 20,
+        "unit_price": 7061,
+        "tax_rate": 8,
+        "total_price": 141221,
+        "import_cost": 7061.05
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "receipt_code": "NK032026_L1",
+    "import_date": "12/03/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 03/2026 Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 914949,
+    "created_at": "2026-08-14T03:53:12.498Z",
+    "items": [
+      {
+        "product_sku": "ONGCUNG3PHAN",
+        "product_name": "Ống cứng vuông 3 phân",
+        "unit": "Cây",
+        "quantity": 50,
+        "unit_price": 10369,
+        "tax_rate": 8,
+        "total_price": 518454,
+        "import_cost": 10369.08
+      },
+      {
+        "product_sku": "ONGCUNG4PHAN",
+        "product_name": "Ống cứng vuông 4 phân",
+        "unit": "Cây",
+        "quantity": 25,
+        "unit_price": 15860,
+        "tax_rate": 8,
+        "total_price": 396495,
+        "import_cost": 15859.8
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "receipt_code": "275141C26TAA",
+    "import_date": "09/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00027514 ngày 09/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2711880,
+    "created_at": "2026-08-14T03:53:12.512Z",
+    "items": [
+      {
+        "product_sku": "DIENCUONVSC-6.0",
+        "product_name": "VSC - Oval 6.0",
+        "unit": "Mét",
+        "quantity": 100,
+        "unit_price": 27119,
+        "tax_rate": 8,
+        "total_price": 2711880,
+        "import_cost": 27118.8
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "receipt_code": "NK062026_L10",
+    "import_date": "01/06/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho tháng 06/2026 Lần 10",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 549623,
+    "created_at": "2026-08-14T03:53:12.536Z",
+    "items": [
+      {
+        "product_sku": "BS1114TV",
+        "product_name": "Bộ ngắt mạch an toàn HB 40A",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 54962,
+        "tax_rate": 8,
+        "total_price": 549623,
+        "import_cost": 54962.3
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "receipt_code": "1C26TAA_1",
+    "import_date": "11/06/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
+    "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1993011,
+    "created_at": "2026-08-14T04:02:41.474Z",
+    "items": [
+      {
+        "product_sku": "ONGRUOTGA20",
+        "product_name": "Ống ruột gà âm tường Ø 20 (HDPE)",
+        "unit": "Cuộn",
+        "quantity": 5,
+        "unit_price": 101500,
+        "tax_rate": 8,
+        "total_price": 507498,
+        "import_cost": 101499.6
+      },
+      {
+        "product_sku": "ONGRUOTGA25",
+        "product_name": "Ống ruột gà âm tường Ø 25 (HDPE)",
+        "unit": "Cuộn",
+        "quantity": 1,
+        "unit_price": 109040,
+        "tax_rate": 8,
+        "total_price": 109040,
+        "import_cost": 109040
+      },
+      {
+        "product_sku": "WZV7061W",
+        "product_name": "WZV7061W - Mặt dùng cho HB FULL",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 10976,
+        "tax_rate": 8,
+        "total_price": 109761,
+        "import_cost": 10976.1
+      },
+      {
+        "product_sku": "WZV7844W",
+        "product_name": "WZV7844W - Mặt dùng cho 4 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 21889,
+        "tax_rate": 8,
+        "total_price": 1094473,
+        "import_cost": 21889.46
+      },
+      {
+        "product_sku": "WZV7843W",
+        "product_name": "WZV7843W - Mặt dùng cho 3 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 8612,
+        "tax_rate": 8,
+        "total_price": 172239,
+        "import_cost": 8611.95
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "receipt_code": "1C26TAA00027513",
+    "import_date": "09/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 3 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 09/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 4885706,
+    "created_at": "2026-08-14T04:02:41.508Z",
+    "items": [
+      {
+        "product_sku": "DAYCVLF1570520",
+        "product_name": "Cadivi - Dây CV/LF-1.5 (7/0.52) - 0.6/1kV",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 7767,
+        "tax_rate": 8,
+        "total_price": 1553472,
+        "import_cost": 7767.36
+      },
+      {
+        "product_sku": "DAYCVLF2570670",
+        "product_name": "Cadivi - Dây CV/LF-2.5 (7/0.67) - 0.6/1kV",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 12655,
+        "tax_rate": 8,
+        "total_price": 2531088,
+        "import_cost": 12655.44
+      },
+      {
+        "product_sku": "WNV1081-7W",
+        "product_name": "Ổ cắm FULL có màn che",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 16023,
+        "tax_rate": 8,
+        "total_price": 801146,
+        "import_cost": 16022.92
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "receipt_code": "1C26TAA",
+    "import_date": "01/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
+    "note": "Nhập kho tháng 07 từ nhà cung cấp CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 11350800,
+    "created_at": "2026-08-14T04:02:41.523Z",
+    "items": [
+      {
+        "product_sku": "OKAWA20-DP",
+        "product_name": "Máy phun thuốc trừ côn trùng 12V12Ah OKAWA 20-DP (vàng)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 779760,
+        "tax_rate": 8,
+        "total_price": 7797600,
+        "import_cost": 779760
+      },
+      {
+        "product_sku": "MKP1013BG2W",
+        "product_name": "Máy khoan pin YMS-MKP1013BG2W",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1684800,
+        "tax_rate": 8,
+        "total_price": 1684800,
+        "import_cost": 1684800
+      },
+      {
+        "product_sku": "YMS-GKT21V-55N",
+        "product_name": "Máy khoan cầm tay pin YMS-GKT21V-55N",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 939600,
+        "tax_rate": 8,
+        "total_price": 939600,
+        "import_cost": 939600
+      },
+      {
+        "product_sku": "YMS-CTN180",
+        "product_name": "Máy chà tường điện YMS-CTN180",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 928800,
+        "tax_rate": 8,
+        "total_price": 928800,
+        "import_cost": 928800
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "receipt_code": "1C26TAA00028570",
+    "import_date": "16/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 2 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 16/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1578822,
+    "created_at": "2026-08-14T04:02:41.622Z",
+    "items": [
+      {
+        "product_sku": "WZV7843W",
+        "product_name": "WZV7843W - Mặt dùng cho 3 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 8848,
+        "tax_rate": 8,
+        "total_price": 265454,
+        "import_cost": 8848.466666666667
+      },
+      {
+        "product_sku": "WZV7844W",
+        "product_name": "WZV7844W - Mặt dùng cho 4 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 21889,
+        "tax_rate": 8,
+        "total_price": 656684,
+        "import_cost": 21889.466666666667
+      },
+      {
+        "product_sku": "WZV7846W",
+        "product_name": "WZV7846W - Mặt dùng cho 6 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 21889,
+        "tax_rate": 8,
+        "total_price": 656684,
+        "import_cost": 21889.466666666667
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "receipt_code": "1472C26MAB",
+    "import_date": "26/07/2026",
+    "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 0000147 ngày 26/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2712000,
+    "created_at": "2026-08-14T04:02:41.652Z",
+    "items": [
+      {
+        "product_sku": "MANPHU1X100",
+        "product_name": "màn phủ 1mx100m",
+        "unit": "Cây",
+        "quantity": 2,
+        "unit_price": 62000,
+        "tax_rate": 0,
+        "total_price": 124000,
+        "import_cost": 62000
+      },
+      {
+        "product_sku": "XABENGDAO1M4",
+        "product_name": "xà beng đào 1m4",
+        "unit": "Kg",
+        "quantity": 5,
+        "unit_price": 20000,
+        "tax_rate": 0,
+        "total_price": 100000,
+        "import_cost": 20000
+      },
+      {
+        "product_sku": "BAYTRETTHEPVM",
+        "product_name": "bay trét thép VM",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 12000,
+        "tax_rate": 0,
+        "total_price": 24000,
+        "import_cost": 12000
+      },
+      {
+        "product_sku": "BANLEINOX_1T",
+        "product_name": "bản lề inox 1T",
+        "unit": "Cặp",
+        "quantity": 2,
+        "unit_price": 25000,
+        "tax_rate": 0,
+        "total_price": 50000,
+        "import_cost": 25000
+      },
+      {
+        "product_sku": "LUDAOROCGIAYA100",
+        "product_name": "Lữ dao rọc giấy a100",
+        "unit": "Hộp",
+        "quantity": 1,
+        "unit_price": 120000,
+        "tax_rate": 0,
+        "total_price": 120000,
+        "import_cost": 120000
+      },
+      {
+        "product_sku": "CODEBUOM19",
+        "product_name": "cổ dê bướm 19",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 3200,
+        "tax_rate": 0,
+        "total_price": 64000,
+        "import_cost": 3200
+      },
+      {
+        "product_sku": "BATXANHCAMHQDAY6M",
+        "product_name": "BẠT XANH CAM HQ DẦY 6M",
+        "unit": "Bành",
+        "quantity": 1,
+        "unit_price": 1250000,
+        "tax_rate": 0,
+        "total_price": 1250000,
+        "import_cost": 1250000
+      },
+      {
+        "product_sku": "BATXANHCAMHQDAY4M",
+        "product_name": "BẠT XANH CAM HQ DẦY 4M",
+        "unit": "Bành",
+        "quantity": 1,
+        "unit_price": 980000,
+        "tax_rate": 0,
+        "total_price": 980000,
+        "import_cost": 980000
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "receipt_code": "1C26TAA00026657",
+    "import_date": "02/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 1 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 02/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1679741,
+    "created_at": "2026-08-14T04:02:41.682Z",
+    "items": [
+      {
+        "product_sku": "BS1113TV",
+        "product_name": "BS1113TV - Bộ ngắt mạch an toàn HB 30A",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 56973,
+        "tax_rate": 8,
+        "total_price": 1139464,
+        "import_cost": 56973.2
+      },
+      {
+        "product_sku": "FRG20WM",
+        "product_name": "Ống luồn dây mềm phi 20 màu\ntrắng, 50m",
+        "unit": "Cuộn",
+        "quantity": 3,
+        "unit_price": 126287,
+        "tax_rate": 8,
+        "total_price": 378860,
+        "import_cost": 126286.66666666667
+      },
+      {
+        "product_sku": "NHB9801M",
+        "product_name": "NHB9801M - Hộp nổi dùng cho HB Breaker",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 5381,
+        "tax_rate": 8,
+        "total_price": 161417,
+        "import_cost": 5380.566666666667
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "receipt_code": "1C26TTT",
+    "import_date": "12/06/2026",
+    "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG Lần 1",
+    "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH THÀNH THẮNG MEKONG Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 5000005,
+    "created_at": "2026-08-14T04:02:41.693Z",
+    "items": [
+      {
+        "product_sku": "VOILAVABO304",
+        "product_name": "Vòi lavabo 304",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 166500,
+        "tax_rate": 8,
+        "total_price": 1665003,
+        "import_cost": 166500.3
+      },
+      {
+        "product_sku": "KS-87006Y",
+        "product_name": "Bộ xịt vàng kem KS-87006Y",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 68000,
+        "tax_rate": 8,
+        "total_price": 680000,
+        "import_cost": 68000
+      },
+      {
+        "product_sku": "LOCRAC6015X15",
+        "product_name": "Lọc rác (LR-002-15*15)60",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 62900,
+        "tax_rate": 8,
+        "total_price": 629003,
+        "import_cost": 62900.3
+      },
+      {
+        "product_sku": "VANNHUATAYDO114",
+        "product_name": "Van nhựa tay đỏ 114",
+        "unit": "Cái",
+        "quantity": 3,
+        "unit_price": 468000,
+        "tax_rate": 8,
+        "total_price": 1403999,
+        "import_cost": 467999.6666666667
+      },
+      {
+        "product_sku": "VANNHUATAYDO90",
+        "product_name": "Van nhựa tay đỏ 90",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 311000,
+        "tax_rate": 8,
+        "total_price": 622000,
+        "import_cost": 311000
+      }
+    ]
+  }
+]

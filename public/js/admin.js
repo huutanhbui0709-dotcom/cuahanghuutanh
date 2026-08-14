@@ -14,6 +14,9 @@ let adminPage = 1;
 const ORDERS_PER_PAGE = 20;
 let orderPage = 1;
 
+const INVENTORY_PER_PAGE = 20;
+let inventoryPage = 1;
+
 function formatPrice(p) {
   if (!p || p === 0) return 'Liên hệ';
   return p.toLocaleString('vi-VN') + '₫';
@@ -70,12 +73,17 @@ function showLogin() {
   document.getElementById('loginView').classList.remove('hidden');
   document.getElementById('adminView').classList.add('hidden');
   document.getElementById('logoutBtn').classList.add('hidden');
+  const toggleBtn = document.getElementById('toggleSidebarBtn');
+  if (toggleBtn) toggleBtn.classList.add('hidden');
 }
 
 function showDashboard() {
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('adminView').classList.remove('hidden');
   document.getElementById('logoutBtn').classList.remove('hidden');
+  const toggleBtn = document.getElementById('toggleSidebarBtn');
+  if (toggleBtn) toggleBtn.classList.remove('hidden');
+  initSidebarState();
   loadAllData();
 }
 
@@ -187,6 +195,7 @@ function adminTab(tab, el) {
   if (tab === 'slides') loadAdminSlides();
   if (tab === 'suppliers') loadSuppliersList();
   if (tab === 'tools') loadGeminiApiKeyToInput();
+  if (tab === 'inventory') loadInventoryHistory();
 }
 
 async function loadSettingsForm() {
@@ -429,7 +438,7 @@ function renderAdminTable() {
           <td>${(adminPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
           <td>${p.image ? `<img src="${getProductImageUrl(p)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" />` : '<i class="fa-solid fa-box"></i>'}</td>
           <td><code style="font-size:.78rem;background:var(--bg);padding:2px 6px;border-radius:4px">${p.ma}</code></td>
-          <td style="max-width:300px">${p.ten}</td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.ten.replace(/"/g, '&quot;')}">${p.ten}</td>
           <td style="font-weight:700;color:var(--primary)">${formatPrice(p.gia)}</td>
           <td>${p.donvi || '-'}</td>
           <td><span class="badge ${p.loai === 'Hàng hóa dịch vụ' ? 'badge-green' : 'badge-blue'}">${p.loai || '-'}</span></td>
@@ -777,17 +786,17 @@ function renderOrdersTable() {
             <div style="display:flex;gap:8px;justify-content:flex-start;align-items:center">
               <button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button>
               ${o.status === 'Chờ xác nhận'
-                ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
-                : o.status === 'Đã xác nhận'
-                  ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
-                  : ''
-              }
+      ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
+      : o.status === 'Đã xác nhận'
+        ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
+        : ''
+    }
               ${o.status === 'Chờ xác nhận'
-                ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
-                : o.status === 'Đã huỷ'
-                  ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
-                  : ''
-              }
+      ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
+      : o.status === 'Đã huỷ'
+        ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
+        : ''
+    }
             </div>
           </td>
         </tr>`).join('')}
@@ -876,15 +885,15 @@ function viewOrderDetail(id) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.875rem">
           <div><strong>Mã đơn:</strong> ${o.id}</div>
           <div><strong>Ngày đặt:</strong> ${(() => {
-            if (!o.createdAt) return '—';
-            const m = o.createdAt.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (m) {
-              const time = `${m[1].padStart(2, '0')}:${m[2]}`;
-              const date = `${m[3].padStart(2, '0')}/${m[4].padStart(2, '0')}/${m[5]}`;
-              return `${date} | ${time}`;
-            }
-            return o.createdAt;
-          })()}</div>
+      if (!o.createdAt) return '—';
+      const m = o.createdAt.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (m) {
+        const time = `${m[1].padStart(2, '0')}:${m[2]}`;
+        const date = `${m[3].padStart(2, '0')}/${m[4].padStart(2, '0')}/${m[5]}`;
+        return `${date} | ${time}`;
+      }
+      return o.createdAt;
+    })()}</div>
           <div><strong>Khách hàng:</strong> ${o.customer}</div>
           <div><strong>SĐT:</strong> ${o.phone}</div>
           <div style="grid-column:1/-1"><strong>Địa chỉ:</strong> ${o.address}</div>
@@ -2307,6 +2316,593 @@ function switchToolsTab(tabName, btn) {
   const activeContent = document.getElementById(`tools-tab-${tabName}`);
   if (activeContent) {
     activeContent.style.display = 'block';
+  }
+}
+
+// =====================================================================
+// INVENTORY STOCK INFLOW FRONTEND LOGIC
+// =====================================================================
+
+function switchProductSubTab(tabName, btn) {
+  document.querySelectorAll('.product-sub-tab-btn').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-outline');
+    b.style.color = 'black';
+  });
+  if (btn) {
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-primary');
+    btn.style.color = '';
+  }
+
+  ['list', 'import'].forEach(name => {
+    const el = document.getElementById(`product-sub-tab-${name}`);
+    if (el) el.style.display = name === tabName ? 'block' : 'none';
+  });
+}
+
+let currentParsedReceipt = null;
+
+function switchInventoryTab(tabName, btn) {
+  document.querySelectorAll('.inventory-tab-btn').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-outline');
+    b.style.color = 'black';
+  });
+  if (btn) {
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-primary');
+    btn.style.color = '';
+  }
+
+  document.querySelectorAll('.inventory-tab-content').forEach(content => {
+    content.style.display = 'none';
+  });
+  const activeContent = document.getElementById(`inventory-tab-${tabName}`);
+  if (activeContent) {
+    activeContent.style.display = 'block';
+  }
+}
+
+let allInventoryReceipts = [];
+
+async function loadInventoryHistory() {
+  const tbody = document.getElementById('inventoryHistoryTableBody');
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Đang tải lịch sử nhập kho...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await adminFetch('/api/admin/inventory/receipts');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    allInventoryReceipts = await res.json();
+    
+    filterInventoryHistory();
+
+  } catch (err) {
+    console.error('Lỗi khi tải lịch sử nhập kho:', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--danger); padding: 20px 0;">
+          <i class="fa-solid fa-circle-exclamation"></i> Không thể tải dữ liệu: ${err.message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function handleTimePresetChange() {
+  inventoryPage = 1;
+  const preset = document.getElementById('inventoryTimePresetFilter').value;
+  const customEl = document.getElementById('inventoryCustomDateRange');
+  if (customEl) {
+    customEl.style.display = preset === 'custom' ? 'flex' : 'none';
+  }
+  filterInventoryHistory();
+}
+
+function filterInventoryHistory() {
+  const tbody = document.getElementById('inventoryHistoryTableBody');
+  if (!allInventoryReceipts || allInventoryReceipts.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">
+          Chưa có chứng từ nhập kho nào được lưu.
+        </td>
+      </tr>
+    `;
+    const pagEl = document.getElementById('inventoryPagination');
+    if (pagEl) pagEl.innerHTML = '';
+    return;
+  }
+
+  // Parse receipt date helper
+  const getReceiptDate = (r) => {
+    const parts = String(r.import_date || '').split('/');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+    }
+    return r.created_at ? new Date(r.created_at) : new Date(0);
+  };
+
+  const preset = document.getElementById('inventoryTimePresetFilter').value;
+  const query = document.getElementById('inventorySearchFilter').value.toLowerCase().trim();
+
+  let startLimit = null;
+  let endLimit = null;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  if (preset === 'today') {
+    startLimit = todayStart;
+    endLimit = todayEnd;
+  } else if (preset === 'yesterday') {
+    const yesterday = new Date(todayStart);
+    yesterday.setDate(yesterday.getDate() - 1);
+    startLimit = yesterday;
+    const yesterdayEnd = new Date(todayEnd);
+    yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+    endLimit = yesterdayEnd;
+  } else if (preset === '7days') {
+    const sevenDaysAgo = new Date(todayStart);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    startLimit = sevenDaysAgo;
+    endLimit = todayEnd;
+  } else if (preset === '30days') {
+    const thirtyDaysAgo = new Date(todayStart);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    startLimit = thirtyDaysAgo;
+    endLimit = todayEnd;
+  } else if (preset === 'thisMonth') {
+    startLimit = new Date(now.getFullYear(), now.getMonth(), 1);
+    endLimit = todayEnd;
+  } else if (preset === 'lastMonth') {
+    startLimit = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    endLimit = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  } else if (preset === 'thisYear') {
+    startLimit = new Date(now.getFullYear(), 0, 1);
+    endLimit = todayEnd;
+  } else if (preset === 'custom') {
+    const startVal = document.getElementById('inventoryStartDate').value;
+    const endVal = document.getElementById('inventoryEndDate').value;
+    if (startVal) startLimit = new Date(startVal + 'T00:00:00');
+    if (endVal) endLimit = new Date(endVal + 'T23:59:59.999');
+  }
+
+  const filtered = allInventoryReceipts.filter(r => {
+    // 1. Match search text query
+    const matchQuery = !query || 
+      String(r.receipt_code || '').toLowerCase().includes(query) ||
+      String(r.supplier_name || '').toLowerCase().includes(query) ||
+      String(r.note || '').toLowerCase().includes(query);
+
+    if (!matchQuery) return false;
+
+    // 2. Match Date limits
+    if (preset === 'all') return true;
+
+    const rDate = getReceiptDate(r);
+    const matchDate = (!startLimit || rDate >= startLimit) && (!endLimit || rDate <= endLimit);
+    return matchDate;
+  });
+
+  // Sắp xếp theo ngày nhập mới nhất lên trên
+  filtered.sort((a, b) => getReceiptDate(b) - getReceiptDate(a));
+
+  const total = filtered.length;
+  const pages = Math.ceil(total / INVENTORY_PER_PAGE);
+  if (inventoryPage > pages) inventoryPage = Math.max(1, pages);
+  const paged = filtered.slice((inventoryPage - 1) * INVENTORY_PER_PAGE, inventoryPage * INVENTORY_PER_PAGE);
+
+  if (total === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">
+          Không tìm thấy chứng từ nhập kho nào khớp với bộ lọc.
+        </td>
+      </tr>
+    `;
+    const pagEl = document.getElementById('inventoryPagination');
+    if (pagEl) pagEl.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = paged.map(r => {
+    const formattedDate = r.import_date || (r.created_at ? new Date(r.created_at).toLocaleDateString('vi-VN') : 'N/A');
+    return `
+      <tr>
+        <td><strong>#${r.id}</strong></td>
+        <td><code>${r.receipt_code}</code></td>
+        <td>${formattedDate}</td>
+        <td>${r.supplier_name || 'N/A'}</td>
+        <td>${r.warehouse_name || 'N/A'}</td>
+        <td><strong style="color: var(--danger);">${formatPrice(r.total_amount)}</strong></td>
+        <td><span class="badge badge-blue">${r.item_count} mặt hàng</span></td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="openInventoryReceiptDetail(${r.id})" title="Xem chi tiết" style="color: var(--primary); border-color: var(--primary); padding: 4px 8px;">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="deleteInventoryReceipt(${r.id})" title="Xóa chứng từ" style="color: var(--danger); border-color: var(--danger); padding: 4px 8px; margin-left: 4px;">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Tổng giá trị nhập kho (Dựa trên toàn bộ list đã lọc)
+  const grandTotal = filtered.reduce((sum, r) => sum + (r.total_amount || 0), 0);
+  const tfoot = document.getElementById('inventoryHistoryTableFoot');
+  if (tfoot) {
+    tfoot.innerHTML = `
+      <tr style="background: var(--bg); border-top: 2px solid var(--border);">
+        <td colspan="5" style="padding: 10px 12px; font-weight: 600; font-size: .875rem;">
+          <i class="fa-solid fa-sigma"></i> Tổng cộng (${total} phiếu)
+        </td>
+        <td style="padding: 10px 12px; font-weight: 700; color: var(--danger); font-size: 1rem;">
+          ${formatPrice(grandTotal)}
+        </td>
+        <td colspan="2"></td>
+      </tr>
+    `;
+  }
+
+  // Summary bars (Top & Bottom)
+  const summaryEl = document.getElementById('inventoryHistorySummary');
+  const countEl = document.getElementById('inventorySummaryCount');
+  const totalEl = document.getElementById('inventorySummaryTotal');
+  if (summaryEl && countEl && totalEl) {
+    countEl.textContent = total;
+    totalEl.textContent = formatPrice(grandTotal);
+    summaryEl.style.display = 'flex';
+  }
+
+  const summaryElTop = document.getElementById('inventoryHistorySummaryTop');
+  const countElTop = document.getElementById('inventorySummaryCountTop');
+  const totalElTop = document.getElementById('inventorySummaryTotalTop');
+  if (summaryElTop && countElTop && totalElTop) {
+    countElTop.textContent = total;
+    totalElTop.textContent = formatPrice(grandTotal);
+    summaryElTop.style.display = 'flex';
+  }
+
+  // Render pagination
+  renderPagination(pages, inventoryPage, 'inventoryPagination', (p) => { inventoryPage = p; filterInventoryHistory(); });
+
+  // Hiển thị phạm vi dòng đang xem (vD: 1 - 20 của 57)
+  const pagEl = document.getElementById('inventoryPagination');
+  if (pagEl && total > 0) {
+    const start = (inventoryPage - 1) * INVENTORY_PER_PAGE + 1;
+    const end = Math.min(inventoryPage * INVENTORY_PER_PAGE, total);
+    
+    // Nếu chỉ có 1 trang thì renderPagination không render nút (hoặc render trống),
+    // nhưng ta vẫn muốn hiển thị text thông tin.
+    if (pages <= 1) {
+      pagEl.innerHTML = '';
+    }
+    
+    const infoSpan = document.createElement('span');
+    infoSpan.className = 'pagination-info';
+    infoSpan.style.marginLeft = '12px';
+    infoSpan.style.color = 'var(--muted)';
+    infoSpan.style.fontSize = '.85rem';
+    infoSpan.style.fontWeight = '500';
+    infoSpan.innerHTML = `Hiển thị <strong>${start} - ${end}</strong> của <strong>${total}</strong> phiếu`;
+    pagEl.appendChild(infoSpan);
+  }
+}
+
+async function openInventoryReceiptDetail(id) {
+  const detailBody = document.getElementById('inventoryReceiptDetailBody');
+  detailBody.innerHTML = `
+    <div style="text-align: center; padding: 40px 0; color: var(--muted);">
+      <i class="fa-solid fa-spinner fa-spin fa-2x"></i> <br> Đang tải thông tin chi tiết...
+    </div>
+  `;
+  document.getElementById('inventoryReceiptModal').classList.add('open');
+
+  try {
+    const res = await adminFetch(`/api/admin/inventory/receipts/${id}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.ok || !data.receipt) {
+      throw new Error(data.message || 'Không có dữ liệu');
+    }
+
+    const { receipt, items } = data;
+    const fileDate = receipt.import_date || 'N/A';
+    const systemDate = receipt.created_at ? new Date(receipt.created_at).toLocaleString('vi-VN') : 'N/A';
+
+    let itemsHtml = items.map((item, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td><code>${item.product_sku}</code></td>
+        <td>${item.product_name}</td>
+        <td><span class="badge">${item.unit || 'Cái'}</span></td>
+        <td style="text-align: right;">${item.quantity.toLocaleString('vi-VN')}</td>
+        <td style="text-align: right;">${formatPrice(item.unit_price)}</td>
+        <td style="text-align: right;">${item.tax_rate}%</td>
+        <td style="text-align: right;"><strong style="color: var(--text);">${formatPrice(item.total_price)}</strong></td>
+      </tr>
+    `).join('');
+
+    detailBody.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; padding: 16px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border);">
+        <div><strong>Mã chứng từ:</strong> <span>${receipt.receipt_code}</span></div>
+        <div><strong>Ngày nhập:</strong> <span>${fileDate}</span></div>
+        <div><strong>Ngày tạo (hệ thống):</strong> <span>${systemDate}</span></div>
+        <div><strong>Nhà cung cấp:</strong> <span>${receipt.supplier_name || 'N/A'}</span></div>
+        <div><strong>Kho nhập:</strong> <span>${receipt.warehouse_name || 'N/A'}</span></div>
+        <div><strong>Tổng tiền thanh toán:</strong> <strong style="color: var(--danger);">${formatPrice(receipt.total_amount)}</strong></div>
+        <div style="grid-column: 1 / -1;"><strong>Diễn giải:</strong> <span>${receipt.note || 'N/A'}</span></div>
+      </div>
+
+      <h4 style="margin-bottom: 12px; font-size: 1rem;"><i class="fa-solid fa-boxes-stacked"></i> Danh sách mặt hàng</h4>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Mã SKU</th>
+              <th>Tên hàng hóa</th>
+              <th>ĐVT</th>
+              <th style="text-align: right;">Số lượng</th>
+              <th style="text-align: right;">Đơn giá</th>
+              <th style="text-align: right;">Thuế suất</th>
+              <th style="text-align: right;">Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+  } catch (err) {
+    console.error('Lỗi khi tải chi tiết phiếu nhập:', err);
+    detailBody.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: var(--danger);">
+        <i class="fa-solid fa-triangle-exclamation fa-2x"></i> <br>
+        Không thể tải chi tiết phiếu nhập: ${err.message}
+      </div>
+    `;
+  }
+}
+
+// Drag & drop handlers for inventory import
+function handleInventoryDragOver(e) {
+  e.preventDefault();
+  document.getElementById('inventoryUploadZone').classList.add('dragover');
+}
+
+function handleInventoryDragLeave(e) {
+  e.preventDefault();
+  document.getElementById('inventoryUploadZone').classList.remove('dragover');
+}
+
+function handleInventoryDrop(e) {
+  e.preventDefault();
+  document.getElementById('inventoryUploadZone').classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files && files[0]) {
+    uploadInventoryExcel(files[0]);
+  }
+}
+
+function handleInventoryFileSelect(e) {
+  const files = e.target.files;
+  if (files && files[0]) {
+    uploadInventoryExcel(files[0]);
+  }
+}
+
+async function uploadInventoryExcel(file) {
+  const statusDiv = document.getElementById('inventoryUploadStatus');
+  const statusText = document.getElementById('inventoryStatusText');
+  const previewContainer = document.getElementById('inventoryPreviewContainer');
+
+  statusDiv.style.display = 'block';
+  statusText.innerHTML = `Đang phân tích file <code>${file.name}</code>...`;
+  previewContainer.style.display = 'none';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await adminFetch('/api/admin/inventory/import-receipt', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || 'Lỗi không rõ khi xử lý file.');
+    }
+
+    currentParsedReceipt = data;
+    renderStockReceiptPreview(data);
+    showToast('<i class="fa-solid fa-circle-check"></i> Đọc dữ liệu file Excel thành công!', 'success');
+
+  } catch (err) {
+    console.error('Lỗi upload/parse Excel:', err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  } finally {
+    statusDiv.style.display = 'none';
+    document.getElementById('inventoryExcelInput').value = '';
+  }
+}
+
+function renderStockReceiptPreview(data) {
+  const receipts = data.receipts || [{ receipt: data.receipt, items: data.items, sheet_name: '' }];
+  const multiSheet = receipts.length > 1;
+
+  // Update header card (first sheet preview metadata)
+  const first = receipts[0];
+  document.getElementById('prevReceiptCode').textContent = multiSheet
+    ? `${first.receipt.receipt_code} (+${receipts.length - 1} phiếu khác)`
+    : first.receipt.receipt_code;
+  document.getElementById('prevImportDate').textContent = first.receipt.import_date;
+  document.getElementById('prevSupplierName').textContent = first.receipt.supplier_name;
+  document.getElementById('prevWarehouseName').textContent = first.receipt.warehouse_name;
+  document.getElementById('prevTotalAmount').textContent = formatPrice(
+    receipts.reduce((sum, r) => sum + (r.receipt.total_amount || 0), 0)
+  );
+  document.getElementById('prevNote').textContent = first.receipt.note || '(Trống)';
+
+  // Render items — all sheets combined into one table, with sheet separator rows
+  const tbody = document.getElementById('inventoryPreviewTableBody');
+  let allRows = '';
+  for (const parsed of receipts) {
+    if (multiSheet) {
+      allRows += `
+        <tr style="background: var(--bg); border-top: 2px solid var(--border);">
+          <td colspan="8" style="padding: 8px 12px; font-weight: 600; color: var(--primary); font-size: .85rem;">
+            <i class="fa-solid fa-table-columns"></i>
+            Sheet: <code>${parsed.sheet_name}</code>
+            &mdash; Mã chứng từ: <code>${parsed.receipt.receipt_code}</code>
+            &mdash; Ngày: ${parsed.receipt.import_date}
+            &mdash; Tổng: <strong style="color:var(--danger)">${formatPrice(parsed.receipt.total_amount)}</strong>
+          </td>
+        </tr>
+      `;
+    }
+    for (const item of parsed.items) {
+      let statusBadge = item.system_match
+        ? `<span class="badge badge-green" style="font-size: 0.75rem;">Khớp hệ thống (Tồn: ${item.current_stock}, Giá vốn: ${formatPrice(item.current_cost)})</span>`
+        : `<span class="badge badge-yellow" style="font-size: 0.75rem;">Sản phẩm mới (Không khớp SKU)</span>`;
+      allRows += `
+        <tr>
+          <td><code>${item.product_sku || 'N/A'}</code></td>
+          <td><strong>${item.product_name}</strong></td>
+          <td><span class="badge">${item.unit || 'Cái'}</span></td>
+          <td>${item.quantity.toLocaleString('vi-VN')}</td>
+          <td>${formatPrice(item.unit_price)}</td>
+          <td>${item.tax_rate}%</td>
+          <td><strong style="color: var(--text);">${formatPrice(item.total_price)}</strong></td>
+          <td>${statusBadge}</td>
+        </tr>
+      `;
+    }
+  }
+  tbody.innerHTML = allRows;
+
+  document.getElementById('inventoryPreviewContainer').style.display = 'block';
+}
+
+async function saveStockReceipt() {
+  if (!currentParsedReceipt) return;
+
+  const btn = document.querySelector('#inventoryPreviewContainer button');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+  const receiptsToSave = currentParsedReceipt.receipts
+    || [{ receipt: currentParsedReceipt.receipt, items: currentParsedReceipt.items }];
+
+  let savedCount = 0;
+  const skippedDuplicates = [];
+  const errors = [];
+
+  try {
+    for (const parsed of receiptsToSave) {
+      try {
+        const res = await adminFetch('/api/admin/inventory/save-receipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ receipt: parsed.receipt, items: parsed.items })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          if (data.message && data.message.includes('đã tồn tại')) {
+            skippedDuplicates.push(parsed.receipt.receipt_code);
+          } else {
+            errors.push(`${parsed.receipt.receipt_code}: ${data.message}`);
+          }
+        } else {
+          savedCount++;
+        }
+      } catch (innerErr) {
+        errors.push(`${parsed.receipt.receipt_code}: ${innerErr.message}`);
+      }
+    }
+
+    if (savedCount > 0) {
+      let msg = `<i class="fa-solid fa-circle-check"></i> Đã lưu ${savedCount} phiếu nhập kho thành công!`;
+      if (skippedDuplicates.length > 0) msg += ` (Bỏ qua ${skippedDuplicates.length} mã trùng: ${skippedDuplicates.join(', ')})`;
+      showToast(msg, 'success');
+    } else if (skippedDuplicates.length > 0 && errors.length === 0) {
+      showToast(`<i class="fa-solid fa-triangle-exclamation"></i> Tất cả phiếu đã tồn tại: ${skippedDuplicates.join(', ')}`, 'error');
+    } else {
+      throw new Error(errors[0] || 'Lỗi không xác định');
+    }
+
+    // Clear preview and switch to history
+    currentParsedReceipt = null;
+    document.getElementById('inventoryPreviewContainer').style.display = 'none';
+
+    switchInventoryTab('history', document.querySelector('.inventory-tab-btn'));
+    loadInventoryHistory();
+
+    // Refresh products list in dashboard / product manager
+    await loadProducts();
+    if (typeof renderAdminTable === 'function') renderAdminTable();
+
+  } catch (err) {
+    console.error('Lỗi khi lưu phiếu nhập kho:', err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+}
+
+async function deleteInventoryReceipt(id) {
+  if (!confirm('Bạn có chắc chắn muốn xóa chứng từ nhập kho này? Hành động này không thể hoàn tác.')) {
+    return;
+  }
+
+  try {
+    const res = await adminFetch(`/api/admin/inventory/receipts/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || 'Lỗi khi xóa chứng từ.');
+    }
+
+    showToast('<i class="fa-solid fa-circle-check"></i> Đã xóa chứng từ nhập kho thành công!', 'success');
+    loadInventoryHistory();
+
+  } catch (err) {
+    console.error('Lỗi khi xóa chứng từ:', err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  }
+}
+
+function toggleSidebar() {
+  const layout = document.querySelector('.admin-layout');
+  if (!layout) return;
+  const isCollapsed = layout.classList.toggle('sidebar-collapsed');
+  localStorage.setItem('adminSidebarCollapsed', isCollapsed ? 'true' : 'false');
+}
+
+function initSidebarState() {
+  const layout = document.querySelector('.admin-layout');
+  if (!layout) return;
+  const isCollapsed = localStorage.getItem('adminSidebarCollapsed') === 'true';
+  if (isCollapsed) {
+    layout.classList.add('sidebar-collapsed');
+  } else {
+    layout.classList.remove('sidebar-collapsed');
   }
 }
 
