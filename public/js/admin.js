@@ -2317,6 +2317,10 @@ function switchToolsTab(tabName, btn) {
   if (activeContent) {
     activeContent.style.display = 'block';
   }
+
+  if (tabName === 'footer-settings') {
+    loadSettingsForm();
+  }
 }
 
 // =====================================================================
