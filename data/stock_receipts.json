@@ -1,13 +1,75 @@
 [
   {
     "id": 1,
+    "receipt_code": "1C26TAA_1",
+    "import_date": "11/06/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
+    "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1993011,
+    "created_at": "2026-08-15T03:03:54.706Z",
+    "items": [
+      {
+        "product_sku": "ONGRUOTGA20",
+        "product_name": "Ống ruột gà âm tường Ø 20 (HDPE)",
+        "unit": "Cuộn",
+        "quantity": 5,
+        "unit_price": 101500,
+        "tax_rate": 8,
+        "total_price": 507498,
+        "import_cost": 101499.6
+      },
+      {
+        "product_sku": "ONGRUOTGA25",
+        "product_name": "Ống ruột gà âm tường Ø 25 (HDPE)",
+        "unit": "Cuộn",
+        "quantity": 1,
+        "unit_price": 109040,
+        "tax_rate": 8,
+        "total_price": 109040,
+        "import_cost": 109040
+      },
+      {
+        "product_sku": "WZV7061W",
+        "product_name": "WZV7061W - Mặt dùng cho HB FULL",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 10976,
+        "tax_rate": 8,
+        "total_price": 109761,
+        "import_cost": 10976.1
+      },
+      {
+        "product_sku": "WZV7844W",
+        "product_name": "WZV7844W - Mặt dùng cho 4 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 21889,
+        "tax_rate": 8,
+        "total_price": 1094473,
+        "import_cost": 21889.46
+      },
+      {
+        "product_sku": "WZV7843W",
+        "product_name": "WZV7843W - Mặt dùng cho 3 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 8612,
+        "tax_rate": 8,
+        "total_price": 172239,
+        "import_cost": 8611.95
+      }
+    ]
+  },
+  {
+    "id": 2,
     "receipt_code": "28971",
     "import_date": "18/07/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho hàng hóa lần 4 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 18/07/2026",
-    "warehouse_name": "Kho chính",
+    "warehouse_name": "Kho mặc định",
     "total_amount": 2882827,
-    "created_at": "2026-08-14T03:39:53.042Z",
+    "created_at": "2026-08-15T03:03:54.719Z",
     "items": [
       {
         "product_sku": "SONPHUNT224XANHD",
@@ -62,14 +124,14 @@
     ]
   },
   {
-    "id": 2,
+    "id": 3,
     "receipt_code": "2C26MAB",
     "import_date": "04/04/2026",
     "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 2C26MAB ngày 04/04/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2512000,
-    "created_at": "2026-08-14T03:53:11.564Z",
+    "created_at": "2026-08-15T03:03:54.751Z",
     "items": [
       {
         "product_sku": "SP000014",
@@ -144,14 +206,14 @@
     ]
   },
   {
-    "id": 3,
+    "id": 4,
     "receipt_code": "NK042026_L8",
     "import_date": "09/04/2026",
     "supplier_name": "HỘ KINH DOANH NGUYỄN TRIỀU ANH",
     "note": "Nhập kho tháng 04/2026 Lần 8",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1980000,
-    "created_at": "2026-08-14T03:53:11.575Z",
+    "created_at": "2026-08-15T03:03:54.799Z",
     "items": [
       {
         "product_sku": "SP000003",
@@ -196,14 +258,14 @@
     ]
   },
   {
-    "id": 4,
+    "id": 5,
     "receipt_code": "NK032026_L2",
     "import_date": "19/03/2026",
     "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
     "note": "Nhập kho tháng 03/2026 Lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 3023968,
-    "created_at": "2026-08-14T03:53:11.632Z",
+    "created_at": "2026-08-15T03:03:54.828Z",
     "items": [
       {
         "product_sku": "MK-107Đ",
@@ -268,14 +330,108 @@
     ]
   },
   {
-    "id": 5,
+    "id": 6,
+    "receipt_code": "1C26TAA00027513",
+    "import_date": "09/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 3 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 09/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 4885706,
+    "created_at": "2026-08-15T03:03:54.851Z",
+    "items": [
+      {
+        "product_sku": "DAYCVLF1570520",
+        "product_name": "Cadivi - Dây CV/LF-1.5 (7/0.52) - 0.6/1kV",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 7767,
+        "tax_rate": 8,
+        "total_price": 1553472,
+        "import_cost": 7767.36
+      },
+      {
+        "product_sku": "DAYCVLF2570670",
+        "product_name": "Cadivi - Dây CV/LF-2.5 (7/0.67) - 0.6/1kV",
+        "unit": "Mét",
+        "quantity": 200,
+        "unit_price": 12655,
+        "tax_rate": 8,
+        "total_price": 2531088,
+        "import_cost": 12655.44
+      },
+      {
+        "product_sku": "WNV1081-7W",
+        "product_name": "Ổ cắm FULL có màn che",
+        "unit": "Cái",
+        "quantity": 50,
+        "unit_price": 16023,
+        "tax_rate": 8,
+        "total_price": 801146,
+        "import_cost": 16022.92
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "receipt_code": "1C26TAA",
+    "import_date": "01/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
+    "note": "Nhập kho tháng 07 từ nhà cung cấp CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 11350800,
+    "created_at": "2026-08-15T03:03:54.866Z",
+    "items": [
+      {
+        "product_sku": "OKAWA20-DP",
+        "product_name": "Máy phun thuốc trừ côn trùng 12V12Ah OKAWA 20-DP (vàng)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 779760,
+        "tax_rate": 8,
+        "total_price": 7797600,
+        "import_cost": 779760
+      },
+      {
+        "product_sku": "MKP1013BG2W",
+        "product_name": "Máy khoan pin YMS-MKP1013BG2W",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1684800,
+        "tax_rate": 8,
+        "total_price": 1684800,
+        "import_cost": 1684800
+      },
+      {
+        "product_sku": "YMS-GKT21V-55N",
+        "product_name": "Máy khoan cầm tay pin YMS-GKT21V-55N",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 939600,
+        "tax_rate": 8,
+        "total_price": 939600,
+        "import_cost": 939600
+      },
+      {
+        "product_sku": "YMS-CTN180",
+        "product_name": "Máy chà tường điện YMS-CTN180",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 928800,
+        "tax_rate": 8,
+        "total_price": 928800,
+        "import_cost": 928800
+      }
+    ]
+  },
+  {
+    "id": 8,
     "receipt_code": "NK052026_L8",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 8",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999974,
-    "created_at": "2026-08-14T03:53:11.646Z",
+    "created_at": "2026-08-15T03:03:54.901Z",
     "items": [
       {
         "product_sku": "PVC-Udn60x1,8",
@@ -410,14 +566,14 @@
     ]
   },
   {
-    "id": 6,
+    "id": 9,
     "receipt_code": "NK052026_L6",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 6",
     "warehouse_name": "Kho mặc định",
     "total_amount": 19340986,
-    "created_at": "2026-08-14T03:53:11.663Z",
+    "created_at": "2026-08-15T03:03:54.934Z",
     "items": [
       {
         "product_sku": "ONGNUOC114MONG",
@@ -532,14 +688,14 @@
     ]
   },
   {
-    "id": 7,
+    "id": 10,
     "receipt_code": "NK042026_L6",
     "import_date": "09/04/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 04/2026 Lần 6",
     "warehouse_name": "Kho mặc định",
     "total_amount": 632383,
-    "created_at": "2026-08-14T03:53:11.681Z",
+    "created_at": "2026-08-15T03:03:54.956Z",
     "items": [
       {
         "product_sku": "NN102WM",
@@ -554,14 +710,14 @@
     ]
   },
   {
-    "id": 8,
+    "id": 11,
     "receipt_code": "NK032026_L3",
     "import_date": "25/03/2026",
     "supplier_name": "CÔNG TY TNHH 2TV HOÀNG MINH DI",
     "note": "Nhập kho tháng 03/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1766943,
-    "created_at": "2026-08-14T03:53:11.705Z",
+    "created_at": "2026-08-15T03:03:54.978Z",
     "items": [
       {
         "product_sku": "OCAM-4E26",
@@ -626,14 +782,14 @@
     ]
   },
   {
-    "id": 9,
+    "id": 12,
     "receipt_code": "NK052026_L5",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 5",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999806,
-    "created_at": "2026-08-14T03:53:11.724Z",
+    "created_at": "2026-08-15T03:03:55.005Z",
     "items": [
       {
         "product_sku": "PVC-Udn21x1,3",
@@ -688,14 +844,14 @@
     ]
   },
   {
-    "id": 10,
+    "id": 13,
     "receipt_code": "NK012026_L5",
     "import_date": "29/01/2026",
     "supplier_name": "CÔNG TY TNHH SẢN XUẤT THƯƠNG MẠI DỊCH VỤ V.I.P",
     "note": "Nhập kho tháng 01/2026 Lần 5",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1762560,
-    "created_at": "2026-08-14T03:53:11.752Z",
+    "created_at": "2026-08-15T03:03:55.036Z",
     "items": [
       {
         "product_sku": "SILICONA500-XAM",
@@ -750,14 +906,14 @@
     ]
   },
   {
-    "id": 11,
+    "id": 14,
     "receipt_code": "NK052026_L18",
     "import_date": "09/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 18",
     "warehouse_name": "Kho mặc định",
     "total_amount": 247137,
-    "created_at": "2026-08-14T03:53:11.765Z",
+    "created_at": "2026-08-15T03:03:55.058Z",
     "items": [
       {
         "product_sku": "NA101TM",
@@ -782,14 +938,14 @@
     ]
   },
   {
-    "id": 12,
+    "id": 15,
     "receipt_code": "NK042026_L7",
     "import_date": "09/04/2026",
     "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
     "note": "Nhập kho tháng 04/2026 Lần 7",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2512000,
-    "created_at": "2026-08-14T03:53:11.792Z",
+    "created_at": "2026-08-15T03:03:55.086Z",
     "items": [
       {
         "product_sku": "SP000014",
@@ -864,14 +1020,14 @@
     ]
   },
   {
-    "id": 13,
+    "id": 16,
     "receipt_code": "NK052026_L2",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 8605440,
-    "created_at": "2026-08-14T03:53:11.813Z",
+    "created_at": "2026-08-15T03:03:55.123Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-2.5",
@@ -896,14 +1052,14 @@
     ]
   },
   {
-    "id": 14,
+    "id": 17,
     "receipt_code": "NK012026_L2",
     "import_date": "19/01/2026",
     "supplier_name": "ĐIỆN GIA DỤNG KHẮC TÍNH",
     "note": "Nhập kho tháng 01/2026 lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1305000,
-    "created_at": "2026-08-14T03:53:11.833Z",
+    "created_at": "2026-08-15T03:03:55.169Z",
     "items": [
       {
         "product_sku": "DENTRANGTRI220V",
@@ -948,14 +1104,14 @@
     ]
   },
   {
-    "id": 15,
+    "id": 18,
     "receipt_code": "NK052026_L14",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 14",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4999968,
-    "created_at": "2026-08-14T03:53:11.852Z",
+    "created_at": "2026-08-15T03:03:55.214Z",
     "items": [
       {
         "product_sku": "ONP200DAY",
@@ -970,14 +1126,14 @@
     ]
   },
   {
-    "id": 16,
+    "id": 19,
     "receipt_code": "NK052026_L4",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 411331,
-    "created_at": "2026-08-14T03:53:11.870Z",
+    "created_at": "2026-08-15T03:03:55.257Z",
     "items": [
       {
         "product_sku": "FRG20WM",
@@ -992,14 +1148,14 @@
     ]
   },
   {
-    "id": 17,
+    "id": 20,
     "receipt_code": "NK052026_L1",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1206036,
-    "created_at": "2026-08-14T03:53:11.896Z",
+    "created_at": "2026-08-15T03:03:55.274Z",
     "items": [
       {
         "product_sku": "WNV5001-7W",
@@ -1024,14 +1180,14 @@
     ]
   },
   {
-    "id": 18,
+    "id": 21,
     "receipt_code": "NK042026_L3",
     "import_date": "09/04/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 04/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 10000001,
-    "created_at": "2026-08-14T03:53:11.911Z",
+    "created_at": "2026-08-15T03:03:55.308Z",
     "items": [
       {
         "product_sku": "PVC-Udn114x3,1",
@@ -1066,14 +1222,46 @@
     ]
   },
   {
-    "id": 20,
+    "id": 22,
+    "receipt_code": "6301C26TAA",
+    "import_date": "27/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000630 ngày 27/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2307960,
+    "created_at": "2026-08-15T03:03:55.335Z",
+    "items": [
+      {
+        "product_sku": "COV-22-RS",
+        "product_name": "Đầu phun áp lực chất lỏng 1HP Hiệu Con ong vàng Model COV-22-RS",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1225800,
+        "tax_rate": 8,
+        "total_price": 1225800,
+        "import_cost": 1225800
+      },
+      {
+        "product_sku": "YMS-303G2",
+        "product_name": "Dụng cụ đo cân bằng laser YMS-303G2",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1082160,
+        "tax_rate": 8,
+        "total_price": 1082160,
+        "import_cost": 1082160
+      }
+    ]
+  },
+  {
+    "id": 23,
     "receipt_code": "NK052026_L7",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 7",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2500103,
-    "created_at": "2026-08-14T03:53:11.949Z",
+    "created_at": "2026-08-15T03:03:55.370Z",
     "items": [
       {
         "product_sku": "ONP300DAY",
@@ -1108,14 +1296,14 @@
     ]
   },
   {
-    "id": 21,
+    "id": 24,
     "receipt_code": "NK042026_L2",
     "import_date": "09/04/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 04/2026 Lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999936,
-    "created_at": "2026-08-14T03:53:11.967Z",
+    "created_at": "2026-08-15T03:03:55.407Z",
     "items": [
       {
         "product_sku": "ONGNUOC220DAY",
@@ -1150,14 +1338,14 @@
     ]
   },
   {
-    "id": 22,
+    "id": 25,
     "receipt_code": "NK052026_L10",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 10",
     "warehouse_name": "Kho mặc định",
     "total_amount": 425952,
-    "created_at": "2026-08-14T03:53:11.983Z",
+    "created_at": "2026-08-15T03:03:55.422Z",
     "items": [
       {
         "product_sku": "COPVC21DAY",
@@ -1182,14 +1370,14 @@
     ]
   },
   {
-    "id": 23,
+    "id": 26,
     "receipt_code": "2481C26TAA",
     "import_date": "20/04/2026",
     "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000248 ngày 20/04/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 5752080,
-    "created_at": "2026-08-14T03:53:12.003Z",
+    "created_at": "2026-08-15T03:03:55.450Z",
     "items": [
       {
         "product_sku": "YMS-DBT0832G2",
@@ -1244,14 +1432,66 @@
     ]
   },
   {
-    "id": 25,
+    "id": 27,
+    "receipt_code": "5641C26TAA",
+    "import_date": "01/07/2026",
+    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000564 ngày 01/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 11350800,
+    "created_at": "2026-08-15T03:03:55.487Z",
+    "items": [
+      {
+        "product_sku": "OKAWA20-DP",
+        "product_name": "Máy phun thuốc trừ côn trùng 12V12Ah OKAWA 20-DP (vàng)",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 779760,
+        "tax_rate": 8,
+        "total_price": 7797600,
+        "import_cost": 779760
+      },
+      {
+        "product_sku": "MKP1013BG2W",
+        "product_name": "Máy khoan pin YMS-MKP1013BG2W",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 1684800,
+        "tax_rate": 8,
+        "total_price": 1684800,
+        "import_cost": 1684800
+      },
+      {
+        "product_sku": "YMS-GKT21V-55N",
+        "product_name": "Máy khoan cầm tay pin YMS-GKT21V-55N",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 939600,
+        "tax_rate": 8,
+        "total_price": 939600,
+        "import_cost": 939600
+      },
+      {
+        "product_sku": "YMS-CTN180",
+        "product_name": "Máy chà tường điện YMS-CTN180",
+        "unit": "Cái",
+        "quantity": 1,
+        "unit_price": 928800,
+        "tax_rate": 8,
+        "total_price": 928800,
+        "import_cost": 928800
+      }
+    ]
+  },
+  {
+    "id": 28,
     "receipt_code": "NK012026_L1",
     "import_date": "19/01/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 01/2026 lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1316002,
-    "created_at": "2026-08-14T03:53:12.043Z",
+    "created_at": "2026-08-15T03:03:55.508Z",
     "items": [
       {
         "product_sku": "CADIVIDOI1,5",
@@ -1266,14 +1506,56 @@
     ]
   },
   {
-    "id": 26,
+    "id": 29,
+    "receipt_code": "1C26TAA00028570",
+    "import_date": "16/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 2 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 16/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1578822,
+    "created_at": "2026-08-15T03:03:55.532Z",
+    "items": [
+      {
+        "product_sku": "WZV7843W",
+        "product_name": "WZV7843W - Mặt dùng cho 3 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 8848,
+        "tax_rate": 8,
+        "total_price": 265454,
+        "import_cost": 8848.466666666667
+      },
+      {
+        "product_sku": "WZV7844W",
+        "product_name": "WZV7844W - Mặt dùng cho 4 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 21889,
+        "tax_rate": 8,
+        "total_price": 656684,
+        "import_cost": 21889.466666666667
+      },
+      {
+        "product_sku": "WZV7846W",
+        "product_name": "WZV7846W - Mặt dùng cho 6 thiết bị FULL",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 21889,
+        "tax_rate": 8,
+        "total_price": 656684,
+        "import_cost": 21889.466666666667
+      }
+    ]
+  },
+  {
+    "id": 30,
     "receipt_code": "NK052026_L9",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 9",
     "warehouse_name": "Kho mặc định",
     "total_amount": 10000001,
-    "created_at": "2026-08-14T03:53:12.063Z",
+    "created_at": "2026-08-15T03:03:55.548Z",
     "items": [
       {
         "product_sku": "PVC-Udn60x1,8",
@@ -1388,14 +1670,14 @@
     ]
   },
   {
-    "id": 27,
+    "id": 31,
     "receipt_code": "NK042026_L4",
     "import_date": "09/04/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 04/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2484874,
-    "created_at": "2026-08-14T03:53:12.090Z",
+    "created_at": "2026-08-15T03:03:55.580Z",
     "items": [
       {
         "product_sku": "WEV68040SW",
@@ -1450,14 +1732,14 @@
     ]
   },
   {
-    "id": 28,
+    "id": 32,
     "receipt_code": "NK052026_L11",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 11",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2530980,
-    "created_at": "2026-08-14T03:53:12.107Z",
+    "created_at": "2026-08-15T03:03:55.608Z",
     "items": [
       {
         "product_sku": "PVC-Udn21x1,7",
@@ -1492,14 +1774,14 @@
     ]
   },
   {
-    "id": 29,
+    "id": 33,
     "receipt_code": "285691C26TAA",
     "import_date": "16/07/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00028569 ngày 16/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 3265920,
-    "created_at": "2026-08-14T03:53:12.127Z",
+    "created_at": "2026-08-15T03:03:55.624Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-1.5",
@@ -1514,14 +1796,14 @@
     ]
   },
   {
-    "id": 30,
+    "id": 34,
     "receipt_code": "296131C26TAA",
     "import_date": "23/07/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00029613 ngày 23/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 569732,
-    "created_at": "2026-08-14T03:53:12.148Z",
+    "created_at": "2026-08-15T03:03:55.654Z",
     "items": [
       {
         "product_sku": "BS1113TV",
@@ -1536,14 +1818,14 @@
     ]
   },
   {
-    "id": 31,
+    "id": 35,
     "receipt_code": "NK012026_L4",
     "import_date": "29/01/2026",
     "supplier_name": "CÔNG TY TNHH MỘT THÀNH VIÊN THƯƠNG MẠI XÂY DỰNG NGỌC THANH THANH",
     "note": "Nhập kho tháng 01/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1084160,
-    "created_at": "2026-08-14T03:53:12.169Z",
+    "created_at": "2026-08-15T03:03:55.667Z",
     "items": [
       {
         "product_sku": "QTSENKOTC1626",
@@ -1558,14 +1840,106 @@
     ]
   },
   {
-    "id": 32,
+    "id": 36,
+    "receipt_code": "1472C26MAB",
+    "import_date": "26/07/2026",
+    "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
+    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 0000147 ngày 26/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 2712000,
+    "created_at": "2026-08-15T03:03:55.680Z",
+    "items": [
+      {
+        "product_sku": "MANPHU1X100",
+        "product_name": "màn phủ 1mx100m",
+        "unit": "Cây",
+        "quantity": 2,
+        "unit_price": 62000,
+        "tax_rate": 0,
+        "total_price": 124000,
+        "import_cost": 62000
+      },
+      {
+        "product_sku": "XABENGDAO1M4",
+        "product_name": "xà beng đào 1m4",
+        "unit": "Kg",
+        "quantity": 5,
+        "unit_price": 20000,
+        "tax_rate": 0,
+        "total_price": 100000,
+        "import_cost": 20000
+      },
+      {
+        "product_sku": "BAYTRETTHEPVM",
+        "product_name": "bay trét thép VM",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 12000,
+        "tax_rate": 0,
+        "total_price": 24000,
+        "import_cost": 12000
+      },
+      {
+        "product_sku": "BANLEINOX_1T",
+        "product_name": "bản lề inox 1T",
+        "unit": "Cặp",
+        "quantity": 2,
+        "unit_price": 25000,
+        "tax_rate": 0,
+        "total_price": 50000,
+        "import_cost": 25000
+      },
+      {
+        "product_sku": "LUDAOROCGIAYA100",
+        "product_name": "Lữ dao rọc giấy a100",
+        "unit": "Hộp",
+        "quantity": 1,
+        "unit_price": 120000,
+        "tax_rate": 0,
+        "total_price": 120000,
+        "import_cost": 120000
+      },
+      {
+        "product_sku": "CODEBUOM19",
+        "product_name": "cổ dê bướm 19",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 3200,
+        "tax_rate": 0,
+        "total_price": 64000,
+        "import_cost": 3200
+      },
+      {
+        "product_sku": "BATXANHCAMHQDAY6M",
+        "product_name": "BẠT XANH CAM HQ DẦY 6M",
+        "unit": "Bành",
+        "quantity": 1,
+        "unit_price": 1250000,
+        "tax_rate": 0,
+        "total_price": 1250000,
+        "import_cost": 1250000
+      },
+      {
+        "product_sku": "BATXANHCAMHQDAY4M",
+        "product_name": "BẠT XANH CAM HQ DẦY 4M",
+        "unit": "Bành",
+        "quantity": 1,
+        "unit_price": 980000,
+        "tax_rate": 0,
+        "total_price": 980000,
+        "import_cost": 980000
+      }
+    ]
+  },
+  {
+    "id": 37,
     "receipt_code": "NK032026_L4",
     "import_date": "17/03/2026",
     "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DUY MINH PHÁT",
     "note": "Nhập kho tháng 03/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4001847,
-    "created_at": "2026-08-14T03:53:12.186Z",
+    "created_at": "2026-08-15T03:03:55.696Z",
     "items": [
       {
         "product_sku": "KIMBAMDINHRUT9.5",
@@ -1660,14 +2034,14 @@
     ]
   },
   {
-    "id": 33,
+    "id": 38,
     "receipt_code": "NK062026_L12",
     "import_date": "15/06/2026",
     "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DUY MINH PHÁT",
     "note": "Nhập kho tháng 06/2026 Lần 12",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1757862,
-    "created_at": "2026-08-14T03:53:12.220Z",
+    "created_at": "2026-08-15T03:03:55.734Z",
     "items": [
       {
         "product_sku": "MUIKHOAN08HSS-4341",
@@ -1752,14 +2126,14 @@
     ]
   },
   {
-    "id": 34,
+    "id": 39,
     "receipt_code": "NK042026_L5",
     "import_date": "09/04/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 04/2026 Lần 5",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1532000,
-    "created_at": "2026-08-14T03:53:12.232Z",
+    "created_at": "2026-08-15T03:03:55.748Z",
     "items": [
       {
         "product_sku": "NKT1886N",
@@ -1794,14 +2168,14 @@
     ]
   },
   {
-    "id": 35,
+    "id": 40,
     "receipt_code": "NK012026_L3",
     "import_date": "19/01/2026",
     "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ MTV TÂN QUỐC TRUNG",
     "note": "Nhập kho tháng 01/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2587994,
-    "created_at": "2026-08-14T03:53:12.251Z",
+    "created_at": "2026-08-15T03:03:55.770Z",
     "items": [
       {
         "product_sku": "XR.N015.020.BH76358020.21",
@@ -1886,14 +2260,14 @@
     ]
   },
   {
-    "id": 36,
+    "id": 41,
     "receipt_code": "NK052026_L13",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 13",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999936,
-    "created_at": "2026-08-14T03:53:12.267Z",
+    "created_at": "2026-08-15T03:03:55.784Z",
     "items": [
       {
         "product_sku": "PVC-Udn21x1,3",
@@ -1938,14 +2312,14 @@
     ]
   },
   {
-    "id": 37,
+    "id": 42,
     "receipt_code": "NK052026_L15",
     "import_date": "09/05/2026",
     "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DUY MINH PHÁT",
     "note": "Nhập kho tháng 05/2026 Lần 15",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2910221,
-    "created_at": "2026-08-14T03:53:12.289Z",
+    "created_at": "2026-08-15T03:03:55.802Z",
     "items": [
       {
         "product_sku": "LUOICUATHEP110x40T",
@@ -2070,14 +2444,14 @@
     ]
   },
   {
-    "id": 38,
+    "id": 43,
     "receipt_code": "NK052026_L16",
     "import_date": "09/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 16",
     "warehouse_name": "Kho mặc định",
     "total_amount": 907200,
-    "created_at": "2026-08-14T03:53:12.305Z",
+    "created_at": "2026-08-15T03:03:55.823Z",
     "items": [
       {
         "product_sku": "FPC20M",
@@ -2092,14 +2466,14 @@
     ]
   },
   {
-    "id": 39,
+    "id": 44,
     "receipt_code": "NK052026_L12",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 05/2026 Lần 12",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999998,
-    "created_at": "2026-08-14T03:53:12.324Z",
+    "created_at": "2026-08-15T03:03:55.851Z",
     "items": [
       {
         "product_sku": "UPVC90A",
@@ -2184,14 +2558,56 @@
     ]
   },
   {
-    "id": 40,
+    "id": 45,
+    "receipt_code": "1C26TAA00026657",
+    "import_date": "02/07/2026",
+    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
+    "note": "Nhập kho hàng hóa lần 1 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 02/07/2026",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 1679741,
+    "created_at": "2026-08-15T03:03:55.874Z",
+    "items": [
+      {
+        "product_sku": "BS1113TV",
+        "product_name": "BS1113TV - Bộ ngắt mạch an toàn HB 30A",
+        "unit": "Cái",
+        "quantity": 20,
+        "unit_price": 56973,
+        "tax_rate": 8,
+        "total_price": 1139464,
+        "import_cost": 56973.2
+      },
+      {
+        "product_sku": "FRG20WM",
+        "product_name": "Ống luồn dây mềm phi 20 màu\ntrắng, 50m",
+        "unit": "Cuộn",
+        "quantity": 3,
+        "unit_price": 126287,
+        "tax_rate": 8,
+        "total_price": 378860,
+        "import_cost": 126286.66666666667
+      },
+      {
+        "product_sku": "NHB9801M",
+        "product_name": "NHB9801M - Hộp nổi dùng cho HB Breaker",
+        "unit": "Cái",
+        "quantity": 30,
+        "unit_price": 5381,
+        "tax_rate": 8,
+        "total_price": 161417,
+        "import_cost": 5380.566666666667
+      }
+    ]
+  },
+  {
+    "id": 46,
     "receipt_code": "NK022026_L1",
     "import_date": "23/02/2026",
     "supplier_name": "CÔNG TY TRÁCH NHIỆM HỮU HẠN MỘT THÀNH VIÊN ĐẠI LỘC DUNG",
     "note": "Nhập kho tháng 02/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2500103,
-    "created_at": "2026-08-14T03:53:12.342Z",
+    "created_at": "2026-08-15T03:03:55.910Z",
     "items": [
       {
         "product_sku": "ONP300DAY",
@@ -2226,14 +2642,76 @@
     ]
   },
   {
-    "id": 41,
+    "id": 47,
+    "receipt_code": "1C26TTT",
+    "import_date": "12/06/2026",
+    "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG Lần 1",
+    "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH THÀNH THẮNG MEKONG Lần 1",
+    "warehouse_name": "Kho mặc định",
+    "total_amount": 5000005,
+    "created_at": "2026-08-15T03:03:55.937Z",
+    "items": [
+      {
+        "product_sku": "VOILAVABO304",
+        "product_name": "Vòi lavabo 304",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 166500,
+        "tax_rate": 8,
+        "total_price": 1665003,
+        "import_cost": 166500.3
+      },
+      {
+        "product_sku": "KS-87006Y",
+        "product_name": "Bộ xịt vàng kem KS-87006Y",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 68000,
+        "tax_rate": 8,
+        "total_price": 680000,
+        "import_cost": 68000
+      },
+      {
+        "product_sku": "LOCRAC6015X15",
+        "product_name": "Lọc rác (LR-002-15*15)60",
+        "unit": "Cái",
+        "quantity": 10,
+        "unit_price": 62900,
+        "tax_rate": 8,
+        "total_price": 629003,
+        "import_cost": 62900.3
+      },
+      {
+        "product_sku": "VANNHUATAYDO114",
+        "product_name": "Van nhựa tay đỏ 114",
+        "unit": "Cái",
+        "quantity": 3,
+        "unit_price": 468000,
+        "tax_rate": 8,
+        "total_price": 1403999,
+        "import_cost": 467999.6666666667
+      },
+      {
+        "product_sku": "VANNHUATAYDO90",
+        "product_name": "Van nhựa tay đỏ 90",
+        "unit": "Cái",
+        "quantity": 2,
+        "unit_price": 311000,
+        "tax_rate": 8,
+        "total_price": 622000,
+        "import_cost": 311000
+      }
+    ]
+  },
+  {
+    "id": 48,
     "receipt_code": "8321C26THA",
     "import_date": "15/07/2026",
     "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ THIẾT BỊ ĐIỆN QUỐC HÙNG",
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCQUOCHUNG - Số HĐ: 832 ngày 15/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 6784799,
-    "created_at": "2026-08-14T03:53:12.357Z",
+    "created_at": "2026-08-15T03:03:55.972Z",
     "items": [
       {
         "product_sku": "NN102WM",
@@ -2308,14 +2786,14 @@
     ]
   },
   {
-    "id": 42,
+    "id": 49,
     "receipt_code": "NK052026_L3",
     "import_date": "01/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 222048,
-    "created_at": "2026-08-14T03:53:12.373Z",
+    "created_at": "2026-08-15T03:03:56.006Z",
     "items": [
       {
         "product_sku": "NPA0420",
@@ -2330,14 +2808,14 @@
     ]
   },
   {
-    "id": 43,
+    "id": 50,
     "receipt_code": "8551C26TTT",
     "import_date": "28/07/2026",
     "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
     "note": "Nhập kho hàng hóa hóa đơn của NCC THANHTHANGMEKONG - Số HĐ: 00000855 ngày 28/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9785060,
-    "created_at": "2026-08-14T03:53:12.390Z",
+    "created_at": "2026-08-15T03:03:56.036Z",
     "items": [
       {
         "product_sku": "DUIDENNHUAKNT",
@@ -2392,14 +2870,14 @@
     ]
   },
   {
-    "id": 44,
+    "id": 51,
     "receipt_code": "NK062026_L13",
     "import_date": "15/06/2026",
     "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
     "note": "Nhập kho tháng 06/2026 Lần 13",
     "warehouse_name": "Kho mặc định",
     "total_amount": 89770566,
-    "created_at": "2026-08-14T03:53:12.408Z",
+    "created_at": "2026-08-15T03:03:56.068Z",
     "items": [
       {
         "product_sku": "MK-107Đ",
@@ -2724,14 +3202,14 @@
     ]
   },
   {
-    "id": 45,
+    "id": 52,
     "receipt_code": "NK042026_L1",
     "import_date": "09/04/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 04/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4880736,
-    "created_at": "2026-08-14T03:53:12.435Z",
+    "created_at": "2026-08-15T03:03:56.101Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-4.0",
@@ -2756,14 +3234,14 @@
     ]
   },
   {
-    "id": 46,
+    "id": 53,
     "receipt_code": "NK052026_L17",
     "import_date": "09/05/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 05/2026 Lần 17",
     "warehouse_name": "Kho mặc định",
     "total_amount": 708029,
-    "created_at": "2026-08-14T03:53:12.462Z",
+    "created_at": "2026-08-15T03:03:56.120Z",
     "items": [
       {
         "product_sku": "TP-Rga",
@@ -2798,14 +3276,14 @@
     ]
   },
   {
-    "id": 47,
+    "id": 54,
     "receipt_code": "NK062026_L11",
     "import_date": "01/06/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 06/2026 Lần 11",
     "warehouse_name": "Kho mặc định",
     "total_amount": 247137,
-    "created_at": "2026-08-14T03:53:12.478Z",
+    "created_at": "2026-08-15T03:03:56.150Z",
     "items": [
       {
         "product_sku": "NA101TM",
@@ -2830,14 +3308,14 @@
     ]
   },
   {
-    "id": 48,
+    "id": 55,
     "receipt_code": "NK032026_L1",
     "import_date": "12/03/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 03/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 914949,
-    "created_at": "2026-08-14T03:53:12.498Z",
+    "created_at": "2026-08-15T03:03:56.179Z",
     "items": [
       {
         "product_sku": "ONGCUNG3PHAN",
@@ -2862,14 +3340,14 @@
     ]
   },
   {
-    "id": 49,
+    "id": 56,
     "receipt_code": "275141C26TAA",
     "import_date": "09/07/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00027514 ngày 09/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2711880,
-    "created_at": "2026-08-14T03:53:12.512Z",
+    "created_at": "2026-08-15T03:03:56.225Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-6.0",
@@ -2884,14 +3362,14 @@
     ]
   },
   {
-    "id": 50,
+    "id": 57,
     "receipt_code": "NK062026_L10",
     "import_date": "01/06/2026",
     "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
     "note": "Nhập kho tháng 06/2026 Lần 10",
     "warehouse_name": "Kho mặc định",
     "total_amount": 549623,
-    "created_at": "2026-08-14T03:53:12.536Z",
+    "created_at": "2026-08-15T03:03:56.239Z",
     "items": [
       {
         "product_sku": "BS1114TV",
@@ -2902,331 +3380,6 @@
         "tax_rate": 8,
         "total_price": 549623,
         "import_cost": 54962.3
-      }
-    ]
-  },
-  {
-    "id": 51,
-    "receipt_code": "1C26TAA_1",
-    "import_date": "11/06/2026",
-    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
-    "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
-    "warehouse_name": "Kho mặc định",
-    "total_amount": 1993011,
-    "created_at": "2026-08-14T04:02:41.474Z",
-    "items": [
-      {
-        "product_sku": "ONGRUOTGA20",
-        "product_name": "Ống ruột gà âm tường Ø 20 (HDPE)",
-        "unit": "Cuộn",
-        "quantity": 5,
-        "unit_price": 101500,
-        "tax_rate": 8,
-        "total_price": 507498,
-        "import_cost": 101499.6
-      },
-      {
-        "product_sku": "ONGRUOTGA25",
-        "product_name": "Ống ruột gà âm tường Ø 25 (HDPE)",
-        "unit": "Cuộn",
-        "quantity": 1,
-        "unit_price": 109040,
-        "tax_rate": 8,
-        "total_price": 109040,
-        "import_cost": 109040
-      },
-      {
-        "product_sku": "WZV7061W",
-        "product_name": "WZV7061W - Mặt dùng cho HB FULL",
-        "unit": "Cái",
-        "quantity": 10,
-        "unit_price": 10976,
-        "tax_rate": 8,
-        "total_price": 109761,
-        "import_cost": 10976.1
-      },
-      {
-        "product_sku": "WZV7844W",
-        "product_name": "WZV7844W - Mặt dùng cho 4 thiết bị FULL",
-        "unit": "Cái",
-        "quantity": 50,
-        "unit_price": 21889,
-        "tax_rate": 8,
-        "total_price": 1094473,
-        "import_cost": 21889.46
-      },
-      {
-        "product_sku": "WZV7843W",
-        "product_name": "WZV7843W - Mặt dùng cho 3 thiết bị FULL",
-        "unit": "Cái",
-        "quantity": 20,
-        "unit_price": 8612,
-        "tax_rate": 8,
-        "total_price": 172239,
-        "import_cost": 8611.95
-      }
-    ]
-  },
-  {
-    "id": 52,
-    "receipt_code": "1C26TAA00027513",
-    "import_date": "09/07/2026",
-    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
-    "note": "Nhập kho hàng hóa lần 3 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 09/07/2026",
-    "warehouse_name": "Kho mặc định",
-    "total_amount": 4885706,
-    "created_at": "2026-08-14T04:02:41.508Z",
-    "items": [
-      {
-        "product_sku": "DAYCVLF1570520",
-        "product_name": "Cadivi - Dây CV/LF-1.5 (7/0.52) - 0.6/1kV",
-        "unit": "Mét",
-        "quantity": 200,
-        "unit_price": 7767,
-        "tax_rate": 8,
-        "total_price": 1553472,
-        "import_cost": 7767.36
-      },
-      {
-        "product_sku": "DAYCVLF2570670",
-        "product_name": "Cadivi - Dây CV/LF-2.5 (7/0.67) - 0.6/1kV",
-        "unit": "Mét",
-        "quantity": 200,
-        "unit_price": 12655,
-        "tax_rate": 8,
-        "total_price": 2531088,
-        "import_cost": 12655.44
-      },
-      {
-        "product_sku": "WNV1081-7W",
-        "product_name": "Ổ cắm FULL có màn che",
-        "unit": "Cái",
-        "quantity": 50,
-        "unit_price": 16023,
-        "tax_rate": 8,
-        "total_price": 801146,
-        "import_cost": 16022.92
-      }
-    ]
-  },
-  {
-    "id": 53,
-    "receipt_code": "1C26TAA",
-    "import_date": "01/07/2026",
-    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
-    "note": "Nhập kho tháng 07 từ nhà cung cấp CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
-    "warehouse_name": "Kho mặc định",
-    "total_amount": 11350800,
-    "created_at": "2026-08-14T04:02:41.523Z",
-    "items": [
-      {
-        "product_sku": "OKAWA20-DP",
-        "product_name": "Máy phun thuốc trừ côn trùng 12V12Ah OKAWA 20-DP (vàng)",
-        "unit": "Cái",
-        "quantity": 10,
-        "unit_price": 779760,
-        "tax_rate": 8,
-        "total_price": 7797600,
-        "import_cost": 779760
-      },
-      {
-        "product_sku": "MKP1013BG2W",
-        "product_name": "Máy khoan pin YMS-MKP1013BG2W",
-        "unit": "Cái",
-        "quantity": 1,
-        "unit_price": 1684800,
-        "tax_rate": 8,
-        "total_price": 1684800,
-        "import_cost": 1684800
-      },
-      {
-        "product_sku": "YMS-GKT21V-55N",
-        "product_name": "Máy khoan cầm tay pin YMS-GKT21V-55N",
-        "unit": "Cái",
-        "quantity": 1,
-        "unit_price": 939600,
-        "tax_rate": 8,
-        "total_price": 939600,
-        "import_cost": 939600
-      },
-      {
-        "product_sku": "YMS-CTN180",
-        "product_name": "Máy chà tường điện YMS-CTN180",
-        "unit": "Cái",
-        "quantity": 1,
-        "unit_price": 928800,
-        "tax_rate": 8,
-        "total_price": 928800,
-        "import_cost": 928800
-      }
-    ]
-  },
-  {
-    "id": 54,
-    "receipt_code": "1C26TAA00028570",
-    "import_date": "16/07/2026",
-    "supplier_name": "CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA",
-    "note": "Nhập kho hàng hóa lần 2 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 16/07/2026",
-    "warehouse_name": "Kho mặc định",
-    "total_amount": 1578822,
-    "created_at": "2026-08-14T04:02:41.622Z",
-    "items": [
-      {
-        "product_sku": "WZV7843W",
-        "product_name": "WZV7843W - Mặt dùng cho 3 thiết bị FULL",
-        "unit": "Cái",
-        "quantity": 30,
-        "unit_price": 8848,
-        "tax_rate": 8,
-        "total_price": 265454,
-        "import_cost": 8848.466666666667
-      },
-      {
-        "product_sku": "WZV7844W",
-        "product_name": "WZV7844W - Mặt dùng cho 4 thiết bị FULL",
-        "unit": "Cái",
-        "quantity": 30,
-        "unit_price": 21889,
-        "tax_rate": 8,
-        "total_price": 656684,
-        "import_cost": 21889.466666666667
-      },
-      {
-        "product_sku": "WZV7846W",
-        "product_name": "WZV7846W - Mặt dùng cho 6 thiết bị FULL",
-        "unit": "Cái",
-        "quantity": 30,
-        "unit_price": 21889,
-        "tax_rate": 8,
-        "total_price": 656684,
-        "import_cost": 21889.466666666667
-      }
-    ]
-  },
-  {
-    "id": 55,
-    "receipt_code": "1472C26MAB",
-    "import_date": "26/07/2026",
-    "supplier_name": "HỘ KINH DOANH MINH TRÍ P.M.T",
-    "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 0000147 ngày 26/07/2026",
-    "warehouse_name": "Kho mặc định",
-    "total_amount": 2712000,
-    "created_at": "2026-08-14T04:02:41.652Z",
-    "items": [
-      {
-        "product_sku": "MANPHU1X100",
-        "product_name": "màn phủ 1mx100m",
-        "unit": "Cây",
-        "quantity": 2,
-        "unit_price": 62000,
-        "tax_rate": 0,
-        "total_price": 124000,
-        "import_cost": 62000
-      },
-      {
-        "product_sku": "XABENGDAO1M4",
-        "product_name": "xà beng đào 1m4",
-        "unit": "Kg",
-        "quantity": 5,
-        "unit_price": 20000,
-        "tax_rate": 0,
-        "total_price": 100000,
-        "import_cost": 20000
-      },
-      {
-        "product_sku": "BAYTRETTHEPVM",
-        "product_name": "bay trét thép VM",
-        "unit": "Cái",
-        "quantity": 2,
-        "unit_price": 12000,
-        "tax_rate": 0,
-        "total_price": 24000,
-        "import_cost": 12000
-      },
-      {
-        "product_sku": "BANLEINOX_1T",
-        "product_name": "bản lề inox 1T",
-        "unit": "Cặp",
-        "quantity": 2,
-        "unit_price": 25000,
-        "tax_rate": 0,
-        "total_price": 50000,
-        "import_cost": 25000
-      },
-      {
-        "product_sku": "LUDAOROCGIAYA100",
-        "product_name": "Lữ dao rọc giấy a100",
-        "unit": "Hộp",
-        "quantity": 1,
-        "unit_price": 120000,
-        "tax_rate": 0,
-        "total_price": 120000,
-        "import_cost": 120000
-      },
-      {
-        "product_sku": "CODEBUOM19",
-        "product_name": "cổ dê bướm 19",
-        "unit": "Cái",
-        "quantity": 20,
-        "unit_price": 3200,
-        "tax_rate": 0,
-        "total_price": 64000,
-        "import_cost": 3200
-      },
-      {
-        "product_sku": "BATXANHCAMHQDAY6M",
-        "product_name": "BẠT XANH CAM HQ DẦY 6M",
-        "unit": "Bành",
-        "quantity": 1,
-        "unit_price": 1250000,
-        "tax_rate": 0,
-        "total_price": 1250000,
-        "import_cost": 1250000
-      },
-      {
-        "product_sku": "BATXANHCAMHQDAY4M",
-        "product_name": "BẠT XANH CAM HQ DẦY 4M",
-        "unit": "Bành",
-        "quantity": 1,
-        "unit_price": 980000,
-        "tax_rate": 0,
-        "total_price": 980000,
-        "import_cost": 980000
-      }
-    ]
-  },
-  {
-    "id": 56,
-    "receipt_code": "6301C26TAA",
-    "import_date": "27/07/2026",
-    "supplier_name": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN",
-    "note": "Nhập từ hóa đơn GTGT - Số HĐ: 00000630 / Serial: 1C26TAA",
-    "warehouse_name": "Kho chính",
-    "total_amount": 2307960,
-    "invoice_number": "00000630",
-    "serial_number": "1C26TAA",
-    "tax_code": "180165306",
-    "created_at": "2026-08-14T13:18:30.942Z",
-    "items": [
-      {
-        "product_sku": "COV-22-RS",
-        "product_name": "Đầu phun áp lực chất lỏng 1HP Hiệu Con ong vàng Model COV-22-RS",
-        "unit": "Cái",
-        "quantity": 1,
-        "unit_price": 1135000,
-        "tax_rate": 8,
-        "total_price": 1135000,
-        "import_cost": 1135000
-      },
-      {
-        "product_sku": "YMS-303G2",
-        "product_name": "Dụng cụ đo cân bằng laser YMS-303G2",
-        "unit": "Cái",
-        "quantity": 1,
-        "unit_price": 1002000,
-        "tax_rate": 8,
-        "total_price": 1002000,
-        "import_cost": 1002000
       }
     ]
   }

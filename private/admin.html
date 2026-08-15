@@ -15,6 +15,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=1.6" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: {
+        preflight: false,
+      }
+    }
+  </script>
 </head>
 
 <body>
@@ -324,70 +332,113 @@
           <!-- LỊCH SỬ NHẬP KHO -->
           <div id="inventory-tab-history" class="inventory-tab-content">
             <div class="admin-card">
-              <div class="admin-card-title"
-                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <span><i class="fa-solid fa-history"></i> Nhập kho mua hàng</span>
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                  <input type="text" class="filter-input" id="inventorySearchFilter"
-                    placeholder="Tìm kiếm chứng từ, NCC..." oninput="inventoryPage = 1; filterInventoryHistory()"
-                    style="padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; width: 220px;" />
+              <!-- ═══ HEADER ROW: Title LEFT | Search+Filter RIGHT ═══ -->
+              <div class="flex flex-row justify-between items-center mb-4 gap-4" style="flex-wrap: nowrap;">
+                <span class="text-xl font-bold text-gray-800 whitespace-nowrap">
+                  <i class="fa-solid fa-history"></i> Nhập kho mua hàng
+                </span>
+                <div class="flex items-center gap-3" style="flex-shrink: 0;">
+                  <input type="text"
+                    class="border border-gray-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    style="width: 220px;"
+                    id="inventorySearchFilter"
+                    placeholder="Tìm kiếm chứng từ, NCC..."
+                    oninput="inventoryPage = 1; filterInventoryHistory()" />
 
-                  <select class="filter-select" id="inventoryTimePresetFilter" onchange="handleTimePresetChange()"
-                    style="padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; height: 34px;">
-                    <option value="all">Tất cả thời gian</option>
+                  <select class="border border-gray-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9"
+                    id="inventoryTimePresetFilter" onchange="handleTimePresetChange()">
+                    <option value="all" selected>Tất cả thời gian</option>
                     <option value="today">Hôm nay</option>
                     <option value="yesterday">Hôm qua</option>
                     <option value="7days">7 ngày qua</option>
                     <option value="30days">30 ngày qua</option>
-                    <option value="thisMonth" selected>Tháng này</option>
+                    <option value="thisMonth">Tháng này</option>
                     <option value="lastMonth">Tháng trước</option>
                     <option value="thisYear">Năm nay</option>
                     <option value="custom">Tùy chọn...</option>
                   </select>
-
-                  <div id="inventoryCustomDateRange" style="display: none; align-items: center; gap: 6px;">
-                    <input type="date" class="filter-input" id="inventoryStartDate"
-                      onchange="inventoryPage = 1; filterInventoryHistory()"
-                      style="padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; height: 34px;" />
-                    <span style="color: var(--muted); font-size: .85rem;">đến</span>
-                    <input type="date" class="filter-input" id="inventoryEndDate"
-                      onchange="inventoryPage = 1; filterInventoryHistory()"
-                      style="padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: .85rem; height: 34px;" />
-                  </div>
                 </div>
               </div>
-              <!-- Summary Top -->
-              <div id="inventoryHistorySummaryTop"
-                style="display:none; margin-bottom: 12px; padding: 12px 16px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); display: flex; gap: 24px; align-items: center; flex-wrap: wrap; font-size: .875rem;">
-                <span><i class="fa-solid fa-receipt" style="color:var(--primary)"></i> <strong
-                    id="inventorySummaryCountTop">0</strong> phiếu nhập</span>
-                <span><i class="fa-solid fa-coins" style="color:var(--danger)"></i> Tổng giá trị: <strong
-                    id="inventorySummaryTotalTop" style="color:var(--danger);">0đ</strong></span>
+
+              <!-- Custom date range (shown only when "Tùy chọn..." is selected) -->
+              <div id="inventoryCustomDateRange" class="items-center gap-2 mb-3" style="display: none;">
+                <input type="date"
+                  class="border border-gray-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9"
+                  id="inventoryStartDate" onchange="inventoryPage = 1; filterInventoryHistory()" />
+                <span class="text-gray-500 text-sm">đến</span>
+                <input type="date"
+                  class="border border-gray-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9"
+                  id="inventoryEndDate" onchange="inventoryPage = 1; filterInventoryHistory()" />
               </div>
-              <div class="table-wrap">
-                <table class="table">
-                  <thead>
+
+              <!-- ═══ ACTION & METRICS BAR ═══ -->
+              <div class="flex justify-between items-center py-2.5 border-b border-gray-200 mb-3">
+                <!-- Left: Bulk Actions — pl-4 so checkbox aligns under table column -->
+                <div class="flex items-center gap-3 pl-4">
+                  <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-gray-700 font-medium">
+                    <input type="checkbox" id="inventorySelectAllCheckbox"
+                      onchange="toggleSelectAllInventoryReceipts(this)"
+                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span>Chọn tất cả (<span id="inventorySelectedCount">0</span>/<span id="inventoryTotalCount">0</span>)</span>
+                  </label>
+                  <button id="inventoryBulkDeleteBtn" onclick="deleteSelectedInventoryReceipts()"
+                    class="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors border-none"
+                    disabled style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fa-solid fa-trash-can"></i> Xóa
+                  </button>
+                </div>
+                <!-- Right: Summary Metrics -->
+                <div class="flex items-center gap-3 text-sm" id="inventoryHistorySummaryTop">
+                  <span class="flex items-center gap-1.5 text-blue-600 font-semibold">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span id="inventorySummaryCountTop">0</span> phiếu nhập
+                  </span>
+                  <span class="text-gray-300 font-light">|</span>
+                  <span class="flex items-center gap-1.5 text-gray-700 font-medium">
+                    <i class="fa-solid fa-coins" style="color:var(--danger)"></i>
+                    Tổng giá trị: <strong id="inventorySummaryTotalTop" class="text-red-600 font-bold ml-1">0đ</strong>
+                  </span>
+                </div>
+              </div>
+
+              <!-- ═══ TABLE ═══ -->
+              <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="table min-w-full divide-y divide-slate-200" style="border-collapse: collapse;">
+                  <thead class="bg-slate-50">
                     <tr>
-                      <th>ID</th>
-                      <th>Mã chứng từ</th>
-                      <th>Ngày nhập</th>
-                      <th>Nhà cung cấp</th>
-                      <th>Kho</th>
-                      <th>Tổng tiền</th>
-                      <th>Số mặt hàng</th>
-                      <th>Thao tác</th>
+                      <th class="w-12 px-4 py-3 text-center border-b border-slate-200"></th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Mã chứng từ</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Ngày nhập</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Nhà cung cấp</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Kho</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Tổng tiền</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Số mặt hàng</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody id="inventoryHistoryTableBody">
+                  <tbody id="inventoryHistoryTableBody" class="bg-white divide-y divide-slate-100">
                     <tr>
-                      <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">Đang tải lịch sử
-                        nhập kho...</td>
+                      <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">Đang tải lịch sử nhập kho...</td>
                     </tr>
                   </tbody>
                   <tfoot id="inventoryHistoryTableFoot"></tfoot>
                 </table>
               </div>
-              <div class="pagination" id="inventoryPagination" style="margin-top: 10px;"></div>
+
+              <!-- Footer/Pagination Bar -->
+              <div class="flex justify-between items-center mt-4 border-t border-gray-200 pt-4 flex-wrap gap-4" id="inventoryPaginationWrapper">
+                <div class="flex items-center gap-4">
+                  <div class="flex items-center gap-1" id="inventoryPagination"></div>
+                  <span class="text-xs text-gray-500" id="inventoryPaginationInfo"></span>
+                </div>
+                <div>
+                  <select id="inventoryPageSizeSelect" onchange="changeInventoryPageSize(this.value)" class="border border-gray-300 rounded-lg text-sm text-gray-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9">
+                    <option value="20" selected>20 / trang</option>
+                    <option value="50">50 / trang</option>
+                    <option value="100">100 / trang</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 

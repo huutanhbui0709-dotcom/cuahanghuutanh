@@ -14,7 +14,7 @@ let adminPage = 1;
 const ORDERS_PER_PAGE = 20;
 let orderPage = 1;
 
-const INVENTORY_PER_PAGE = 20;
+let INVENTORY_PER_PAGE = 20;
 let inventoryPage = 1;
 
 function formatPrice(p) {
@@ -2471,6 +2471,151 @@ function handleTimePresetChange() {
   filterInventoryHistory();
 }
 
+let selectedInventoryIds = [];
+
+function toggleSelectAllInventoryReceipts(selectAllCheckbox) {
+  const rowCheckboxes = document.querySelectorAll('.inventory-row-checkbox');
+  rowCheckboxes.forEach(cb => {
+    cb.checked = selectAllCheckbox.checked;
+    const id = parseInt(cb.value);
+    if (selectAllCheckbox.checked) {
+      if (!selectedInventoryIds.includes(id)) {
+        selectedInventoryIds.push(id);
+      }
+    } else {
+      selectedInventoryIds = selectedInventoryIds.filter(item => item !== id);
+    }
+  });
+  updateSelectedInventoryCount();
+}
+
+function updateSelectedInventoryCount() {
+  const allRowCheckboxes = document.querySelectorAll('.inventory-row-checkbox');
+  
+  const selectAllCheckbox = document.getElementById('inventorySelectAllCheckbox');
+  if (selectAllCheckbox) {
+    const checkedCount = Array.from(allRowCheckboxes).filter(cb => cb.checked).length;
+    selectAllCheckbox.checked = allRowCheckboxes.length > 0 && checkedCount === allRowCheckboxes.length;
+  }
+  
+  allRowCheckboxes.forEach(cb => {
+    const id = parseInt(cb.value);
+    if (cb.checked) {
+      if (!selectedInventoryIds.includes(id)) selectedInventoryIds.push(id);
+    } else {
+      selectedInventoryIds = selectedInventoryIds.filter(item => item !== id);
+    }
+  });
+  
+  const selectedCountSpan = document.getElementById('inventorySelectedCount');
+  if (selectedCountSpan) {
+    selectedCountSpan.textContent = selectedInventoryIds.length;
+  }
+  
+  const bulkDeleteBtn = document.getElementById('inventoryBulkDeleteBtn');
+  if (bulkDeleteBtn) {
+    if (selectedInventoryIds.length > 0) {
+      bulkDeleteBtn.removeAttribute('disabled');
+      bulkDeleteBtn.style.opacity = '1';
+      bulkDeleteBtn.style.cursor = 'pointer';
+    } else {
+      bulkDeleteBtn.setAttribute('disabled', 'true');
+      bulkDeleteBtn.style.opacity = '0.5';
+      bulkDeleteBtn.style.cursor = 'not-allowed';
+    }
+  }
+}
+
+async function deleteSelectedInventoryReceipts() {
+  if (selectedInventoryIds.length === 0) return;
+  if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedInventoryIds.length} chứng từ đã chọn? Hành động này không thể hoàn tác.`)) {
+    return;
+  }
+  
+  const bulkDeleteBtn = document.getElementById('inventoryBulkDeleteBtn');
+  const originalHTML = bulkDeleteBtn.innerHTML;
+  bulkDeleteBtn.disabled = true;
+  bulkDeleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa...';
+  
+  let deletedCount = 0;
+  let errorCount = 0;
+  
+  try {
+    for (const id of selectedInventoryIds) {
+      try {
+        const res = await adminFetch(`/api/admin/inventory/receipts/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          deletedCount++;
+        } else {
+          errorCount++;
+        }
+      } catch (err) {
+        errorCount++;
+      }
+    }
+    
+    if (deletedCount > 0) {
+      showToast(`<i class="fa-solid fa-circle-check"></i> Đã xóa ${deletedCount} chứng từ thành công!`, 'success');
+    }
+    if (errorCount > 0) {
+      showToast(`<i class="fa-solid fa-xmark"></i> Lỗi khi xóa ${errorCount} chứng từ.`, 'error');
+    }
+    
+    selectedInventoryIds = [];
+    loadInventoryHistory();
+  } catch (err) {
+    console.error('Lỗi khi xóa hàng loạt:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Có lỗi xảy ra trong quá trình xóa.', 'error');
+  } finally {
+    bulkDeleteBtn.disabled = false;
+    bulkDeleteBtn.innerHTML = originalHTML;
+    updateSelectedInventoryCount();
+  }
+}
+
+function changeInventoryPageSize(size) {
+  INVENTORY_PER_PAGE = parseInt(size) || 20;
+  inventoryPage = 1;
+  filterInventoryHistory();
+}
+
+function resetInventorySummary() {
+  const tfoot = document.getElementById('inventoryHistoryTableFoot');
+  if (tfoot) {
+    tfoot.innerHTML = `
+      <tr style="background: var(--bg); border-top: 2px solid var(--border);">
+        <td colspan="5" style="padding: 10px 12px; font-weight: 600; font-size: .875rem;">
+          <i class="fa-solid fa-sigma"></i> Tổng cộng (0 phiếu)
+        </td>
+        <td colspan="3" style="padding: 10px 12px; font-weight: 700; color: var(--danger); font-size: 1rem;">0₫</td>
+      </tr>
+    `;
+  }
+  const countElTop = document.getElementById('inventorySummaryCountTop');
+  const totalElTop = document.getElementById('inventorySummaryTotalTop');
+  if (countElTop && totalElTop) {
+    countElTop.textContent = '0';
+    totalElTop.textContent = '0₫';
+  }
+  
+  selectedInventoryIds = [];
+  const selectAllCheckbox = document.getElementById('inventorySelectAllCheckbox');
+  if (selectAllCheckbox) selectAllCheckbox.checked = false;
+  const selectedCountSpan = document.getElementById('inventorySelectedCount');
+  if (selectedCountSpan) selectedCountSpan.textContent = '0';
+  const totalCountSpan = document.getElementById('inventoryTotalCount');
+  if (totalCountSpan) totalCountSpan.textContent = '0';
+  const bulkDeleteBtn = document.getElementById('inventoryBulkDeleteBtn');
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.setAttribute('disabled', 'true');
+    bulkDeleteBtn.style.opacity = '0.5';
+    bulkDeleteBtn.style.cursor = 'not-allowed';
+  }
+}
+
 function filterInventoryHistory() {
   const tbody = document.getElementById('inventoryHistoryTableBody');
   if (!allInventoryReceipts || allInventoryReceipts.length === 0) {
@@ -2483,6 +2628,9 @@ function filterInventoryHistory() {
     `;
     const pagEl = document.getElementById('inventoryPagination');
     if (pagEl) pagEl.innerHTML = '';
+    const infoEl = document.getElementById('inventoryPaginationInfo');
+    if (infoEl) infoEl.innerHTML = '';
+    resetInventorySummary();
     return;
   }
 
@@ -2542,7 +2690,6 @@ function filterInventoryHistory() {
   }
 
   const filtered = allInventoryReceipts.filter(r => {
-    // 1. Match search text query
     const matchQuery = !query ||
       String(r.receipt_code || '').toLowerCase().includes(query) ||
       String(r.supplier_name || '').toLowerCase().includes(query) ||
@@ -2550,7 +2697,6 @@ function filterInventoryHistory() {
 
     if (!matchQuery) return false;
 
-    // 2. Match Date limits
     if (preset === 'all') return true;
 
     const rDate = getReceiptDate(r);
@@ -2558,7 +2704,6 @@ function filterInventoryHistory() {
     return matchDate;
   });
 
-  // Sắp xếp theo ngày nhập mới nhất lên trên
   filtered.sort((a, b) => getReceiptDate(b) - getReceiptDate(a));
 
   const total = filtered.length;
@@ -2576,91 +2721,86 @@ function filterInventoryHistory() {
     `;
     const pagEl = document.getElementById('inventoryPagination');
     if (pagEl) pagEl.innerHTML = '';
+    const infoEl = document.getElementById('inventoryPaginationInfo');
+    if (infoEl) infoEl.innerHTML = '';
+    resetInventorySummary();
     return;
+  }
+
+  // Clear selections for new page/filter render
+  selectedInventoryIds = [];
+  const selectAllCheckbox = document.getElementById('inventorySelectAllCheckbox');
+  if (selectAllCheckbox) selectAllCheckbox.checked = false;
+  const selectedCountSpan = document.getElementById('inventorySelectedCount');
+  if (selectedCountSpan) selectedCountSpan.textContent = '0';
+  const totalCountSpan = document.getElementById('inventoryTotalCount');
+  if (totalCountSpan) totalCountSpan.textContent = total;
+  const bulkDeleteBtn = document.getElementById('inventoryBulkDeleteBtn');
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.setAttribute('disabled', 'true');
+    bulkDeleteBtn.style.opacity = '0.5';
+    bulkDeleteBtn.style.cursor = 'not-allowed';
   }
 
   tbody.innerHTML = paged.map(r => {
     const formattedDate = r.import_date || (r.created_at ? new Date(r.created_at).toLocaleDateString('vi-VN') : 'N/A');
     return `
-      <tr>
-        <td><strong>#${r.id}</strong></td>
-        <td><code>${r.receipt_code}</code></td>
-        <td>${formattedDate}</td>
-        <td>${r.supplier_name || 'N/A'}</td>
-        <td>${r.warehouse_name || 'N/A'}</td>
-        <td><strong style="color: var(--danger);">${formatPrice(r.total_amount)}</strong></td>
-        <td><span class="badge badge-blue">${r.item_count} mặt hàng</span></td>
-        <td>
-          <button class="btn btn-outline btn-sm" onclick="openInventoryReceiptDetail(${r.id})" title="Xem chi tiết" style="color: var(--primary); border-color: var(--primary); padding: 4px 8px;">
-            <i class="fa-solid fa-eye"></i>
-          </button>
-          <button class="btn btn-outline btn-sm" onclick="deleteInventoryReceipt(${r.id})" title="Xóa chứng từ" style="color: var(--danger); border-color: var(--danger); padding: 4px 8px; margin-left: 4px;">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
+      <tr class="hover:bg-gray-50 border-b border-gray-100">
+        <td class="w-12 px-4 py-3 text-center">
+          <input type="checkbox" class="inventory-row-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" value="${r.id}" onchange="updateSelectedInventoryCount()" />
+        </td>
+        <td class="py-3 px-4 font-medium text-gray-900">${r.receipt_code}</td>
+        <td class="py-3 px-4 text-gray-600">${formattedDate}</td>
+        <td class="py-3 px-4 text-sm font-normal text-gray-800 uppercase">${r.supplier_name || 'N/A'}</td>
+        <td class="py-3 px-4 text-gray-600">${r.warehouse_name || 'N/A'}</td>
+        <td class="py-3 px-4"><span class="text-red-600 font-semibold">${formatPrice(r.total_amount)}</span></td>
+        <td class="py-3 px-4"><span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">${r.item_count} mặt hàng</span></td>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-1.5">
+            <button class="p-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors bg-white cursor-pointer" onclick="openInventoryReceiptDetail(${r.id})" title="Xem chi tiết">
+              <i class="fa-solid fa-eye text-xs"></i>
+            </button>
+            <button class="p-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors bg-white cursor-pointer" onclick="deleteInventoryReceipt(${r.id})" title="Xóa chứng từ">
+              <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 
-  // Tổng giá trị nhập kho (Dựa trên toàn bộ list đã lọc)
   const grandTotal = filtered.reduce((sum, r) => sum + (r.total_amount || 0), 0);
   const tfoot = document.getElementById('inventoryHistoryTableFoot');
   if (tfoot) {
     tfoot.innerHTML = `
       <tr style="background: var(--bg); border-top: 2px solid var(--border);">
-        <td colspan="5" style="padding: 10px 12px; font-weight: 600; font-size: .875rem;">
+        <td colspan="5" style="padding: 12px; font-weight: 600; font-size: .875rem; text-align: left; color: var(--text);">
           <i class="fa-solid fa-sigma"></i> Tổng cộng (${total} phiếu)
         </td>
-        <td style="padding: 10px 12px; font-weight: 700; color: var(--danger); font-size: 1rem;">
+        <td colspan="3" style="padding: 12px; font-weight: 700; color: var(--danger); font-size: 1.05rem; text-align: left;">
           ${formatPrice(grandTotal)}
         </td>
-        <td colspan="2"></td>
       </tr>
     `;
   }
 
-  // Summary bars (Top & Bottom)
-  const summaryEl = document.getElementById('inventoryHistorySummary');
-  const countEl = document.getElementById('inventorySummaryCount');
-  const totalEl = document.getElementById('inventorySummaryTotal');
-  if (summaryEl && countEl && totalEl) {
-    countEl.textContent = total;
-    totalEl.textContent = formatPrice(grandTotal);
-    summaryEl.style.display = 'flex';
-  }
-
-  const summaryElTop = document.getElementById('inventoryHistorySummaryTop');
   const countElTop = document.getElementById('inventorySummaryCountTop');
   const totalElTop = document.getElementById('inventorySummaryTotalTop');
-  if (summaryElTop && countElTop && totalElTop) {
+  if (countElTop && totalElTop) {
     countElTop.textContent = total;
     totalElTop.textContent = formatPrice(grandTotal);
-    summaryElTop.style.display = 'flex';
   }
 
   // Render pagination
   renderPagination(pages, inventoryPage, 'inventoryPagination', (p) => { inventoryPage = p; filterInventoryHistory(); });
 
-  // Hiển thị phạm vi dòng đang xem (vD: 1 - 20 của 57)
-  const pagEl = document.getElementById('inventoryPagination');
-  if (pagEl && total > 0) {
+  const infoEl = document.getElementById('inventoryPaginationInfo');
+  if (infoEl && total > 0) {
     const start = (inventoryPage - 1) * INVENTORY_PER_PAGE + 1;
     const end = Math.min(inventoryPage * INVENTORY_PER_PAGE, total);
-
-    // Nếu chỉ có 1 trang thì renderPagination không render nút (hoặc render trống),
-    // nhưng ta vẫn muốn hiển thị text thông tin.
-    if (pages <= 1) {
-      pagEl.innerHTML = '';
-    }
-
-    const infoSpan = document.createElement('span');
-    infoSpan.className = 'pagination-info';
-    infoSpan.style.marginLeft = '12px';
-    infoSpan.style.color = 'var(--muted)';
-    infoSpan.style.fontSize = '.85rem';
-    infoSpan.style.fontWeight = '500';
-    infoSpan.innerHTML = `Hiển thị <strong>${start} - ${end}</strong> của <strong>${total}</strong> phiếu`;
-    pagEl.appendChild(infoSpan);
+    infoEl.innerHTML = `Hiển thị <strong>${start} – ${end}</strong> của <strong>${total}</strong> phiếu`;
+  } else if (infoEl) {
+    infoEl.innerHTML = '';
   }
 }
 
