@@ -7,7 +7,7 @@
     "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH MTV THƯƠNG MẠI VÀ DỊCH VỤ HUỲNH GIA Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1993011,
-    "created_at": "2026-08-15T03:03:54.706Z",
+    "created_at": "2026-08-15T04:08:39.010Z",
     "items": [
       {
         "product_sku": "ONGRUOTGA20",
@@ -16,7 +16,7 @@
         "quantity": 5,
         "unit_price": 101500,
         "tax_rate": 8,
-        "total_price": 507498,
+        "total_price": 469905,
         "import_cost": 101499.6
       },
       {
@@ -26,7 +26,7 @@
         "quantity": 1,
         "unit_price": 109040,
         "tax_rate": 8,
-        "total_price": 109040,
+        "total_price": 100963,
         "import_cost": 109040
       },
       {
@@ -36,7 +36,7 @@
         "quantity": 10,
         "unit_price": 10976,
         "tax_rate": 8,
-        "total_price": 109761,
+        "total_price": 101630,
         "import_cost": 10976.1
       },
       {
@@ -46,7 +46,7 @@
         "quantity": 50,
         "unit_price": 21889,
         "tax_rate": 8,
-        "total_price": 1094473,
+        "total_price": 1013400,
         "import_cost": 21889.46
       },
       {
@@ -56,7 +56,7 @@
         "quantity": 20,
         "unit_price": 8612,
         "tax_rate": 8,
-        "total_price": 172239,
+        "total_price": 159480,
         "import_cost": 8611.95
       }
     ]
@@ -69,7 +69,7 @@
     "note": "Nhập kho hàng hóa lần 4 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 18/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2882827,
-    "created_at": "2026-08-15T03:03:54.719Z",
+    "created_at": "2026-08-15T04:08:39.019Z",
     "items": [
       {
         "product_sku": "SONPHUNT224XANHD",
@@ -78,7 +78,7 @@
         "quantity": 48,
         "unit_price": 24024,
         "tax_rate": 8,
-        "total_price": 1153131,
+        "total_price": 1067712,
         "import_cost": 24023.5625
       },
       {
@@ -88,7 +88,7 @@
         "quantity": 12,
         "unit_price": 24024,
         "tax_rate": 8,
-        "total_price": 288283,
+        "total_price": 266928,
         "import_cost": 24023.583333333332
       },
       {
@@ -98,7 +98,7 @@
         "quantity": 24,
         "unit_price": 24024,
         "tax_rate": 8,
-        "total_price": 576565,
+        "total_price": 533856,
         "import_cost": 24023.541666666668
       },
       {
@@ -108,7 +108,7 @@
         "quantity": 36,
         "unit_price": 24024,
         "tax_rate": 8,
-        "total_price": 864848,
+        "total_price": 800784,
         "import_cost": 24023.555555555555
       },
       {
@@ -131,7 +131,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 2C26MAB ngày 04/04/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2512000,
-    "created_at": "2026-08-15T03:03:54.751Z",
+    "created_at": "2026-08-15T04:08:39.051Z",
     "items": [
       {
         "product_sku": "SP000014",
@@ -213,7 +213,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 8",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1980000,
-    "created_at": "2026-08-15T03:03:54.799Z",
+    "created_at": "2026-08-15T04:08:39.074Z",
     "items": [
       {
         "product_sku": "SP000003",
@@ -265,7 +265,7 @@
     "note": "Nhập kho tháng 03/2026 Lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 3023968,
-    "created_at": "2026-08-15T03:03:54.828Z",
+    "created_at": "2026-08-15T04:08:39.100Z",
     "items": [
       {
         "product_sku": "MK-107Đ",
@@ -274,7 +274,7 @@
         "quantity": 100,
         "unit_price": 3240,
         "tax_rate": 8,
-        "total_price": 324000,
+        "total_price": 300000,
         "import_cost": 3240
       },
       {
@@ -284,7 +284,7 @@
         "quantity": 10,
         "unit_price": 47500,
         "tax_rate": 8,
-        "total_price": 474995,
+        "total_price": 439810,
         "import_cost": 47499.5
       },
       {
@@ -294,7 +294,7 @@
         "quantity": 10,
         "unit_price": 62500,
         "tax_rate": 8,
-        "total_price": 624996,
+        "total_price": 578700,
         "import_cost": 62499.6
       },
       {
@@ -304,7 +304,7 @@
         "quantity": 10,
         "unit_price": 54999,
         "tax_rate": 8,
-        "total_price": 549990,
+        "total_price": 509250,
         "import_cost": 54999
       },
       {
@@ -314,7 +314,7 @@
         "quantity": 10,
         "unit_price": 42499,
         "tax_rate": 8,
-        "total_price": 424991,
+        "total_price": 393510,
         "import_cost": 42499.1
       },
       {
@@ -324,7 +324,7 @@
         "quantity": 10,
         "unit_price": 62500,
         "tax_rate": 8,
-        "total_price": 624996,
+        "total_price": 578700,
         "import_cost": 62499.6
       }
     ]
@@ -337,7 +337,7 @@
     "note": "Nhập kho hàng hóa lần 3 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 09/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4885706,
-    "created_at": "2026-08-15T03:03:54.851Z",
+    "created_at": "2026-08-15T04:08:39.123Z",
     "items": [
       {
         "product_sku": "DAYCVLF1570520",
@@ -346,7 +346,7 @@
         "quantity": 200,
         "unit_price": 7767,
         "tax_rate": 8,
-        "total_price": 1553472,
+        "total_price": 1438400,
         "import_cost": 7767.36
       },
       {
@@ -356,7 +356,7 @@
         "quantity": 200,
         "unit_price": 12655,
         "tax_rate": 8,
-        "total_price": 2531088,
+        "total_price": 2343600,
         "import_cost": 12655.44
       },
       {
@@ -366,7 +366,7 @@
         "quantity": 50,
         "unit_price": 16023,
         "tax_rate": 8,
-        "total_price": 801146,
+        "total_price": 741800,
         "import_cost": 16022.92
       }
     ]
@@ -379,7 +379,7 @@
     "note": "Nhập kho tháng 07 từ nhà cung cấp CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ SẢN XUẤT CHÂU NGUYỄN Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 11350800,
-    "created_at": "2026-08-15T03:03:54.866Z",
+    "created_at": "2026-08-15T04:08:39.140Z",
     "items": [
       {
         "product_sku": "OKAWA20-DP",
@@ -388,7 +388,7 @@
         "quantity": 10,
         "unit_price": 779760,
         "tax_rate": 8,
-        "total_price": 7797600,
+        "total_price": 7220000,
         "import_cost": 779760
       },
       {
@@ -398,7 +398,7 @@
         "quantity": 1,
         "unit_price": 1684800,
         "tax_rate": 8,
-        "total_price": 1684800,
+        "total_price": 1560000,
         "import_cost": 1684800
       },
       {
@@ -408,7 +408,7 @@
         "quantity": 1,
         "unit_price": 939600,
         "tax_rate": 8,
-        "total_price": 939600,
+        "total_price": 870000,
         "import_cost": 939600
       },
       {
@@ -418,7 +418,7 @@
         "quantity": 1,
         "unit_price": 928800,
         "tax_rate": 8,
-        "total_price": 928800,
+        "total_price": 860000,
         "import_cost": 928800
       }
     ]
@@ -431,7 +431,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 8",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999974,
-    "created_at": "2026-08-15T03:03:54.901Z",
+    "created_at": "2026-08-15T04:08:39.170Z",
     "items": [
       {
         "product_sku": "PVC-Udn60x1,8",
@@ -440,7 +440,7 @@
         "quantity": 100,
         "unit_price": 25974,
         "tax_rate": 8,
-        "total_price": 2597400,
+        "total_price": 2405000,
         "import_cost": 25974
       },
       {
@@ -450,7 +450,7 @@
         "quantity": 40,
         "unit_price": 54756,
         "tax_rate": 8,
-        "total_price": 2190240,
+        "total_price": 2028000,
         "import_cost": 54756
       },
       {
@@ -460,7 +460,7 @@
         "quantity": 200,
         "unit_price": 9704,
         "tax_rate": 8,
-        "total_price": 1940760,
+        "total_price": 1797000,
         "import_cost": 9703.8
       },
       {
@@ -470,7 +470,7 @@
         "quantity": 100,
         "unit_price": 10833,
         "tax_rate": 8,
-        "total_price": 1083348,
+        "total_price": 1003100,
         "import_cost": 10833.48
       },
       {
@@ -480,7 +480,7 @@
         "quantity": 20,
         "unit_price": 18684,
         "tax_rate": 8,
-        "total_price": 373680,
+        "total_price": 346000,
         "import_cost": 18684
       },
       {
@@ -490,7 +490,7 @@
         "quantity": 20,
         "unit_price": 11416,
         "tax_rate": 8,
-        "total_price": 228312,
+        "total_price": 211400,
         "import_cost": 11415.6
       },
       {
@@ -500,7 +500,7 @@
         "quantity": 30,
         "unit_price": 2371,
         "tax_rate": 8,
-        "total_price": 71118,
+        "total_price": 65850,
         "import_cost": 2370.6
       },
       {
@@ -510,7 +510,7 @@
         "quantity": 20,
         "unit_price": 9583,
         "tax_rate": 8,
-        "total_price": 191657,
+        "total_price": 177460,
         "import_cost": 9582.85
       },
       {
@@ -520,7 +520,7 @@
         "quantity": 5,
         "unit_price": 39312,
         "tax_rate": 8,
-        "total_price": 196560,
+        "total_price": 182000,
         "import_cost": 39312
       },
       {
@@ -530,7 +530,7 @@
         "quantity": 5,
         "unit_price": 29360,
         "tax_rate": 8,
-        "total_price": 146799,
+        "total_price": 135925,
         "import_cost": 29359.8
       },
       {
@@ -540,7 +540,7 @@
         "quantity": 50,
         "unit_price": 2357,
         "tax_rate": 8,
-        "total_price": 117828,
+        "total_price": 109100,
         "import_cost": 2356.56
       },
       {
@@ -550,7 +550,7 @@
         "quantity": 20,
         "unit_price": 11146,
         "tax_rate": 8,
-        "total_price": 222912,
+        "total_price": 206400,
         "import_cost": 11145.6
       },
       {
@@ -560,7 +560,7 @@
         "quantity": 20,
         "unit_price": 31968,
         "tax_rate": 8,
-        "total_price": 639360,
+        "total_price": 592000,
         "import_cost": 31968
       }
     ]
@@ -573,7 +573,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 6",
     "warehouse_name": "Kho mặc định",
     "total_amount": 19340986,
-    "created_at": "2026-08-15T03:03:54.934Z",
+    "created_at": "2026-08-15T04:08:39.189Z",
     "items": [
       {
         "product_sku": "ONGNUOC114MONG",
@@ -582,7 +582,7 @@
         "quantity": 100,
         "unit_price": 17172,
         "tax_rate": 8,
-        "total_price": 1717200,
+        "total_price": 1590000,
         "import_cost": 17172
       },
       {
@@ -592,7 +592,7 @@
         "quantity": 100,
         "unit_price": 28566,
         "tax_rate": 8,
-        "total_price": 2856600,
+        "total_price": 2645000,
         "import_cost": 28566
       },
       {
@@ -602,7 +602,7 @@
         "quantity": 100,
         "unit_price": 51624,
         "tax_rate": 8,
-        "total_price": 5162400,
+        "total_price": 4780000,
         "import_cost": 51624
       },
       {
@@ -612,7 +612,7 @@
         "quantity": 100,
         "unit_price": 9612,
         "tax_rate": 8,
-        "total_price": 961200,
+        "total_price": 890000,
         "import_cost": 9612
       },
       {
@@ -622,7 +622,7 @@
         "quantity": 100,
         "unit_price": 11772,
         "tax_rate": 8,
-        "total_price": 1177200,
+        "total_price": 1090000,
         "import_cost": 11772
       },
       {
@@ -632,7 +632,7 @@
         "quantity": 40,
         "unit_price": 54972,
         "tax_rate": 8,
-        "total_price": 2198880,
+        "total_price": 2036000,
         "import_cost": 54972
       },
       {
@@ -642,7 +642,7 @@
         "quantity": 40,
         "unit_price": 26406,
         "tax_rate": 8,
-        "total_price": 1056240,
+        "total_price": 978000,
         "import_cost": 26406
       },
       {
@@ -652,7 +652,7 @@
         "quantity": 40,
         "unit_price": 23652,
         "tax_rate": 8,
-        "total_price": 946080,
+        "total_price": 876000,
         "import_cost": 23652
       },
       {
@@ -662,7 +662,7 @@
         "quantity": 80,
         "unit_price": 18742,
         "tax_rate": 8,
-        "total_price": 1499386,
+        "total_price": 1388320,
         "import_cost": 18742.325
       },
       {
@@ -672,7 +672,7 @@
         "quantity": 100,
         "unit_price": 10260,
         "tax_rate": 8,
-        "total_price": 1026000,
+        "total_price": 950000,
         "import_cost": 10260
       },
       {
@@ -682,7 +682,7 @@
         "quantity": 100,
         "unit_price": 7398,
         "tax_rate": 8,
-        "total_price": 739800,
+        "total_price": 685000,
         "import_cost": 7398
       }
     ]
@@ -695,7 +695,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 6",
     "warehouse_name": "Kho mặc định",
     "total_amount": 632383,
-    "created_at": "2026-08-15T03:03:54.956Z",
+    "created_at": "2026-08-15T04:08:39.215Z",
     "items": [
       {
         "product_sku": "NN102WM",
@@ -704,7 +704,7 @@
         "quantity": 60,
         "unit_price": 10540,
         "tax_rate": 8,
-        "total_price": 632383,
+        "total_price": 585540,
         "import_cost": 10539.716666666667
       }
     ]
@@ -717,7 +717,7 @@
     "note": "Nhập kho tháng 03/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1766943,
-    "created_at": "2026-08-15T03:03:54.978Z",
+    "created_at": "2026-08-15T04:08:39.231Z",
     "items": [
       {
         "product_sku": "OCAM-4E26",
@@ -726,7 +726,7 @@
         "quantity": 10,
         "unit_price": 28999,
         "tax_rate": 8,
-        "total_price": 289991,
+        "total_price": 268510,
         "import_cost": 28999.1
       },
       {
@@ -736,7 +736,7 @@
         "quantity": 20,
         "unit_price": 19899,
         "tax_rate": 8,
-        "total_price": 397980,
+        "total_price": 368500,
         "import_cost": 19899
       },
       {
@@ -746,7 +746,7 @@
         "quantity": 20,
         "unit_price": 3100,
         "tax_rate": 8,
-        "total_price": 61992,
+        "total_price": 57400,
         "import_cost": 3099.6
       },
       {
@@ -756,7 +756,7 @@
         "quantity": 20,
         "unit_price": 15999,
         "tax_rate": 8,
-        "total_price": 319982,
+        "total_price": 296280,
         "import_cost": 15999.1
       },
       {
@@ -766,7 +766,7 @@
         "quantity": 2,
         "unit_price": 155000,
         "tax_rate": 8,
-        "total_price": 309999,
+        "total_price": 287036,
         "import_cost": 154999.5
       },
       {
@@ -776,7 +776,7 @@
         "quantity": 3,
         "unit_price": 129000,
         "tax_rate": 8,
-        "total_price": 386999,
+        "total_price": 358332,
         "import_cost": 128999.66666666667
       }
     ]
@@ -789,7 +789,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 5",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999806,
-    "created_at": "2026-08-15T03:03:55.005Z",
+    "created_at": "2026-08-15T04:08:39.253Z",
     "items": [
       {
         "product_sku": "PVC-Udn21x1,3",
@@ -798,7 +798,7 @@
         "quantity": 180,
         "unit_price": 6935,
         "tax_rate": 8,
-        "total_price": 1248242,
+        "total_price": 1155780,
         "import_cost": 6934.677777777778
       },
       {
@@ -808,7 +808,7 @@
         "quantity": 200,
         "unit_price": 9828,
         "tax_rate": 8,
-        "total_price": 1965600,
+        "total_price": 1820000,
         "import_cost": 9828
       },
       {
@@ -818,7 +818,7 @@
         "quantity": 200,
         "unit_price": 14385,
         "tax_rate": 8,
-        "total_price": 2876904,
+        "total_price": 2663800,
         "import_cost": 14384.52
       },
       {
@@ -828,7 +828,7 @@
         "quantity": 100,
         "unit_price": 18311,
         "tax_rate": 8,
-        "total_price": 1831140,
+        "total_price": 1695500,
         "import_cost": 18311.4
       },
       {
@@ -838,7 +838,7 @@
         "quantity": 80,
         "unit_price": 25974,
         "tax_rate": 8,
-        "total_price": 2077920,
+        "total_price": 1924000,
         "import_cost": 25974
       }
     ]
@@ -851,7 +851,7 @@
     "note": "Nhập kho tháng 01/2026 Lần 5",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1762560,
-    "created_at": "2026-08-15T03:03:55.036Z",
+    "created_at": "2026-08-15T04:08:39.286Z",
     "items": [
       {
         "product_sku": "SILICONA500-XAM",
@@ -860,7 +860,7 @@
         "quantity": 24,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 725760,
+        "total_price": 672000,
         "import_cost": 30240
       },
       {
@@ -870,7 +870,7 @@
         "quantity": 12,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 259200,
+        "total_price": 240000,
         "import_cost": 21600
       },
       {
@@ -880,7 +880,7 @@
         "quantity": 12,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 259200,
+        "total_price": 240000,
         "import_cost": 21600
       },
       {
@@ -890,7 +890,7 @@
         "quantity": 12,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 259200,
+        "total_price": 240000,
         "import_cost": 21600
       },
       {
@@ -900,7 +900,7 @@
         "quantity": 12,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 259200,
+        "total_price": 240000,
         "import_cost": 21600
       }
     ]
@@ -913,7 +913,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 18",
     "warehouse_name": "Kho mặc định",
     "total_amount": 247137,
-    "created_at": "2026-08-15T03:03:55.058Z",
+    "created_at": "2026-08-15T04:08:39.312Z",
     "items": [
       {
         "product_sku": "NA101TM",
@@ -922,7 +922,7 @@
         "quantity": 30,
         "unit_price": 3531,
         "tax_rate": 8,
-        "total_price": 105916,
+        "total_price": 98070,
         "import_cost": 3530.5333333333333
       },
       {
@@ -932,7 +932,7 @@
         "quantity": 20,
         "unit_price": 7061,
         "tax_rate": 8,
-        "total_price": 141221,
+        "total_price": 130760,
         "import_cost": 7061.05
       }
     ]
@@ -945,7 +945,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 7",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2512000,
-    "created_at": "2026-08-15T03:03:55.086Z",
+    "created_at": "2026-08-15T04:08:39.330Z",
     "items": [
       {
         "product_sku": "SP000014",
@@ -1027,7 +1027,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 8605440,
-    "created_at": "2026-08-15T03:03:55.123Z",
+    "created_at": "2026-08-15T04:08:39.347Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-2.5",
@@ -1036,7 +1036,7 @@
         "quantity": 400,
         "unit_price": 12460,
         "tax_rate": 8,
-        "total_price": 4983984,
+        "total_price": 4614800,
         "import_cost": 12459.96
       },
       {
@@ -1046,7 +1046,7 @@
         "quantity": 200,
         "unit_price": 18107,
         "tax_rate": 8,
-        "total_price": 3621456,
+        "total_price": 3353200,
         "import_cost": 18107.28
       }
     ]
@@ -1059,7 +1059,7 @@
     "note": "Nhập kho tháng 01/2026 lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1305000,
-    "created_at": "2026-08-15T03:03:55.169Z",
+    "created_at": "2026-08-15T04:08:39.367Z",
     "items": [
       {
         "product_sku": "DENTRANGTRI220V",
@@ -1111,7 +1111,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 14",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4999968,
-    "created_at": "2026-08-15T03:03:55.214Z",
+    "created_at": "2026-08-15T04:08:39.391Z",
     "items": [
       {
         "product_sku": "ONP200DAY",
@@ -1120,7 +1120,7 @@
         "quantity": 60,
         "unit_price": 83333,
         "tax_rate": 8,
-        "total_price": 4999968,
+        "total_price": 4629600,
         "import_cost": 83332.8
       }
     ]
@@ -1133,7 +1133,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 411331,
-    "created_at": "2026-08-15T03:03:55.257Z",
+    "created_at": "2026-08-15T04:08:39.417Z",
     "items": [
       {
         "product_sku": "FRG20WM",
@@ -1142,7 +1142,7 @@
         "quantity": 3,
         "unit_price": 137110,
         "tax_rate": 8,
-        "total_price": 411331,
+        "total_price": 380862,
         "import_cost": 137110.33333333334
       }
     ]
@@ -1155,7 +1155,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1206036,
-    "created_at": "2026-08-15T03:03:55.274Z",
+    "created_at": "2026-08-15T04:08:39.440Z",
     "items": [
       {
         "product_sku": "WNV5001-7W",
@@ -1164,7 +1164,7 @@
         "quantity": 50,
         "unit_price": 8659,
         "tax_rate": 8,
-        "total_price": 432972,
+        "total_price": 400900,
         "import_cost": 8659.44
       },
       {
@@ -1174,7 +1174,7 @@
         "quantity": 100,
         "unit_price": 7731,
         "tax_rate": 8,
-        "total_price": 773064,
+        "total_price": 715800,
         "import_cost": 7730.64
       }
     ]
@@ -1187,7 +1187,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 10000001,
-    "created_at": "2026-08-15T03:03:55.308Z",
+    "created_at": "2026-08-15T04:08:39.457Z",
     "items": [
       {
         "product_sku": "PVC-Udn114x3,1",
@@ -1196,7 +1196,7 @@
         "quantity": 80,
         "unit_price": 90066,
         "tax_rate": 8,
-        "total_price": 7205242,
+        "total_price": 6671520,
         "import_cost": 90065.525
       },
       {
@@ -1206,7 +1206,7 @@
         "quantity": 340,
         "unit_price": 7970,
         "tax_rate": 8,
-        "total_price": 2709936,
+        "total_price": 2509200,
         "import_cost": 7970.4
       },
       {
@@ -1216,7 +1216,7 @@
         "quantity": 34,
         "unit_price": 2495,
         "tax_rate": 8,
-        "total_price": 84823,
+        "total_price": 78540,
         "import_cost": 2494.794117647059
       }
     ]
@@ -1229,7 +1229,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000630 ngày 27/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2307960,
-    "created_at": "2026-08-15T03:03:55.335Z",
+    "created_at": "2026-08-15T04:08:39.476Z",
     "items": [
       {
         "product_sku": "COV-22-RS",
@@ -1238,7 +1238,7 @@
         "quantity": 1,
         "unit_price": 1225800,
         "tax_rate": 8,
-        "total_price": 1225800,
+        "total_price": 1135000,
         "import_cost": 1225800
       },
       {
@@ -1248,7 +1248,7 @@
         "quantity": 1,
         "unit_price": 1082160,
         "tax_rate": 8,
-        "total_price": 1082160,
+        "total_price": 1002000,
         "import_cost": 1082160
       }
     ]
@@ -1261,7 +1261,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 7",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2500103,
-    "created_at": "2026-08-15T03:03:55.370Z",
+    "created_at": "2026-08-15T04:08:39.498Z",
     "items": [
       {
         "product_sku": "ONP300DAY",
@@ -1270,7 +1270,7 @@
         "quantity": 12,
         "unit_price": 162000,
         "tax_rate": 8,
-        "total_price": 1944000,
+        "total_price": 1800000,
         "import_cost": 162000
       },
       {
@@ -1280,7 +1280,7 @@
         "quantity": 10,
         "unit_price": 37456,
         "tax_rate": 8,
-        "total_price": 374555,
+        "total_price": 346810,
         "import_cost": 37455.5
       },
       {
@@ -1290,7 +1290,7 @@
         "quantity": 10,
         "unit_price": 18155,
         "tax_rate": 8,
-        "total_price": 181548,
+        "total_price": 168100,
         "import_cost": 18154.8
       }
     ]
@@ -1303,7 +1303,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 2",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999936,
-    "created_at": "2026-08-15T03:03:55.407Z",
+    "created_at": "2026-08-15T04:08:39.523Z",
     "items": [
       {
         "product_sku": "ONGNUOC220DAY",
@@ -1312,7 +1312,7 @@
         "quantity": 100,
         "unit_price": 71280,
         "tax_rate": 8,
-        "total_price": 7128000,
+        "total_price": 6600000,
         "import_cost": 71280
       },
       {
@@ -1322,7 +1322,7 @@
         "quantity": 88,
         "unit_price": 23652,
         "tax_rate": 8,
-        "total_price": 2081376,
+        "total_price": 1927200,
         "import_cost": 23652
       },
       {
@@ -1332,7 +1332,7 @@
         "quantity": 80,
         "unit_price": 9882,
         "tax_rate": 8,
-        "total_price": 790560,
+        "total_price": 732000,
         "import_cost": 9882
       }
     ]
@@ -1345,7 +1345,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 10",
     "warehouse_name": "Kho mặc định",
     "total_amount": 425952,
-    "created_at": "2026-08-15T03:03:55.422Z",
+    "created_at": "2026-08-15T04:08:39.544Z",
     "items": [
       {
         "product_sku": "COPVC21DAY",
@@ -1354,7 +1354,7 @@
         "quantity": 100,
         "unit_price": 2554,
         "tax_rate": 8,
-        "total_price": 255420,
+        "total_price": 236500,
         "import_cost": 2554.2
       },
       {
@@ -1364,7 +1364,7 @@
         "quantity": 50,
         "unit_price": 3411,
         "tax_rate": 8,
-        "total_price": 170532,
+        "total_price": 157900,
         "import_cost": 3410.64
       }
     ]
@@ -1377,7 +1377,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000248 ngày 20/04/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 5752080,
-    "created_at": "2026-08-15T03:03:55.450Z",
+    "created_at": "2026-08-15T04:08:39.562Z",
     "items": [
       {
         "product_sku": "YMS-DBT0832G2",
@@ -1386,7 +1386,7 @@
         "quantity": 2,
         "unit_price": 1263600,
         "tax_rate": 8,
-        "total_price": 2527200,
+        "total_price": 2340000,
         "import_cost": 1263600
       },
       {
@@ -1396,7 +1396,7 @@
         "quantity": 5,
         "unit_price": 403920,
         "tax_rate": 8,
-        "total_price": 2019600,
+        "total_price": 1870000,
         "import_cost": 403920
       },
       {
@@ -1406,7 +1406,7 @@
         "quantity": 1,
         "unit_price": 1086480,
         "tax_rate": 8,
-        "total_price": 1086480,
+        "total_price": 1006000,
         "import_cost": 1086480
       },
       {
@@ -1416,7 +1416,7 @@
         "quantity": 1,
         "unit_price": 23760,
         "tax_rate": 8,
-        "total_price": 23760,
+        "total_price": 22000,
         "import_cost": 23760
       },
       {
@@ -1426,7 +1426,7 @@
         "quantity": 2,
         "unit_price": 47520,
         "tax_rate": 8,
-        "total_price": 95040,
+        "total_price": 88000,
         "import_cost": 47520
       }
     ]
@@ -1439,7 +1439,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCCHAUNGUYEN - Số HĐ: 00000564 ngày 01/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 11350800,
-    "created_at": "2026-08-15T03:03:55.487Z",
+    "created_at": "2026-08-15T04:08:39.580Z",
     "items": [
       {
         "product_sku": "OKAWA20-DP",
@@ -1448,7 +1448,7 @@
         "quantity": 10,
         "unit_price": 779760,
         "tax_rate": 8,
-        "total_price": 7797600,
+        "total_price": 7220000,
         "import_cost": 779760
       },
       {
@@ -1458,7 +1458,7 @@
         "quantity": 1,
         "unit_price": 1684800,
         "tax_rate": 8,
-        "total_price": 1684800,
+        "total_price": 1560000,
         "import_cost": 1684800
       },
       {
@@ -1468,7 +1468,7 @@
         "quantity": 1,
         "unit_price": 939600,
         "tax_rate": 8,
-        "total_price": 939600,
+        "total_price": 870000,
         "import_cost": 939600
       },
       {
@@ -1478,7 +1478,7 @@
         "quantity": 1,
         "unit_price": 928800,
         "tax_rate": 8,
-        "total_price": 928800,
+        "total_price": 860000,
         "import_cost": 928800
       }
     ]
@@ -1491,7 +1491,7 @@
     "note": "Nhập kho tháng 01/2026 lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1316002,
-    "created_at": "2026-08-15T03:03:55.508Z",
+    "created_at": "2026-08-15T04:08:39.605Z",
     "items": [
       {
         "product_sku": "CADIVIDOI1,5",
@@ -1500,7 +1500,7 @@
         "quantity": 100,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 1316002,
+        "total_price": 1218520,
         "import_cost": 13160.02
       }
     ]
@@ -1513,7 +1513,7 @@
     "note": "Nhập kho hàng hóa lần 2 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 16/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1578822,
-    "created_at": "2026-08-15T03:03:55.532Z",
+    "created_at": "2026-08-15T04:08:39.626Z",
     "items": [
       {
         "product_sku": "WZV7843W",
@@ -1522,7 +1522,7 @@
         "quantity": 30,
         "unit_price": 8848,
         "tax_rate": 8,
-        "total_price": 265454,
+        "total_price": 245790,
         "import_cost": 8848.466666666667
       },
       {
@@ -1532,7 +1532,7 @@
         "quantity": 30,
         "unit_price": 21889,
         "tax_rate": 8,
-        "total_price": 656684,
+        "total_price": 608040,
         "import_cost": 21889.466666666667
       },
       {
@@ -1542,7 +1542,7 @@
         "quantity": 30,
         "unit_price": 21889,
         "tax_rate": 8,
-        "total_price": 656684,
+        "total_price": 608040,
         "import_cost": 21889.466666666667
       }
     ]
@@ -1555,7 +1555,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 9",
     "warehouse_name": "Kho mặc định",
     "total_amount": 10000001,
-    "created_at": "2026-08-15T03:03:55.548Z",
+    "created_at": "2026-08-15T04:08:39.657Z",
     "items": [
       {
         "product_sku": "PVC-Udn60x1,8",
@@ -1564,7 +1564,7 @@
         "quantity": 100,
         "unit_price": 26873,
         "tax_rate": 8,
-        "total_price": 2687256,
+        "total_price": 2488200,
         "import_cost": 26872.56
       },
       {
@@ -1574,7 +1574,7 @@
         "quantity": 40,
         "unit_price": 56862,
         "tax_rate": 8,
-        "total_price": 2274480,
+        "total_price": 2106000,
         "import_cost": 56862
       },
       {
@@ -1584,7 +1584,7 @@
         "quantity": 48,
         "unit_price": 14658,
         "tax_rate": 8,
-        "total_price": 703572,
+        "total_price": 651456,
         "import_cost": 14657.75
       },
       {
@@ -1594,7 +1594,7 @@
         "quantity": 200,
         "unit_price": 10109,
         "tax_rate": 8,
-        "total_price": 2021760,
+        "total_price": 1872000,
         "import_cost": 10108.8
       },
       {
@@ -1604,7 +1604,7 @@
         "quantity": 3,
         "unit_price": 63223,
         "tax_rate": 8,
-        "total_price": 189670,
+        "total_price": 175620,
         "import_cost": 63223.333333333336
       },
       {
@@ -1614,7 +1614,7 @@
         "quantity": 20,
         "unit_price": 11867,
         "tax_rate": 8,
-        "total_price": 237341,
+        "total_price": 219760,
         "import_cost": 11867.05
       },
       {
@@ -1624,7 +1624,7 @@
         "quantity": 20,
         "unit_price": 22866,
         "tax_rate": 8,
-        "total_price": 457315,
+        "total_price": 423440,
         "import_cost": 22865.75
       },
       {
@@ -1634,7 +1634,7 @@
         "quantity": 20,
         "unit_price": 47523,
         "tax_rate": 8,
-        "total_price": 950465,
+        "total_price": 880060,
         "import_cost": 47523.25
       },
       {
@@ -1644,7 +1644,7 @@
         "quantity": 5,
         "unit_price": 43109,
         "tax_rate": 8,
-        "total_price": 215546,
+        "total_price": 199580,
         "import_cost": 43109.2
       },
       {
@@ -1654,7 +1654,7 @@
         "quantity": 5,
         "unit_price": 33354,
         "tax_rate": 8,
-        "total_price": 166768,
+        "total_price": 154415,
         "import_cost": 33353.6
       },
       {
@@ -1664,7 +1664,7 @@
         "quantity": 10,
         "unit_price": 9583,
         "tax_rate": 8,
-        "total_price": 95828,
+        "total_price": 88730,
         "import_cost": 9582.8
       }
     ]
@@ -1677,7 +1677,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2484874,
-    "created_at": "2026-08-15T03:03:55.580Z",
+    "created_at": "2026-08-15T04:08:39.672Z",
     "items": [
       {
         "product_sku": "WEV68040SW",
@@ -1686,7 +1686,7 @@
         "quantity": 40,
         "unit_price": 21959,
         "tax_rate": 8,
-        "total_price": 878342,
+        "total_price": 813280,
         "import_cost": 21958.55
       },
       {
@@ -1696,7 +1696,7 @@
         "quantity": 10,
         "unit_price": 11181,
         "tax_rate": 8,
-        "total_price": 111812,
+        "total_price": 103530,
         "import_cost": 11181.2
       },
       {
@@ -1706,7 +1706,7 @@
         "quantity": 10,
         "unit_price": 21959,
         "tax_rate": 8,
-        "total_price": 219586,
+        "total_price": 203320,
         "import_cost": 21958.6
       },
       {
@@ -1716,7 +1716,7 @@
         "quantity": 100,
         "unit_price": 7061,
         "tax_rate": 8,
-        "total_price": 706104,
+        "total_price": 653800,
         "import_cost": 7061.04
       },
       {
@@ -1726,7 +1726,7 @@
         "quantity": 40,
         "unit_price": 14226,
         "tax_rate": 8,
-        "total_price": 569030,
+        "total_price": 526880,
         "import_cost": 14225.75
       }
     ]
@@ -1739,7 +1739,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 11",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2530980,
-    "created_at": "2026-08-15T03:03:55.608Z",
+    "created_at": "2026-08-15T04:08:39.690Z",
     "items": [
       {
         "product_sku": "PVC-Udn21x1,7",
@@ -1748,7 +1748,7 @@
         "quantity": 200,
         "unit_price": 7582,
         "tax_rate": 8,
-        "total_price": 1516320,
+        "total_price": 1404000,
         "import_cost": 7581.6
       },
       {
@@ -1758,7 +1758,7 @@
         "quantity": 110,
         "unit_price": 1706,
         "tax_rate": 8,
-        "total_price": 187704,
+        "total_price": 173800,
         "import_cost": 1706.4
       },
       {
@@ -1768,7 +1768,7 @@
         "quantity": 50,
         "unit_price": 16539,
         "tax_rate": 8,
-        "total_price": 826956,
+        "total_price": 765700,
         "import_cost": 16539.12
       }
     ]
@@ -1781,7 +1781,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00028569 ngày 16/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 3265920,
-    "created_at": "2026-08-15T03:03:55.624Z",
+    "created_at": "2026-08-15T04:08:39.711Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-1.5",
@@ -1790,7 +1790,7 @@
         "quantity": 400,
         "unit_price": 8165,
         "tax_rate": 8,
-        "total_price": 3265920,
+        "total_price": 3024000,
         "import_cost": 8164.8
       }
     ]
@@ -1803,7 +1803,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00029613 ngày 23/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 569732,
-    "created_at": "2026-08-15T03:03:55.654Z",
+    "created_at": "2026-08-15T04:08:39.738Z",
     "items": [
       {
         "product_sku": "BS1113TV",
@@ -1812,7 +1812,7 @@
         "quantity": 10,
         "unit_price": 56973,
         "tax_rate": 8,
-        "total_price": 569732,
+        "total_price": 527530,
         "import_cost": 56973.2
       }
     ]
@@ -1825,7 +1825,7 @@
     "note": "Nhập kho tháng 01/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1084160,
-    "created_at": "2026-08-15T03:03:55.667Z",
+    "created_at": "2026-08-15T04:08:39.767Z",
     "items": [
       {
         "product_sku": "QTSENKOTC1626",
@@ -1834,7 +1834,7 @@
         "quantity": 4,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 1084160,
+        "total_price": 1003852,
         "import_cost": 271040
       }
     ]
@@ -1847,7 +1847,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCMINHTRIPMT - Số HĐ: 0000147 ngày 26/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2712000,
-    "created_at": "2026-08-15T03:03:55.680Z",
+    "created_at": "2026-08-15T04:08:39.800Z",
     "items": [
       {
         "product_sku": "MANPHU1X100",
@@ -1939,7 +1939,7 @@
     "note": "Nhập kho tháng 03/2026 Lần 4",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4001847,
-    "created_at": "2026-08-15T03:03:55.696Z",
+    "created_at": "2026-08-15T04:08:39.832Z",
     "items": [
       {
         "product_sku": "KIMBAMDINHRUT9.5",
@@ -1948,7 +1948,7 @@
         "quantity": 10,
         "unit_price": 68183,
         "tax_rate": 8,
-        "total_price": 681826,
+        "total_price": 631320,
         "import_cost": 68182.6
       },
       {
@@ -1958,7 +1958,7 @@
         "quantity": 10,
         "unit_price": 24797,
         "tax_rate": 8,
-        "total_price": 247968,
+        "total_price": 229600,
         "import_cost": 24796.8
       },
       {
@@ -1968,7 +1968,7 @@
         "quantity": 10,
         "unit_price": 79985,
         "tax_rate": 8,
-        "total_price": 799848,
+        "total_price": 740600,
         "import_cost": 79984.8
       },
       {
@@ -1978,7 +1978,7 @@
         "quantity": 10,
         "unit_price": 98158,
         "tax_rate": 8,
-        "total_price": 981580,
+        "total_price": 908870,
         "import_cost": 98158
       },
       {
@@ -1988,7 +1988,7 @@
         "quantity": 10,
         "unit_price": 16466,
         "tax_rate": 8,
-        "total_price": 164657,
+        "total_price": 152460,
         "import_cost": 16465.7
       },
       {
@@ -1998,7 +1998,7 @@
         "quantity": 10,
         "unit_price": 22108,
         "tax_rate": 8,
-        "total_price": 221076,
+        "total_price": 204700,
         "import_cost": 22107.6
       },
       {
@@ -2008,7 +2008,7 @@
         "quantity": 20,
         "unit_price": 5092,
         "tax_rate": 8,
-        "total_price": 101844,
+        "total_price": 94300,
         "import_cost": 5092.2
       },
       {
@@ -2018,7 +2018,7 @@
         "quantity": 10,
         "unit_price": 52785,
         "tax_rate": 8,
-        "total_price": 527850,
+        "total_price": 488750,
         "import_cost": 52785
       },
       {
@@ -2028,7 +2028,7 @@
         "quantity": 13,
         "unit_price": 21169,
         "tax_rate": 8,
-        "total_price": 275198,
+        "total_price": 254813,
         "import_cost": 21169.076923076922
       }
     ]
@@ -2041,7 +2041,7 @@
     "note": "Nhập kho tháng 06/2026 Lần 12",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1757862,
-    "created_at": "2026-08-15T03:03:55.734Z",
+    "created_at": "2026-08-15T04:08:39.857Z",
     "items": [
       {
         "product_sku": "MUIKHOAN08HSS-4341",
@@ -2050,7 +2050,7 @@
         "quantity": 10,
         "unit_price": 19375,
         "tax_rate": 8,
-        "total_price": 193752,
+        "total_price": 179400,
         "import_cost": 19375.2
       },
       {
@@ -2060,7 +2060,7 @@
         "quantity": 10,
         "unit_price": 10360,
         "tax_rate": 8,
-        "total_price": 103604,
+        "total_price": 95930,
         "import_cost": 10360.4
       },
       {
@@ -2070,7 +2070,7 @@
         "quantity": 10,
         "unit_price": 5830,
         "tax_rate": 8,
-        "total_price": 58298,
+        "total_price": 53980,
         "import_cost": 5829.8
       },
       {
@@ -2080,7 +2080,7 @@
         "quantity": 100,
         "unit_price": 4102,
         "tax_rate": 8,
-        "total_price": 410184,
+        "total_price": 379800,
         "import_cost": 4101.84
       },
       {
@@ -2090,7 +2090,7 @@
         "quantity": 12,
         "unit_price": 39020,
         "tax_rate": 8,
-        "total_price": 468245,
+        "total_price": 433560,
         "import_cost": 39020.416666666664
       },
       {
@@ -2100,7 +2100,7 @@
         "quantity": 12,
         "unit_price": 13376,
         "tax_rate": 8,
-        "total_price": 160510,
+        "total_price": 148620,
         "import_cost": 13375.833333333334
       },
       {
@@ -2110,7 +2110,7 @@
         "quantity": 12,
         "unit_price": 14126,
         "tax_rate": 8,
-        "total_price": 169517,
+        "total_price": 156960,
         "import_cost": 14126.416666666666
       },
       {
@@ -2120,7 +2120,7 @@
         "quantity": 12,
         "unit_price": 16146,
         "tax_rate": 8,
-        "total_price": 193752,
+        "total_price": 179400,
         "import_cost": 16146
       }
     ]
@@ -2133,7 +2133,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 5",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1532000,
-    "created_at": "2026-08-15T03:03:55.748Z",
+    "created_at": "2026-08-15T04:08:39.878Z",
     "items": [
       {
         "product_sku": "NKT1886N",
@@ -2142,7 +2142,7 @@
         "quantity": 3,
         "unit_price": 149000,
         "tax_rate": 8,
-        "total_price": 447000,
+        "total_price": 413889,
         "import_cost": 149000
       },
       {
@@ -2152,7 +2152,7 @@
         "quantity": 3,
         "unit_price": 189000,
         "tax_rate": 8,
-        "total_price": 567000,
+        "total_price": 525000,
         "import_cost": 189000
       },
       {
@@ -2162,7 +2162,7 @@
         "quantity": 2,
         "unit_price": 259000,
         "tax_rate": 8,
-        "total_price": 518000,
+        "total_price": 479630,
         "import_cost": 259000
       }
     ]
@@ -2175,7 +2175,7 @@
     "note": "Nhập kho tháng 01/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2587994,
-    "created_at": "2026-08-15T03:03:55.770Z",
+    "created_at": "2026-08-15T04:08:39.897Z",
     "items": [
       {
         "product_sku": "XR.N015.020.BH76358020.21",
@@ -2184,7 +2184,7 @@
         "quantity": 1,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 594000,
+        "total_price": 550000,
         "import_cost": 594000
       },
       {
@@ -2194,7 +2194,7 @@
         "quantity": 1,
         "unit_price": 0,
         "tax_rate": 10,
-        "total_price": 583000,
+        "total_price": 530000,
         "import_cost": 583000
       },
       {
@@ -2204,7 +2204,7 @@
         "quantity": 600,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 112752,
+        "total_price": 104400,
         "import_cost": 187.92
       },
       {
@@ -2214,7 +2214,7 @@
         "quantity": 100,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 449820,
+        "total_price": 416500,
         "import_cost": 4498.2
       },
       {
@@ -2224,7 +2224,7 @@
         "quantity": 100,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 233820,
+        "total_price": 216500,
         "import_cost": 2338.2
       },
       {
@@ -2234,7 +2234,7 @@
         "quantity": 20,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 92880,
+        "total_price": 86000,
         "import_cost": 4644
       },
       {
@@ -2244,7 +2244,7 @@
         "quantity": 24,
         "unit_price": 0,
         "tax_rate": 10,
-        "total_price": 353760,
+        "total_price": 321600,
         "import_cost": 14740
       },
       {
@@ -2254,7 +2254,7 @@
         "quantity": 72,
         "unit_price": 0,
         "tax_rate": 8,
-        "total_price": 167962,
+        "total_price": 155520,
         "import_cost": 2332.8055555555557
       }
     ]
@@ -2267,7 +2267,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 13",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999936,
-    "created_at": "2026-08-15T03:03:55.784Z",
+    "created_at": "2026-08-15T04:08:39.931Z",
     "items": [
       {
         "product_sku": "PVC-Udn21x1,3",
@@ -2276,7 +2276,7 @@
         "quantity": 200,
         "unit_price": 6855,
         "tax_rate": 8,
-        "total_price": 1370952,
+        "total_price": 1269400,
         "import_cost": 6854.76
       },
       {
@@ -2286,7 +2286,7 @@
         "quantity": 200,
         "unit_price": 9720,
         "tax_rate": 8,
-        "total_price": 1944000,
+        "total_price": 1800000,
         "import_cost": 9720
       },
       {
@@ -2296,7 +2296,7 @@
         "quantity": 200,
         "unit_price": 18360,
         "tax_rate": 8,
-        "total_price": 3672000,
+        "total_price": 3400000,
         "import_cost": 18360
       },
       {
@@ -2306,7 +2306,7 @@
         "quantity": 116,
         "unit_price": 25974,
         "tax_rate": 8,
-        "total_price": 3012984,
+        "total_price": 2789800,
         "import_cost": 25974
       }
     ]
@@ -2319,7 +2319,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 15",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2910221,
-    "created_at": "2026-08-15T03:03:55.802Z",
+    "created_at": "2026-08-15T04:08:39.944Z",
     "items": [
       {
         "product_sku": "LUOICUATHEP110x40T",
@@ -2328,7 +2328,7 @@
         "quantity": 10,
         "unit_price": 39557,
         "tax_rate": 8,
-        "total_price": 395572,
+        "total_price": 366270,
         "import_cost": 39557.2
       },
       {
@@ -2338,7 +2338,7 @@
         "quantity": 10,
         "unit_price": 45657,
         "tax_rate": 8,
-        "total_price": 456570,
+        "total_price": 422750,
         "import_cost": 45657
       },
       {
@@ -2348,7 +2348,7 @@
         "quantity": 10,
         "unit_price": 4615,
         "tax_rate": 8,
-        "total_price": 46148,
+        "total_price": 42730,
         "import_cost": 4614.8
       },
       {
@@ -2358,7 +2358,7 @@
         "quantity": 10,
         "unit_price": 42876,
         "tax_rate": 8,
-        "total_price": 428760,
+        "total_price": 397000,
         "import_cost": 42876
       },
       {
@@ -2368,7 +2368,7 @@
         "quantity": 10,
         "unit_price": 19375,
         "tax_rate": 8,
-        "total_price": 193752,
+        "total_price": 179400,
         "import_cost": 19375.2
       },
       {
@@ -2378,7 +2378,7 @@
         "quantity": 10,
         "unit_price": 10360,
         "tax_rate": 8,
-        "total_price": 103604,
+        "total_price": 95930,
         "import_cost": 10360.4
       },
       {
@@ -2388,7 +2388,7 @@
         "quantity": 10,
         "unit_price": 5830,
         "tax_rate": 8,
-        "total_price": 58298,
+        "total_price": 53980,
         "import_cost": 5829.8
       },
       {
@@ -2398,7 +2398,7 @@
         "quantity": 10,
         "unit_price": 20720,
         "tax_rate": 8,
-        "total_price": 207198,
+        "total_price": 191850,
         "import_cost": 20719.8
       },
       {
@@ -2408,7 +2408,7 @@
         "quantity": 10,
         "unit_price": 20720,
         "tax_rate": 8,
-        "total_price": 207198,
+        "total_price": 191850,
         "import_cost": 20719.8
       },
       {
@@ -2418,7 +2418,7 @@
         "quantity": 10,
         "unit_price": 15250,
         "tax_rate": 8,
-        "total_price": 152496,
+        "total_price": 141200,
         "import_cost": 15249.6
       },
       {
@@ -2428,7 +2428,7 @@
         "quantity": 10,
         "unit_price": 61085,
         "tax_rate": 8,
-        "total_price": 610848,
+        "total_price": 565600,
         "import_cost": 61084.8
       },
       {
@@ -2438,7 +2438,7 @@
         "quantity": 10,
         "unit_price": 4978,
         "tax_rate": 8,
-        "total_price": 49777,
+        "total_price": 46090,
         "import_cost": 4977.7
       }
     ]
@@ -2451,7 +2451,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 16",
     "warehouse_name": "Kho mặc định",
     "total_amount": 907200,
-    "created_at": "2026-08-15T03:03:55.823Z",
+    "created_at": "2026-08-15T04:08:39.970Z",
     "items": [
       {
         "product_sku": "FPC20M",
@@ -2460,7 +2460,7 @@
         "quantity": 50,
         "unit_price": 18144,
         "tax_rate": 8,
-        "total_price": 907200,
+        "total_price": 840000,
         "import_cost": 18144
       }
     ]
@@ -2473,7 +2473,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 12",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9999998,
-    "created_at": "2026-08-15T03:03:55.851Z",
+    "created_at": "2026-08-15T04:08:40.002Z",
     "items": [
       {
         "product_sku": "UPVC90A",
@@ -2482,7 +2482,7 @@
         "quantity": 80,
         "unit_price": 41000,
         "tax_rate": 8,
-        "total_price": 3280003,
+        "total_price": 3037040,
         "import_cost": 41000.0375
       },
       {
@@ -2492,7 +2492,7 @@
         "quantity": 200,
         "unit_price": 8977,
         "tax_rate": 8,
-        "total_price": 1795392,
+        "total_price": 1662400,
         "import_cost": 8976.96
       },
       {
@@ -2502,7 +2502,7 @@
         "quantity": 100,
         "unit_price": 10756,
         "tax_rate": 8,
-        "total_price": 1075572,
+        "total_price": 995900,
         "import_cost": 10755.72
       },
       {
@@ -2512,7 +2512,7 @@
         "quantity": 120,
         "unit_price": 14030,
         "tax_rate": 8,
-        "total_price": 1683634,
+        "total_price": 1558920,
         "import_cost": 14030.283333333333
       },
       {
@@ -2522,7 +2522,7 @@
         "quantity": 80,
         "unit_price": 18436,
         "tax_rate": 8,
-        "total_price": 1474848,
+        "total_price": 1365600,
         "import_cost": 18435.6
       },
       {
@@ -2532,7 +2532,7 @@
         "quantity": 50,
         "unit_price": 3279,
         "tax_rate": 8,
-        "total_price": 163944,
+        "total_price": 151800,
         "import_cost": 3278.88
       },
       {
@@ -2542,7 +2542,7 @@
         "quantity": 10,
         "unit_price": 21762,
         "tax_rate": 8,
-        "total_price": 217620,
+        "total_price": 201500,
         "import_cost": 21762
       },
       {
@@ -2552,7 +2552,7 @@
         "quantity": 7,
         "unit_price": 44141,
         "tax_rate": 8,
-        "total_price": 308985,
+        "total_price": 286097,
         "import_cost": 44140.71428571428
       }
     ]
@@ -2565,7 +2565,7 @@
     "note": "Nhập kho hàng hóa lần 1 trong tháng từ hóa đơn của NCC NCCHUYNHGIA - Ký hiệu 1C26TAA ngày 02/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 1679741,
-    "created_at": "2026-08-15T03:03:55.874Z",
+    "created_at": "2026-08-15T04:08:40.034Z",
     "items": [
       {
         "product_sku": "BS1113TV",
@@ -2574,7 +2574,7 @@
         "quantity": 20,
         "unit_price": 56973,
         "tax_rate": 8,
-        "total_price": 1139464,
+        "total_price": 1055060,
         "import_cost": 56973.2
       },
       {
@@ -2584,7 +2584,7 @@
         "quantity": 3,
         "unit_price": 126287,
         "tax_rate": 8,
-        "total_price": 378860,
+        "total_price": 350796,
         "import_cost": 126286.66666666667
       },
       {
@@ -2594,7 +2594,7 @@
         "quantity": 30,
         "unit_price": 5381,
         "tax_rate": 8,
-        "total_price": 161417,
+        "total_price": 149460,
         "import_cost": 5380.566666666667
       }
     ]
@@ -2607,7 +2607,7 @@
     "note": "Nhập kho tháng 02/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2500103,
-    "created_at": "2026-08-15T03:03:55.910Z",
+    "created_at": "2026-08-15T04:08:40.062Z",
     "items": [
       {
         "product_sku": "ONP300DAY",
@@ -2616,7 +2616,7 @@
         "quantity": 12,
         "unit_price": 162000,
         "tax_rate": 8,
-        "total_price": 1944000,
+        "total_price": 1800000,
         "import_cost": 162000
       },
       {
@@ -2626,7 +2626,7 @@
         "quantity": 10,
         "unit_price": 37456,
         "tax_rate": 8,
-        "total_price": 374555,
+        "total_price": 346810,
         "import_cost": 37455.5
       },
       {
@@ -2636,7 +2636,7 @@
         "quantity": 10,
         "unit_price": 18155,
         "tax_rate": 8,
-        "total_price": 181548,
+        "total_price": 168100,
         "import_cost": 18154.8
       }
     ]
@@ -2649,7 +2649,7 @@
     "note": "Nhập kho tháng 06 từ nhà cung cấp CÔNG TY TNHH THÀNH THẮNG MEKONG Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 5000005,
-    "created_at": "2026-08-15T03:03:55.937Z",
+    "created_at": "2026-08-15T04:08:40.087Z",
     "items": [
       {
         "product_sku": "VOILAVABO304",
@@ -2658,7 +2658,7 @@
         "quantity": 10,
         "unit_price": 166500,
         "tax_rate": 8,
-        "total_price": 1665003,
+        "total_price": 1541670,
         "import_cost": 166500.3
       },
       {
@@ -2668,7 +2668,7 @@
         "quantity": 10,
         "unit_price": 68000,
         "tax_rate": 8,
-        "total_price": 680000,
+        "total_price": 629630,
         "import_cost": 68000
       },
       {
@@ -2678,7 +2678,7 @@
         "quantity": 10,
         "unit_price": 62900,
         "tax_rate": 8,
-        "total_price": 629003,
+        "total_price": 582410,
         "import_cost": 62900.3
       },
       {
@@ -2688,7 +2688,7 @@
         "quantity": 3,
         "unit_price": 468000,
         "tax_rate": 8,
-        "total_price": 1403999,
+        "total_price": 1299999,
         "import_cost": 467999.6666666667
       },
       {
@@ -2698,7 +2698,7 @@
         "quantity": 2,
         "unit_price": 311000,
         "tax_rate": 8,
-        "total_price": 622000,
+        "total_price": 575926,
         "import_cost": 311000
       }
     ]
@@ -2711,7 +2711,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCQUOCHUNG - Số HĐ: 832 ngày 15/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 6784799,
-    "created_at": "2026-08-15T03:03:55.972Z",
+    "created_at": "2026-08-15T04:08:40.112Z",
     "items": [
       {
         "product_sku": "NN102WM",
@@ -2720,7 +2720,7 @@
         "quantity": 60,
         "unit_price": 10260,
         "tax_rate": 8,
-        "total_price": 615600,
+        "total_price": 570000,
         "import_cost": 10260
       },
       {
@@ -2730,7 +2730,7 @@
         "quantity": 4,
         "unit_price": 272580,
         "tax_rate": 8,
-        "total_price": 1090320,
+        "total_price": 1009556,
         "import_cost": 272580
       },
       {
@@ -2740,7 +2740,7 @@
         "quantity": 2,
         "unit_price": 321254,
         "tax_rate": 8,
-        "total_price": 642509,
+        "total_price": 594916,
         "import_cost": 321254.5
       },
       {
@@ -2750,7 +2750,7 @@
         "quantity": 2,
         "unit_price": 350460,
         "tax_rate": 8,
-        "total_price": 700920,
+        "total_price": 649000,
         "import_cost": 350460
       },
       {
@@ -2760,7 +2760,7 @@
         "quantity": 100,
         "unit_price": 15601,
         "tax_rate": 8,
-        "total_price": 1560060,
+        "total_price": 1444500,
         "import_cost": 15600.6
       },
       {
@@ -2770,7 +2770,7 @@
         "quantity": 100,
         "unit_price": 8802,
         "tax_rate": 8,
-        "total_price": 880200,
+        "total_price": 815000,
         "import_cost": 8802
       },
       {
@@ -2780,7 +2780,7 @@
         "quantity": 50,
         "unit_price": 25904,
         "tax_rate": 8,
-        "total_price": 1295190,
+        "total_price": 1199250,
         "import_cost": 25903.8
       }
     ]
@@ -2793,7 +2793,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 3",
     "warehouse_name": "Kho mặc định",
     "total_amount": 222048,
-    "created_at": "2026-08-15T03:03:56.006Z",
+    "created_at": "2026-08-15T04:08:40.134Z",
     "items": [
       {
         "product_sku": "NPA0420",
@@ -2802,7 +2802,7 @@
         "quantity": 100,
         "unit_price": 2220,
         "tax_rate": 8,
-        "total_price": 222048,
+        "total_price": 205600,
         "import_cost": 2220.48
       }
     ]
@@ -2815,7 +2815,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC THANHTHANGMEKONG - Số HĐ: 00000855 ngày 28/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 9785060,
-    "created_at": "2026-08-15T03:03:56.036Z",
+    "created_at": "2026-08-15T04:08:40.152Z",
     "items": [
       {
         "product_sku": "DUIDENNHUAKNT",
@@ -2824,7 +2824,7 @@
         "quantity": 200,
         "unit_price": 7225,
         "tax_rate": 8,
-        "total_price": 1445037,
+        "total_price": 1338000,
         "import_cost": 7225.185
       },
       {
@@ -2834,7 +2834,7 @@
         "quantity": 20,
         "unit_price": 99000,
         "tax_rate": 8,
-        "total_price": 1980007,
+        "total_price": 1833340,
         "import_cost": 99000.35
       },
       {
@@ -2844,7 +2844,7 @@
         "quantity": 20,
         "unit_price": 99000,
         "tax_rate": 8,
-        "total_price": 1980007,
+        "total_price": 1833340,
         "import_cost": 99000.35
       },
       {
@@ -2854,7 +2854,7 @@
         "quantity": 20,
         "unit_price": 99000,
         "tax_rate": 8,
-        "total_price": 1980007,
+        "total_price": 1833340,
         "import_cost": 99000.35
       },
       {
@@ -2864,7 +2864,7 @@
         "quantity": 8,
         "unit_price": 300000,
         "tax_rate": 8,
-        "total_price": 2400002,
+        "total_price": 2222224,
         "import_cost": 300000.25
       }
     ]
@@ -2877,7 +2877,7 @@
     "note": "Nhập kho tháng 06/2026 Lần 13",
     "warehouse_name": "Kho mặc định",
     "total_amount": 89770566,
-    "created_at": "2026-08-15T03:03:56.068Z",
+    "created_at": "2026-08-15T04:08:40.170Z",
     "items": [
       {
         "product_sku": "MK-107Đ",
@@ -2886,7 +2886,7 @@
         "quantity": 1000,
         "unit_price": 3240,
         "tax_rate": 8,
-        "total_price": 3240000,
+        "total_price": 3000000,
         "import_cost": 3240
       },
       {
@@ -2896,7 +2896,7 @@
         "quantity": 1000,
         "unit_price": 2808,
         "tax_rate": 8,
-        "total_price": 2808000,
+        "total_price": 2600000,
         "import_cost": 2808
       },
       {
@@ -2906,7 +2906,7 @@
         "quantity": 30,
         "unit_price": 14832,
         "tax_rate": 8,
-        "total_price": 444962,
+        "total_price": 412002,
         "import_cost": 14832.066666666668
       },
       {
@@ -2916,7 +2916,7 @@
         "quantity": 30,
         "unit_price": 13392,
         "tax_rate": 8,
-        "total_price": 401760,
+        "total_price": 372000,
         "import_cost": 13392
       },
       {
@@ -2926,7 +2926,7 @@
         "quantity": 10,
         "unit_price": 17856,
         "tax_rate": 8,
-        "total_price": 178560,
+        "total_price": 165333,
         "import_cost": 17856
       },
       {
@@ -2936,7 +2936,7 @@
         "quantity": 30,
         "unit_price": 11880,
         "tax_rate": 8,
-        "total_price": 356400,
+        "total_price": 330000,
         "import_cost": 11880
       },
       {
@@ -2946,7 +2946,7 @@
         "quantity": 30,
         "unit_price": 8640,
         "tax_rate": 8,
-        "total_price": 259200,
+        "total_price": 240000,
         "import_cost": 8640
       },
       {
@@ -2956,7 +2956,7 @@
         "quantity": 10,
         "unit_price": 116760,
         "tax_rate": 8,
-        "total_price": 1167600,
+        "total_price": 1081111,
         "import_cost": 116760
       },
       {
@@ -2966,7 +2966,7 @@
         "quantity": 10,
         "unit_price": 116760,
         "tax_rate": 8,
-        "total_price": 1167600,
+        "total_price": 1081111,
         "import_cost": 116760
       },
       {
@@ -2976,7 +2976,7 @@
         "quantity": 10,
         "unit_price": 116760,
         "tax_rate": 8,
-        "total_price": 1167600,
+        "total_price": 1081111,
         "import_cost": 116760
       },
       {
@@ -2986,7 +2986,7 @@
         "quantity": 3,
         "unit_price": 189000,
         "tax_rate": 8,
-        "total_price": 567000,
+        "total_price": 525000,
         "import_cost": 189000
       },
       {
@@ -2996,7 +2996,7 @@
         "quantity": 3,
         "unit_price": 189000,
         "tax_rate": 8,
-        "total_price": 567000,
+        "total_price": 525000,
         "import_cost": 189000
       },
       {
@@ -3006,7 +3006,7 @@
         "quantity": 60,
         "unit_price": 102000,
         "tax_rate": 8,
-        "total_price": 6119999,
+        "total_price": 5666666,
         "import_cost": 101999.98333333334
       },
       {
@@ -3016,7 +3016,7 @@
         "quantity": 60,
         "unit_price": 123000,
         "tax_rate": 8,
-        "total_price": 7380000,
+        "total_price": 6833333,
         "import_cost": 123000
       },
       {
@@ -3026,7 +3026,7 @@
         "quantity": 11,
         "unit_price": 71273,
         "tax_rate": 8,
-        "total_price": 784000,
+        "total_price": 725926,
         "import_cost": 71272.72727272728
       },
       {
@@ -3036,7 +3036,7 @@
         "quantity": 11,
         "unit_price": 78545,
         "tax_rate": 8,
-        "total_price": 864000,
+        "total_price": 800000,
         "import_cost": 78545.45454545454
       },
       {
@@ -3046,7 +3046,7 @@
         "quantity": 22,
         "unit_price": 85818,
         "tax_rate": 8,
-        "total_price": 1888000,
+        "total_price": 1748148,
         "import_cost": 85818.18181818182
       },
       {
@@ -3056,7 +3056,7 @@
         "quantity": 11,
         "unit_price": 71273,
         "tax_rate": 8,
-        "total_price": 784000,
+        "total_price": 725926,
         "import_cost": 71272.72727272728
       },
       {
@@ -3066,7 +3066,7 @@
         "quantity": 10,
         "unit_price": 30200,
         "tax_rate": 8,
-        "total_price": 302000,
+        "total_price": 279630,
         "import_cost": 30200
       },
       {
@@ -3076,7 +3076,7 @@
         "quantity": 10,
         "unit_price": 35800,
         "tax_rate": 8,
-        "total_price": 358000,
+        "total_price": 331481,
         "import_cost": 35800
       },
       {
@@ -3086,7 +3086,7 @@
         "quantity": 10,
         "unit_price": 76400,
         "tax_rate": 8,
-        "total_price": 764000,
+        "total_price": 707407,
         "import_cost": 76400
       },
       {
@@ -3096,7 +3096,7 @@
         "quantity": 2,
         "unit_price": 492600,
         "tax_rate": 8,
-        "total_price": 985200,
+        "total_price": 912222,
         "import_cost": 492600
       },
       {
@@ -3106,7 +3106,7 @@
         "quantity": 200,
         "unit_price": 25200,
         "tax_rate": 8,
-        "total_price": 5039999,
+        "total_price": 4666666,
         "import_cost": 25199.995
       },
       {
@@ -3116,7 +3116,7 @@
         "quantity": 200,
         "unit_price": 34000,
         "tax_rate": 8,
-        "total_price": 6800000,
+        "total_price": 6296296,
         "import_cost": 34000
       },
       {
@@ -3126,7 +3126,7 @@
         "quantity": 120,
         "unit_price": 47000,
         "tax_rate": 8,
-        "total_price": 5639999,
+        "total_price": 5222221,
         "import_cost": 46999.99166666667
       },
       {
@@ -3136,7 +3136,7 @@
         "quantity": 120,
         "unit_price": 56400,
         "tax_rate": 8,
-        "total_price": 6767999,
+        "total_price": 6266666,
         "import_cost": 56399.99166666667
       },
       {
@@ -3146,7 +3146,7 @@
         "quantity": 120,
         "unit_price": 69600,
         "tax_rate": 8,
-        "total_price": 8352000,
+        "total_price": 7733333,
         "import_cost": 69600
       },
       {
@@ -3156,7 +3156,7 @@
         "quantity": 5,
         "unit_price": 24500,
         "tax_rate": 8,
-        "total_price": 122500,
+        "total_price": 113426,
         "import_cost": 24500
       },
       {
@@ -3166,7 +3166,7 @@
         "quantity": 5,
         "unit_price": 269500,
         "tax_rate": 8,
-        "total_price": 1347500,
+        "total_price": 1247685,
         "import_cost": 269500
       },
       {
@@ -3176,7 +3176,7 @@
         "quantity": 20,
         "unit_price": 12500,
         "tax_rate": 8,
-        "total_price": 250000,
+        "total_price": 231481,
         "import_cost": 12500
       },
       {
@@ -3186,7 +3186,7 @@
         "quantity": 200,
         "unit_price": 59000,
         "tax_rate": 8,
-        "total_price": 11799998,
+        "total_price": 10925924,
         "import_cost": 58999.99
       },
       {
@@ -3196,7 +3196,7 @@
         "quantity": 150,
         "unit_price": 73971,
         "tax_rate": 8,
-        "total_price": 11095690,
+        "total_price": 10273787,
         "import_cost": 73971.26666666666
       }
     ]
@@ -3209,7 +3209,7 @@
     "note": "Nhập kho tháng 04/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 4880736,
-    "created_at": "2026-08-15T03:03:56.101Z",
+    "created_at": "2026-08-15T04:08:40.185Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-4.0",
@@ -3218,7 +3218,7 @@
         "quantity": 100,
         "unit_price": 18325,
         "tax_rate": 8,
-        "total_price": 1832544,
+        "total_price": 1696800,
         "import_cost": 18325.44
       },
       {
@@ -3228,7 +3228,7 @@
         "quantity": 400,
         "unit_price": 7620,
         "tax_rate": 8,
-        "total_price": 3048192,
+        "total_price": 2822400,
         "import_cost": 7620.48
       }
     ]
@@ -3241,7 +3241,7 @@
     "note": "Nhập kho tháng 05/2026 Lần 17",
     "warehouse_name": "Kho mặc định",
     "total_amount": 708029,
-    "created_at": "2026-08-15T03:03:56.120Z",
+    "created_at": "2026-08-15T04:08:40.208Z",
     "items": [
       {
         "product_sku": "TP-Rga",
@@ -3250,7 +3250,7 @@
         "quantity": 2,
         "unit_price": 80911,
         "tax_rate": 8,
-        "total_price": 161821,
+        "total_price": 149834,
         "import_cost": 80910.5
       },
       {
@@ -3260,7 +3260,7 @@
         "quantity": 2,
         "unit_price": 137111,
         "tax_rate": 8,
-        "total_price": 274221,
+        "total_price": 253908,
         "import_cost": 137110.5
       },
       {
@@ -3270,7 +3270,7 @@
         "quantity": 20,
         "unit_price": 13599,
         "tax_rate": 8,
-        "total_price": 271987,
+        "total_price": 251840,
         "import_cost": 13599.35
       }
     ]
@@ -3283,7 +3283,7 @@
     "note": "Nhập kho tháng 06/2026 Lần 11",
     "warehouse_name": "Kho mặc định",
     "total_amount": 247137,
-    "created_at": "2026-08-15T03:03:56.150Z",
+    "created_at": "2026-08-15T04:08:40.230Z",
     "items": [
       {
         "product_sku": "NA101TM",
@@ -3292,7 +3292,7 @@
         "quantity": 30,
         "unit_price": 3531,
         "tax_rate": 8,
-        "total_price": 105916,
+        "total_price": 98070,
         "import_cost": 3530.5333333333333
       },
       {
@@ -3302,7 +3302,7 @@
         "quantity": 20,
         "unit_price": 7061,
         "tax_rate": 8,
-        "total_price": 141221,
+        "total_price": 130760,
         "import_cost": 7061.05
       }
     ]
@@ -3315,7 +3315,7 @@
     "note": "Nhập kho tháng 03/2026 Lần 1",
     "warehouse_name": "Kho mặc định",
     "total_amount": 914949,
-    "created_at": "2026-08-15T03:03:56.179Z",
+    "created_at": "2026-08-15T04:08:40.264Z",
     "items": [
       {
         "product_sku": "ONGCUNG3PHAN",
@@ -3324,7 +3324,7 @@
         "quantity": 50,
         "unit_price": 10369,
         "tax_rate": 8,
-        "total_price": 518454,
+        "total_price": 480050,
         "import_cost": 10369.08
       },
       {
@@ -3334,7 +3334,7 @@
         "quantity": 25,
         "unit_price": 15860,
         "tax_rate": 8,
-        "total_price": 396495,
+        "total_price": 367125,
         "import_cost": 15859.8
       }
     ]
@@ -3347,7 +3347,7 @@
     "note": "Nhập kho hàng hóa hóa đơn của NCC NCCHUYNHGIA - Số HĐ: 00027514 ngày 09/07/2026",
     "warehouse_name": "Kho mặc định",
     "total_amount": 2711880,
-    "created_at": "2026-08-15T03:03:56.225Z",
+    "created_at": "2026-08-15T04:08:40.287Z",
     "items": [
       {
         "product_sku": "DIENCUONVSC-6.0",
@@ -3356,7 +3356,7 @@
         "quantity": 100,
         "unit_price": 27119,
         "tax_rate": 8,
-        "total_price": 2711880,
+        "total_price": 2511000,
         "import_cost": 27118.8
       }
     ]
@@ -3369,7 +3369,7 @@
     "note": "Nhập kho tháng 06/2026 Lần 10",
     "warehouse_name": "Kho mặc định",
     "total_amount": 549623,
-    "created_at": "2026-08-15T03:03:56.239Z",
+    "created_at": "2026-08-15T04:08:40.307Z",
     "items": [
       {
         "product_sku": "BS1114TV",
@@ -3378,7 +3378,7 @@
         "quantity": 10,
         "unit_price": 54962,
         "tax_rate": 8,
-        "total_price": 549623,
+        "total_price": 508910,
         "import_cost": 54962.3
       }
     ]

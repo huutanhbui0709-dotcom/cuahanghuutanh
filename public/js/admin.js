@@ -965,13 +965,13 @@ async function printOrderInvoice(id) {
   // Hàng hóa
   const itemRows = (o.items || []).map((item, idx) => `
     <tr>
-      <td style="text-align:center;border:1px solid #000;padding:6px 5px">${idx + 1}</td>
-      <td style="border:1px solid #000;padding:6px 8px">${item.ten || ''}</td>
-      <td style="text-align:center;border:1px solid #000;padding:6px 5px">${item.qty}</td>
-      <td style="text-align:center;border:1px solid #000;padding:6px 5px">${item.donvi || 'Cái'}</td>
-      <td style="text-align:right;border:1px solid #000;padding:6px 5px">${item.gia ? item.gia.toLocaleString('vi-VN') : 'Liên hệ'}</td>
-      <td style="text-align:right;font-weight:700;border:1px solid #000;padding:6px 5px">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') : 'Liên hệ'}</td>
-      <td style="border:1px solid #000;padding:6px 8px;font-size:10px">${item.note || ''}</td>
+      <td style="text-align:center;border:1px solid #000;padding:4px 3px">${idx + 1}</td>
+      <td style="border:1px solid #000;padding:4px 5px">${item.ten || ''}</td>
+      <td style="text-align:center;border:1px solid #000;padding:4px 3px">${item.qty}</td>
+      <td style="text-align:center;border:1px solid #000;padding:4px 3px">${item.donvi || 'Cái'}</td>
+      <td style="text-align:right;border:1px solid #000;padding:4px 4px">${item.gia ? item.gia.toLocaleString('vi-VN') : 'Liên hệ'}</td>
+      <td style="text-align:right;font-weight:700;border:1px solid #000;padding:4px 4px">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') : 'Liên hệ'}</td>
+      <td style="border:1px solid #000;padding:4px 5px;font-size:11px">${item.note || ''}</td>
     </tr>`).join('');
 
   // Địa chỉ + tọa độ
@@ -988,159 +988,209 @@ async function printOrderInvoice(id) {
   <meta charset="UTF-8">
   <title>Hóa Đơn Bán Hàng - ${o.id}</title>
   <style>
-    @page { size: A5 portrait; margin: 10mm 12mm; }
+    @page { size: auto; margin: 6mm 8mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .info-box, .summary-box, .sig, .footer, tr {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
     body {
-      font-family: Arial, 'Helvetica Neue', sans-serif;
-      font-size: 9.5px; color: #000; background: #fff; line-height: 1.5;
+      font-family: Arial, Helvetica, sans-serif, system-ui;
+      font-size: 13px; color: #000000; background: #ffffff; line-height: 1.25;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .invoice-container {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 12mm);
+    }
+
+    @media print {
+      html, body {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+      }
+      .invoice-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 12mm);
+      }
+      table {
+        width: 100% !important;
+      }
     }
 
     /* ── HEADER ── */
-    .hdr { text-align: center; padding: 0 0 7px; }
-    .hdr h1 { font-size: 18px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
-    .hdr .sub { font-size: 9.5px; margin-top: 2px; }
-    .dash { border: none; border-top: 2px dashed #000; margin: 7px 0; }
+    .hdr { text-align: center; padding: 0 0 6px; }
+    .hdr h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .hdr .sub { font-size: 13px; margin-top: 1px; }
+    .dash { border: none; border-top: 1.5px dashed #000000; margin: 8px 0; }
 
     /* ── INVOICE TITLE ── */
-    .inv-title { text-align: center; margin: 8px 0 4px; }
-    .inv-title h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
-    .inv-title .print-date { font-size: 9.5px; margin-top: 3px; }
+    .inv-title { text-align: center; margin: 12px 0 8px; }
+    .inv-title h2 { font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+    .inv-title .print-date { font-size: 12px; margin-top: 2px; }
 
-    /* ── INFO BOX ── */
-    .info-box { border: 1.5px solid #000; padding: 7px 10px; margin: 7px 0; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; }
-    .info-cell { display: flex; gap: 5px; align-items: baseline; flex-wrap: wrap; }
+     /* ── INFO BOX ── */
+    .info-box { border: 1.5px solid #000000; padding: 5px 8px; margin: 10px 0 12px; width: 100%; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+    .info-cell { display: flex; gap: 4px; align-items: baseline; flex-wrap: wrap; }
+    .info-cell.right-align { justify-content: flex-end; text-align: right; }
     .info-lbl { white-space: nowrap; }
     .info-val { font-weight: 700; }
-    .addr-block { margin-top: 6px; }
-    .addr-block .info-lbl { display: block; margin-bottom: 2px; }
+    .addr-block { margin-top: 4px; }
+    .addr-block .info-lbl { display: block; margin-bottom: 1px; }
 
     /* ── TABLE ── */
-    table { width: 100%; border-collapse: collapse; font-size: 9px; margin: 8px 0 0; }
+    table { width: 100% !important; table-layout: fixed; border-collapse: collapse; font-size: 12.5px; margin: 12px 0 0; }
     thead th {
-      border: 1.5px solid #000; padding: 5px 4px;
-      text-align: center; font-weight: 700; font-size: 9px;
+      border: 1.5px solid #000000; padding: 4px 3px;
+      text-align: center; font-weight: 700; font-size: 12.5px;
       text-transform: uppercase;
+      white-space: nowrap;
     }
-    tbody td { border: 1px solid #000; padding: 5px 4px; vertical-align: middle; }
+    tbody td { border: 1px solid #000000; padding: 4px 3px; vertical-align: middle; word-wrap: break-word; word-break: break-word; white-space: normal; }
 
     /* ── SUMMARY BOX ── */
-    .summary-box { border: 1.5px solid #000; padding: 7px 10px; margin-top: 8px; }
+    .summary-box { border: 1.5px solid #000000; padding: 5px 8px; margin-top: 14px; width: 100%; }
     .summary-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 4px 0; font-size: 9.5px;
+      padding: 3px 0; font-size: 12.5px;
     }
-    .summary-row + .summary-row { border-top: 1px solid #000; }
+    .summary-row + .summary-row { border-top: 1px solid #000000; }
     .summary-total {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 0; border-top: 1.5px solid #000; margin-top: 2px;
-      font-size: 11px; font-weight: 900; text-transform: uppercase;
+      padding: 5px 0; border-top: 1.5px solid #000000; margin-top: 1px;
+      font-size: 15px; font-weight: 700; text-transform: uppercase;
     }
 
     /* ── SIGNATURE ── */
-    .sig { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 18px; gap: 14px; }
-    .sig-col strong { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
-    .sig-col .sub-label { font-size: 8.5px; font-style: italic; }
-    .sig-space { height: 52px; }
+    .sig { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 20px; gap: 10px; width: 100%; }
+    .sig-col strong { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+    .sig-col .sub-label { font-size: 11px; font-style: italic; }
+    .sig-space { height: 40px; }
 
     /* ── FOOTER ── */
-    .footer { margin-top: 16px; text-align: center; }
-    .footer p.thanks { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin: 6px 0 4px; }
-    .footer p.note { font-size: 9px; }
+    .footer { margin-top: auto; padding-top: 10px; text-align: center; width: 100%; }
+    .footer p.thanks { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin: 4px 0 2px; }
+    .footer p.note { font-size: 11px; }
 
     @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; background: #fff !important; }
-      * { color: #000 !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000000 !important; background: #ffffff !important; }
+      * { color: #000000 !important; }
     }
   </style>
 </head>
 <body>
-
-  <!-- HEADER -->
-  <div class="hdr">
-    <h1>${shopName}</h1>
-    <div class="sub">${shopPhone ? `ĐT: ${shopPhone}` : ''}</div>
-    ${shopAddress ? `<div class="sub">Địa chỉ: ${shopAddress}</div>` : ''}
-  </div>
-  <hr class="dash">
-
-  <!-- INVOICE TITLE -->
-  <div class="inv-title">
-    <h2>Hóa Đơn Bán Hàng</h2>
-    <div class="print-date">Ngày in: ${printDateTime}</div>
-  </div>
-
-  <!-- ORDER INFO BOX -->
-  <div class="info-box">
-    <div class="info-grid">
-      <div class="info-cell"><span class="info-lbl">Mã đơn hàng:</span><span class="info-val">${o.id}</span></div>
-      <div class="info-cell"><span class="info-lbl">Ngày đặt:</span><span class="info-val">${o.createdAt || '—'}</span></div>
-      <div class="info-cell"><span class="info-lbl">Khách hàng:</span><span class="info-val">${o.customer || 'Khách lẻ'}</span></div>
-      <div class="info-cell"><span class="info-lbl">Số điện thoại:</span><span class="info-val">${o.phone || '—'}</span></div>
+  <div class="invoice-container">
+    <!-- HEADER -->
+    <div class="hdr">
+      <h1>${shopName}</h1>
+      <div class="sub">${shopPhone ? `ĐT: ${shopPhone}` : ''}</div>
+      ${shopAddress ? `<div class="sub">Địa chỉ: ${shopAddress}</div>` : ''}
     </div>
-    ${addrParts.length ? `
-    <div class="addr-block">
-      <span class="info-lbl">Địa chỉ giao hàng:</span>
-      <div style="margin-top:3px;font-size:11px;line-height:1.6">${addrParts.join('<br>')}</div>
-    </div>` : ''}
-    ${o.note ? `<div class="addr-block"><span class="info-lbl">Ghi chú đơn hàng:</span><div style="margin-top:3px;font-weight:600">${o.note}</div></div>` : ''}
-  </div>
-
-  <!-- PRODUCT TABLE -->
-  <table>
-    <thead>
-      <tr>
-        <th style="width:32px">STT</th>
-        <th style="text-align:left;padding-left:8px">Tên sản phẩm</th>
-        <th style="width:36px">SL</th>
-        <th style="width:46px">ĐVT</th>
-        <th style="width:80px;text-align:right;padding-right:6px">Đơn giá</th>
-        <th style="width:88px;text-align:right;padding-right:6px">Thành tiền</th>
-        <th style="width:90px;text-align:left;padding-left:8px">Ghi chú</th>
-      </tr>
-    </thead>
-    <tbody>${itemRows}</tbody>
-  </table>
-
-  <!-- FINANCIAL SUMMARY BOX -->
-  <div class="summary-box">
-    <div class="summary-row">
-      <span>Tổng tiền hàng:</span>
-      <strong>${subtotal.toLocaleString('vi-VN')}</strong>
-    </div>
-    <div class="summary-row">
-      <span>Giảm giá:</span>
-      <strong>${discount.toLocaleString('vi-VN')}</strong>
-    </div>
-    <div class="summary-row">
-      <span>Phí vận chuyển:</span>
-      <strong>${shipping.toLocaleString('vi-VN')}</strong>
-    </div>
-    <div class="summary-total">
-      <span>Tổng cộng:</span>
-      <span>${grandTotal.toLocaleString('vi-VN')} đ</span>
-    </div>
-  </div>
-
-  <!-- SIGNATURE SECTION -->
-  <div class="sig">
-    <div class="sig-col">
-      <strong>Người mua hàng</strong>
-      <span class="sub-label">(Ký, ghi rõ họ tên)</span>
-      <div class="sig-space"></div>
-    </div>
-    <div class="sig-col">
-      <strong>Người bán hàng</strong>
-      <span class="sub-label">(Ký, ghi rõ họ tên)</span>
-      <div class="sig-space"></div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
     <hr class="dash">
-    <p class="thanks">Cảm ơn quý khách đã tin tưởng và mua hàng!</p>
-    <p class="note">Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong> kể từ ngày mua.</p>
+
+    <!-- INVOICE TITLE -->
+    <div class="inv-title">
+      <h2>Hóa Đơn Bán Hàng</h2>
+      <div class="print-date">Ngày in: ${printDateTime}</div>
+    </div>
+
+    <!-- ORDER INFO BOX -->
+    <div class="info-box">
+      <div class="info-grid">
+        <div class="info-cell"><span class="info-lbl">Mã đơn hàng:</span><span class="info-val">${o.id}</span></div>
+        <div class="info-cell right-align"><span class="info-lbl">Ngày đặt:</span><span class="info-val">${o.createdAt || '—'}</span></div>
+        <div class="info-cell"><span class="info-lbl">Khách hàng:</span><span class="info-val">${o.customer || 'Khách lẻ'}</span></div>
+        <div class="info-cell right-align"><span class="info-lbl">Số điện thoại:</span><span class="info-val">${o.phone || '—'}</span></div>
+      </div>
+      ${addrParts.length ? `
+      <div class="addr-block">
+        <span class="info-lbl">Địa chỉ giao hàng:</span>
+        <div style="margin-top:2px;font-size:12.5px;line-height:1.4">${addrParts.join('<br>')}</div>
+      </div>` : ''}
+      ${o.note ? `<div class="addr-block"><span class="info-lbl">Ghi chú đơn hàng:</span><div style="margin-top:2px;font-weight:600">${o.note}</div></div>` : ''}
+    </div>
+
+    <!-- PRODUCT TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th style="width:35px">STT</th>
+          <th style="text-align:left;padding-left:5px">Tên sản phẩm</th>
+          <th style="width:32px">SL</th>
+          <th style="width:42px">ĐVT</th>
+          <th style="width:85px;text-align:right;padding-right:4px">Đơn giá</th>
+          <th style="width:105px;text-align:right;padding-right:4px">Thành tiền</th>
+          <th style="width:90px;text-align:left;padding-left:5px">Ghi chú</th>
+        </tr>
+      </thead>
+      <tbody>${itemRows}</tbody>
+    </table>
+
+    <!-- FINANCIAL SUMMARY BOX -->
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Tổng tiền hàng:</span>
+        <strong>${subtotal.toLocaleString('vi-VN')}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Giảm giá:</span>
+        <strong>${discount.toLocaleString('vi-VN')}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Phí vận chuyển:</span>
+        <strong>${shipping.toLocaleString('vi-VN')}</strong>
+      </div>
+      <div class="summary-total">
+        <span>Tổng cộng:</span>
+        <span>${grandTotal.toLocaleString('vi-VN')} đ</span>
+      </div>
+    </div>
+
+    <!-- SIGNATURE SECTION -->
+    <div class="sig">
+      <div class="sig-col">
+        <strong>Người mua hàng</strong>
+        <span class="sub-label">(Ký, ghi rõ họ tên)</span>
+        <div class="sig-space"></div>
+      </div>
+      <div class="sig-col">
+        <strong>Người bán hàng</strong>
+        <span class="sub-label">(Ký, ghi rõ họ tên)</span>
+        <div class="sig-space"></div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <hr class="dash">
+      <p class="thanks">Cảm ơn quý khách đã tin tưởng và mua hàng!</p>
+      <p class="note">Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong> kể từ ngày mua.</p>
+    </div>
   </div>
 
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
