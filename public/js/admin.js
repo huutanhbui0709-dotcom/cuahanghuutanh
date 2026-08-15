@@ -934,7 +934,7 @@ function viewOrderDetail(id) {
 }
 
 // ==============================
-// IN HÓA ĐƠN BÁN HÀNG (A5)
+// IN HÓA ĐƠN BÁN HÀNG (A4)
 // ==============================
 async function printOrderInvoice(id) {
   const o = orders.find(x => x.id === id);
@@ -942,142 +942,211 @@ async function printOrderInvoice(id) {
 
   // Lấy thông tin cửa hàng từ settings
   let shopName = 'CỬA HÀNG HỮU TÁNH';
-  let shopPhone = '';
-  let shopAddress = '';
+  let shopPhone = '0945 592 209';
+  let shopAddress = 'Thị trấn Thốt Nốt, Quận Thốt Nốt, Thành phố Cần Thơ';
   try {
     const res = await fetch('/api/settings');
     const s = await res.json();
+    if (s.shopName) shopName = s.shopName;
     if (s.phone) shopPhone = s.phone;
     if (s.address) shopAddress = s.address;
   } catch (_) { }
 
   // Định dạng ngày in hóa đơn
   const now = new Date();
-  const printDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-  const printTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const printDateTime = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
 
-  const itemRows = o.items.map((item, idx) => `
+  // Tính tổng tiền hàng (trước giảm giá)
+  const subtotal = (o.items || []).reduce((s, item) => s + (item.gia || 0) * (item.qty || 0), 0);
+  const discount = Number(o.discount || 0);
+  const shipping = Number(o.shippingFee || o.shipping || 0);
+  const grandTotal = Number(o.total || (subtotal - discount + shipping));
+
+  // Hàng hóa
+  const itemRows = (o.items || []).map((item, idx) => `
     <tr>
-      <td style="text-align:center;border:1px solid #ccc;padding:5px 4px">${idx + 1}</td>
-      <td style="border:1px solid #ccc;padding:5px 4px;font-weight:500">${item.ten || ''}</td>
-      <td style="border:1px solid #ccc;padding:5px 4px;font-style:italic;color:#444;font-size:9px">${item.note || ''}</td>
-      <td style="text-align:center;border:1px solid #ccc;padding:5px 4px">${item.qty}</td>
-      <td style="text-align:center;border:1px solid #ccc;padding:5px 4px">${item.donvi || ''}</td>
-      <td style="text-align:right;border:1px solid #ccc;padding:5px 4px">${item.gia ? item.gia.toLocaleString('vi-VN') : 'Liên hệ'}</td>
-      <td style="text-align:right;font-weight:700;border:1px solid #ccc;padding:5px 4px">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') : 'Liên hệ'}</td>
+      <td style="text-align:center;border:1px solid #000;padding:6px 5px">${idx + 1}</td>
+      <td style="border:1px solid #000;padding:6px 8px">${item.ten || ''}</td>
+      <td style="text-align:center;border:1px solid #000;padding:6px 5px">${item.qty}</td>
+      <td style="text-align:center;border:1px solid #000;padding:6px 5px">${item.donvi || 'Cái'}</td>
+      <td style="text-align:right;border:1px solid #000;padding:6px 5px">${item.gia ? item.gia.toLocaleString('vi-VN') : 'Liên hệ'}</td>
+      <td style="text-align:right;font-weight:700;border:1px solid #000;padding:6px 5px">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') : 'Liên hệ'}</td>
+      <td style="border:1px solid #000;padding:6px 8px;font-size:10px">${item.note || ''}</td>
     </tr>`).join('');
+
+  // Địa chỉ + tọa độ
+  const addrParts = [];
+  if (o.address) addrParts.push(`<strong>${o.address}</strong>`);
+  if (o.coordinates || o.coords || o.lat) {
+    const coords = o.coordinates || o.coords || `${o.lat}, ${o.lng}`;
+    addrParts.push(`<span style="font-style:italic">(Tọa độ: ${coords})</span>`);
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title></title>
+  <title>Hóa Đơn Bán Hàng - ${o.id}</title>
   <style>
-    @page { size: A5 portrait; margin: 0; }
+    @page { size: A5 portrait; margin: 10mm 12mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', Arial, 'Helvetica Neue', sans-serif;
-      font-size: 10.5px; color: #000; background: #fff; line-height: 1.6;
-      padding: 12mm 14mm;
+      font-family: Arial, 'Helvetica Neue', sans-serif;
+      font-size: 9.5px; color: #000; background: #fff; line-height: 1.5;
     }
 
-    /* HEADER */
-    .header { text-align: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid #000; }
-    .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-    .header .sub { font-size: 9px; color: #444; margin-top: 3px; }
+    /* ── HEADER ── */
+    .hdr { text-align: center; padding: 0 0 7px; }
+    .hdr h1 { font-size: 18px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
+    .hdr .sub { font-size: 9.5px; margin-top: 2px; }
+    .dash { border: none; border-top: 2px dashed #000; margin: 7px 0; }
 
-    /* TITLE */
-    .inv-title { text-align: center; margin: 8px 0; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0; }
-    .inv-title h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
-    .inv-title .meta { font-size: 9px; color: #555; margin-top: 2px; }
+    /* ── INVOICE TITLE ── */
+    .inv-title { text-align: center; margin: 8px 0 4px; }
+    .inv-title h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
+    .inv-title .print-date { font-size: 9.5px; margin-top: 3px; }
 
-    /* INFO */
-    .info-box { border: 1px solid #999; padding: 7px 10px; margin: 8px 0; font-size: 9.5px; }
-    .info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; }
-    .lbl { color: #555; font-size: 8.5px; }
-    .val { font-weight: 600; }
+    /* ── INFO BOX ── */
+    .info-box { border: 1.5px solid #000; padding: 7px 10px; margin: 7px 0; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; }
+    .info-cell { display: flex; gap: 5px; align-items: baseline; flex-wrap: wrap; }
+    .info-lbl { white-space: nowrap; }
+    .info-val { font-weight: 700; }
+    .addr-block { margin-top: 6px; }
+    .addr-block .info-lbl { display: block; margin-bottom: 2px; }
 
-    /* TABLE */
-    table { width: 100%; border-collapse: collapse; font-size: 9.5px; margin: 8px 0; }
-    thead th { background: #000; color: #fff; padding: 5px 4px; font-weight: 600; font-size: 9px; letter-spacing: .3px; border: 1px solid #000; }
-    tbody tr:nth-child(even) { background: #f5f5f5; }
+    /* ── TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: 9px; margin: 8px 0 0; }
+    thead th {
+      border: 1.5px solid #000; padding: 5px 4px;
+      text-align: center; font-weight: 700; font-size: 9px;
+      text-transform: uppercase;
+    }
+    tbody td { border: 1px solid #000; padding: 5px 4px; vertical-align: middle; }
 
-    /* TOTAL */
-    .total-row td { padding: 6px 4px; font-weight: 800; font-size: 11px; border-top: 2px solid #000; }
+    /* ── SUMMARY BOX ── */
+    .summary-box { border: 1.5px solid #000; padding: 7px 10px; margin-top: 8px; }
+    .summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 0; font-size: 9.5px;
+    }
+    .summary-row + .summary-row { border-top: 1px solid #000; }
+    .summary-total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-top: 1.5px solid #000; margin-top: 2px;
+      font-size: 11px; font-weight: 900; text-transform: uppercase;
+    }
 
-    /* SIGNATURE */
-    .sig { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; text-align: center; font-size: 8.5px; color: #444; }
-    .sig-box { border: 1px dashed #999; padding: 4px 6px 26px; }
-    .sig-box strong { display: block; font-size: 9px; color: #000; margin-bottom: 2px; }
+    /* ── SIGNATURE ── */
+    .sig { display: grid; grid-template-columns: 1fr 1fr; text-align: center; margin-top: 18px; gap: 14px; }
+    .sig-col strong { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+    .sig-col .sub-label { font-size: 8.5px; font-style: italic; }
+    .sig-space { height: 52px; }
 
-    /* FOOTER */
-    .footer { border-top: 1px dashed #999; padding-top: 6px; text-align: center; font-size: 8.5px; color: #555; }
+    /* ── FOOTER ── */
+    .footer { margin-top: 16px; text-align: center; }
+    .footer p.thanks { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin: 6px 0 4px; }
+    .footer p.note { font-size: 9px; }
 
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; background: #fff !important; }
+      * { color: #000 !important; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
+  <!-- HEADER -->
+  <div class="hdr">
     <h1>${shopName}</h1>
-    <div class="sub">
-      ${shopPhone ? `ĐT: ${shopPhone}` : ''}
-      ${shopPhone && shopAddress ? ' &nbsp;|&nbsp; ' : ''}
-      ${shopAddress ? `Địa chỉ: ${shopAddress}` : ''}
-    </div>
+    <div class="sub">${shopPhone ? `ĐT: ${shopPhone}` : ''}</div>
+    ${shopAddress ? `<div class="sub">Địa chỉ: ${shopAddress}</div>` : ''}
   </div>
+  <hr class="dash">
 
+  <!-- INVOICE TITLE -->
   <div class="inv-title">
-    <h2>Hóa đơn bán hàng</h2>
-    <div class="meta">Ngày in: ${printDate} lúc ${printTime}</div>
+    <h2>Hóa Đơn Bán Hàng</h2>
+    <div class="print-date">Ngày in: ${printDateTime}</div>
   </div>
 
+  <!-- ORDER INFO BOX -->
   <div class="info-box">
-    <div class="info-row">
-      <div><div class="lbl">Mã đơn hàng</div><div class="val">${o.id}</div></div>
-      <div><div class="lbl">Ngày đặt</div><div class="val">${o.createdAt || '—'}</div></div>
-      <div><div class="lbl">Khách hàng</div><div class="val">${o.customer || 'Khách lẻ'}</div></div>
-      <div><div class="lbl">Số điện thoại</div><div class="val">${o.phone || '—'}</div></div>
+    <div class="info-grid">
+      <div class="info-cell"><span class="info-lbl">Mã đơn hàng:</span><span class="info-val">${o.id}</span></div>
+      <div class="info-cell"><span class="info-lbl">Ngày đặt:</span><span class="info-val">${o.createdAt || '—'}</span></div>
+      <div class="info-cell"><span class="info-lbl">Khách hàng:</span><span class="info-val">${o.customer || 'Khách lẻ'}</span></div>
+      <div class="info-cell"><span class="info-lbl">Số điện thoại:</span><span class="info-val">${o.phone || '—'}</span></div>
     </div>
-    ${o.address ? `<div style="margin-top:4px"><div class="lbl">Địa chỉ giao hàng</div><div class="val">${o.address}</div></div>` : ''}
-    ${o.note ? `<div style="margin-top:4px"><div class="lbl">Ghi chú</div><div class="val">${o.note}</div></div>` : ''}
+    ${addrParts.length ? `
+    <div class="addr-block">
+      <span class="info-lbl">Địa chỉ giao hàng:</span>
+      <div style="margin-top:3px;font-size:11px;line-height:1.6">${addrParts.join('<br>')}</div>
+    </div>` : ''}
+    ${o.note ? `<div class="addr-block"><span class="info-lbl">Ghi chú đơn hàng:</span><div style="margin-top:3px;font-weight:600">${o.note}</div></div>` : ''}
   </div>
 
+  <!-- PRODUCT TABLE -->
   <table>
     <thead>
       <tr>
-        <th style="width:22px;text-align:center">#</th>
-        <th style="text-align:left">Tên sản phẩm</th>
-        <th style="width:100px;text-align:left">Ghi chú</th>
-        <th style="width:28px;text-align:center">SL</th>
-        <th style="width:34px;text-align:center">ĐVT</th>
-        <th style="width:70px;text-align:right">Đơn giá</th>
-        <th style="width:78px;text-align:right">Thành tiền</th>
+        <th style="width:32px">STT</th>
+        <th style="text-align:left;padding-left:8px">Tên sản phẩm</th>
+        <th style="width:36px">SL</th>
+        <th style="width:46px">ĐVT</th>
+        <th style="width:80px;text-align:right;padding-right:6px">Đơn giá</th>
+        <th style="width:88px;text-align:right;padding-right:6px">Thành tiền</th>
+        <th style="width:90px;text-align:left;padding-left:8px">Ghi chú</th>
       </tr>
     </thead>
     <tbody>${itemRows}</tbody>
-    <tfoot>
-      <tr class="total-row">
-        <td colspan="6" style="text-align:right;padding-right:8px">TỔNG CỘNG:</td>
-        <td style="text-align:right">${(o.total || 0).toLocaleString('vi-VN')} ₫</td>
-      </tr>
-    </tfoot>
   </table>
 
-  <div class="sig">
-    <div class="sig-box"><strong>Người mua hàng</strong>(Ký, ghi rõ họ tên)</div>
-    <div class="sig-box"><strong>Người bán hàng</strong>(Ký, ghi rõ họ tên)</div>
+  <!-- FINANCIAL SUMMARY BOX -->
+  <div class="summary-box">
+    <div class="summary-row">
+      <span>Tổng tiền hàng:</span>
+      <strong>${subtotal.toLocaleString('vi-VN')}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Giảm giá:</span>
+      <strong>${discount.toLocaleString('vi-VN')}</strong>
+    </div>
+    <div class="summary-row">
+      <span>Phí vận chuyển:</span>
+      <strong>${shipping.toLocaleString('vi-VN')}</strong>
+    </div>
+    <div class="summary-total">
+      <span>Tổng cộng:</span>
+      <span>${grandTotal.toLocaleString('vi-VN')} đ</span>
+    </div>
   </div>
 
+  <!-- SIGNATURE SECTION -->
+  <div class="sig">
+    <div class="sig-col">
+      <strong>Người mua hàng</strong>
+      <span class="sub-label">(Ký, ghi rõ họ tên)</span>
+      <div class="sig-space"></div>
+    </div>
+    <div class="sig-col">
+      <strong>Người bán hàng</strong>
+      <span class="sub-label">(Ký, ghi rõ họ tên)</span>
+      <div class="sig-space"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
   <div class="footer">
-    <p>Cảm ơn quý khách đã tin tưởng và mua hàng!</p>
-    <p>Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong> kể từ ngày mua.</p>
+    <hr class="dash">
+    <p class="thanks">Cảm ơn quý khách đã tin tưởng và mua hàng!</p>
+    <p class="note">Vui lòng giữ hóa đơn để đổi/trả hàng trong vòng <strong>7 ngày</strong> kể từ ngày mua.</p>
   </div>
 
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
 </body></html>`;
 
-  const win = window.open('', '_blank', 'width=800,height=1000');
+  const win = window.open('', '_blank', 'width=860,height=1100');
   win.document.write(html);
   win.document.close();
 }
