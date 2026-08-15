@@ -1886,7 +1886,7 @@ app.post('/api/admin/inventory/import-receipt', requireAdmin, uploadExcelFile.si
           quantity,
           unit_price: unitPrice,
           tax_rate: taxRate,
-          total_price: totalAmount,
+          total_price: amount,        // before-tax; tax already reflected in import_cost & receipt.total_amount
           import_cost: importCost,
           system_match: !!existingProduct,
           current_stock: existingProduct ? (existingProduct.stock || 0) : 0,
@@ -2393,9 +2393,7 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
     if (IS_VERCEL) {
       const { rows } = await sql`
         SELECT r.*,
-               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count,
-               COALESCE((SELECT SUM(sri.total_price * (1 + sri.tax_rate / 100.0))
-                         FROM stock_receipt_items sri WHERE sri.receipt_id = r.id), r.total_amount) as computed_total
+               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count
         FROM stock_receipts r
         ORDER BY r.created_at DESC, r.id DESC
       `;
@@ -2406,36 +2404,23 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
         supplier_name: r.supplier_name,
         note: r.note,
         warehouse_name: r.warehouse_name,
-        total_amount: Math.round(Number(r.computed_total || r.total_amount)),
+        total_amount: Math.round(Number(r.total_amount || 0)), // use stored value — correct at save time
         item_count: r.item_count,
         created_at: r.created_at
       }));
       res.json(formatted);
     } else {
-      const formatted = stockReceipts.map(r => {
-        // Tính lại tổng từ items (bao gồm thuế)
-        let computedTotal = 0;
-        if (r.items && r.items.length > 0) {
-          computedTotal = r.items.reduce((s, i) => {
-            const amt = Number(i.total_price || 0);
-            const taxAmt = Math.round(amt * Number(i.tax_rate || 0) / 100);
-            return s + amt + taxAmt;
-          }, 0);
-        } else {
-          computedTotal = r.total_amount || 0;
-        }
-        return {
-          id: r.id,
-          receipt_code: r.receipt_code,
-          import_date: r.import_date,
-          supplier_name: r.supplier_name,
-          note: r.note,
-          warehouse_name: r.warehouse_name,
-          total_amount: computedTotal,
-          item_count: r.items ? r.items.length : 0,
-          created_at: r.created_at
-        };
-      }).reverse();
+      const formatted = [...stockReceipts].reverse().map(r => ({
+        id: r.id,
+        receipt_code: r.receipt_code,
+        import_date: r.import_date,
+        supplier_name: r.supplier_name,
+        note: r.note,
+        warehouse_name: r.warehouse_name,
+        total_amount: Math.round(Number(r.total_amount || 0)), // use stored value — correct at save time
+        item_count: r.items ? r.items.length : 0,
+        created_at: r.created_at
+      }));
       res.json(formatted);
     }
   } catch (err) {
