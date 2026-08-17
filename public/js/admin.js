@@ -460,30 +460,181 @@ function renderAdminTable() {
 }
 
 // ==============================
+// COMBOBOX HANDLERS (SEARCHABLE & CUSTOM-CREATABLE)
+// ==============================
+const COMBO_OPTIONS = {
+  donvi: ["Cái", "Mét", "Bộ", "Hộp", "Kg", "Lon", "Bao", "Chiếc", "Cuộn", "Cặp", "Viên", "Thùng", "Tấm", "Khậc"],
+  loai: ["Hàng hóa thường", "Hàng hóa dịch vụ", "Dụng cụ", "Vật liệu xây dựng", "Thiết bị điện", "Khác"]
+};
+
+function renderComboboxList(type, filterText = '') {
+  const listEl = document.getElementById(`combo_${type}_list`);
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  
+  const options = COMBO_OPTIONS[type];
+  const currentValue = document.getElementById(`pf_${type}`).value;
+  
+  const filtered = options.filter(opt => opt.toLowerCase().includes(filterText.toLowerCase()));
+  
+  if (filtered.length === 0) {
+    const emptyEl = document.createElement('div');
+    emptyEl.style.cssText = "padding: 8px 12px; font-size: 0.875rem; color: #9ca3af; font-style: italic;";
+    emptyEl.textContent = "Không tìm thấy lựa chọn nào";
+    listEl.appendChild(emptyEl);
+    return;
+  }
+  
+  filtered.forEach(opt => {
+    const isSelected = currentValue === opt;
+    const itemEl = document.createElement('div');
+    
+    // Style option list items: Padding px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex justify-between items-center cursor-pointer rounded-lg mx-1
+    itemEl.style.cssText = "padding: 8px 12px; font-size: 0.875rem; color: #374151; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-radius: 8px; margin: 2px 4px; transition: background 0.15s, color 0.15s;";
+    
+    if (isSelected) {
+      // Soft blue background (bg-blue-50/70) + text-blue-600 font-medium
+      itemEl.style.background = "rgba(239, 246, 255, 0.7)"; 
+      itemEl.style.color = "#2563eb"; 
+      itemEl.style.fontWeight = "500";
+    } else {
+      itemEl.onmouseover = () => { itemEl.style.background = "#f9fafb"; };
+      itemEl.onmouseout = () => { itemEl.style.background = "transparent"; };
+    }
+    
+    const textNode = document.createElement('span');
+    textNode.textContent = opt;
+    itemEl.appendChild(textNode);
+    
+    if (isSelected) {
+      const checkEl = document.createElement('span');
+      checkEl.textContent = "✓";
+      checkEl.style.cssText = "font-weight: bold; font-size: 0.85rem; color: #2563eb;";
+      itemEl.appendChild(checkEl);
+    }
+    
+    itemEl.onclick = (e) => {
+      e.stopPropagation();
+      selectComboboxOption(type, opt);
+    };
+    
+    listEl.appendChild(itemEl);
+  });
+}
+
+function showComboboxDropdown(type) {
+  const dropdown = document.getElementById(`combo_${type}_dropdown`);
+  if (dropdown) {
+    dropdown.style.display = 'block';
+    const filterText = document.getElementById(`pf_${type}`).value;
+    renderComboboxList(type, filterText);
+  }
+  
+  // Focus ring styling: focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+  const input = document.getElementById(`pf_${type}`);
+  if (input) {
+    input.style.borderColor = "#3b82f6";
+    input.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.2)";
+  }
+}
+
+function hideComboboxDropdown(type) {
+  const dropdown = document.getElementById(`combo_${type}_dropdown`);
+  if (dropdown) {
+    dropdown.style.display = 'none';
+  }
+  
+  const input = document.getElementById(`pf_${type}`);
+  if (input) {
+    input.style.borderColor = "#d1d5db";
+    input.style.boxShadow = "none";
+  }
+}
+
+function toggleComboboxDropdown(type, event) {
+  if (event) event.stopPropagation();
+  const dropdown = document.getElementById(`combo_${type}_dropdown`);
+  if (dropdown) {
+    if (dropdown.style.display === 'none' || !dropdown.style.display) {
+      document.getElementById(`pf_${type}`).focus();
+    } else {
+      hideComboboxDropdown(type);
+    }
+  }
+}
+
+function filterComboboxOptions(type) {
+  const filterText = document.getElementById(`pf_${type}`).value;
+  renderComboboxList(type, filterText);
+}
+
+function selectComboboxOption(type, value) {
+  const input = document.getElementById(`pf_${type}`);
+  if (input) {
+    input.value = value;
+  }
+  hideComboboxDropdown(type);
+}
+
+function handleComboboxKeydown(event, type) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const value = event.target.value.trim();
+    if (value) {
+      selectComboboxOption(type, value);
+    }
+  }
+}
+
+// Global click handler to close dropdowns when clicking outside
+document.addEventListener('click', (e) => {
+  const comboTypes = ['donvi', 'loai'];
+  comboTypes.forEach(type => {
+    const container = document.getElementById(`combo_${type}_container`);
+    if (container && !container.contains(e.target)) {
+      hideComboboxDropdown(type);
+    }
+  });
+});
+
+// ==============================
 // PRODUCT ADD / EDIT / DELETE
 // ==============================
 function openProductModal(ma) {
   const isEdit = !!ma;
-  document.getElementById('productModalTitle').innerHTML = isEdit
-    ? `<i class="fa-solid fa-pencil"></i> Sửa sản phẩm &nbsp;<code style="font-size:.8rem;background:var(--bg);padding:2px 8px;border-radius:4px;font-weight:600">${ma}</code>`
-    : `<i class="fa-solid fa-plus"></i> Thêm sản phẩm`;
+  const titleEl = document.getElementById('productModalTitle');
+  if (isEdit) {
+    titleEl.innerHTML = `Sửa sản phẩm <span style="background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:6px;margin-left:8px;letter-spacing:.02em">${ma}</span>`;
+  } else {
+    titleEl.textContent = 'Thêm sản phẩm';
+  }
+
   document.getElementById('pf_originalMa').value = ma || '';
   const p = isEdit ? products.find(x => x.ma === ma) : null;
 
-  document.getElementById('pf_ma').value = p ? p.ma : '';
-  document.getElementById('pf_ma').disabled = isEdit; // không cho đổi mã khi sửa
+  const maInput = document.getElementById('pf_ma');
+  maInput.value = p ? p.ma : '';
+  maInput.disabled = isEdit;
+  maInput.style.cursor = isEdit ? 'not-allowed' : '';
+  maInput.style.background = isEdit ? '#f9fafb' : '';
+
   document.getElementById('pf_ten').value = p ? p.ten : '';
   document.getElementById('pf_gia').value = p ? p.gia : '';
-  document.getElementById('pf_donvi').value = p ? (p.donvi || '') : '';
+
+  document.getElementById('pf_donvi').value = p ? (p.donvi || 'Cái') : 'Cái';
   document.getElementById('pf_loai').value = p ? (p.loai || 'Hàng hóa thường') : 'Hàng hóa thường';
+
   document.getElementById('pf_trangthai').value = p ? (p.trangthai || 'Đang theo dõi') : 'Đang theo dõi';
 
+
+
+  // Image preview
   document.getElementById('pf_image').value = '';
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
   if (p && p.image) {
     previewImg.src = getProductImageUrl(p);
-    previewWrap.style.display = 'block';
+    previewWrap.style.display = 'flex';
   } else {
     previewImg.src = '';
     previewWrap.style.display = 'none';
@@ -496,17 +647,22 @@ function previewProductImage(event) {
   const file = event.target.files[0];
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
-
   if (file) {
     const reader = new FileReader();
     reader.onload = function (e) {
       previewImg.src = e.target.result;
-      previewWrap.style.display = 'block';
-    }
+      previewWrap.style.display = 'flex';
+    };
     reader.readAsDataURL(file);
   } else {
     previewWrap.style.display = 'none';
   }
+}
+
+function clearProductImage() {
+  document.getElementById('pf_image').value = '';
+  document.getElementById('pf_image_img').src = '';
+  document.getElementById('pf_image_preview').style.display = 'none';
 }
 
 async function saveProductForm() {
@@ -898,25 +1054,26 @@ function viewOrderDetail(id) {
     })()}</div>
           <div><strong>Khách hàng:</strong> ${o.customer}</div>
           <div><strong>SĐT:</strong> ${o.phone}</div>
-          <div style="grid-column:1/-1"><strong>Địa chỉ:</strong> ${o.address}</div>
-          ${o.note ? `<div style="grid-column:1/-1"><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
+          <div><strong>Địa chỉ:</strong> ${o.address}</div>
           <div><strong>Trạng thái:</strong> <span class="badge ${statusBadge(o.status)}">${o.status}</span></div>
+          ${o.note ? `<div style="grid-column:1/-1"><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Sản phẩm</th><th>Mã SP</th><th>Đơn giá</th><th>SL</th><th>ĐVT</th><th>Thành tiền</th></tr></thead>
+          <thead><tr><th>Sản phẩm</th><th>Mã SP</th><th>Đơn giá</th><th>SL</th><th>ĐVT</th><th>Thành tiền</th><th>Ghi chú SP</th></tr></thead>
           <tbody>${o.items.map(item => `
             <tr>
-              <td>${item.ten}</td>
+              <td style="white-space:normal;word-break:break-word;min-width:200px">${item.ten}</td>
               <td><code style="font-size:.72rem">${item.ma}</code></td>
               <td style="white-space:nowrap">${formatPrice(item.gia)}</td>
               <td style="text-align:center;font-weight:700">${item.qty}</td>
               <td>${item.donvi || '-'}</td>
               <td style="font-weight:700;color:var(--primary);white-space:nowrap">${formatPrice(item.gia * item.qty)}</td>
+              <td style="white-space:normal;word-break:break-word;font-size:.78rem;color:var(--muted);font-style:italic;min-width:150px">${item.note || '—'}</td>
             </tr>`).join('')}
           </tbody>
-          <tfoot><tr><td colspan="5" style="text-align:right;font-weight:700;padding:10px 14px;border-top:2px solid var(--border)">Tổng cộng:</td><td style="font-weight:800;font-size:1.1rem;color:var(--primary);padding:10px 14px;border-top:2px solid var(--border);white-space:nowrap">${formatPrice(o.total)}</td></tr></tfoot>
+          <tfoot><tr><td colspan="6" style="text-align:right;font-weight:700;padding:10px 14px;border-top:2px solid var(--border)">Tổng cộng:</td><td style="font-weight:800;font-size:1.1rem;color:var(--primary);padding:10px 14px;border-top:2px solid var(--border);white-space:nowrap">${formatPrice(o.total)}</td></tr></tfoot>
         </table>
       </div>
       ${o.status === 'Chờ xác nhận' ? `
@@ -927,6 +1084,11 @@ function viewOrderDetail(id) {
       ${o.status === 'Đã xác nhận' ? `
         <div style="display:flex;gap:10px;justify-content:center;padding-top:4px">
           <button class="btn" style="background:#f97316;color:#fff;padding:10px 28px;justify-content:center" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i> In hóa đơn</button>
+          <button class="btn btn-primary" style="padding:10px 20px;justify-content:center" onclick="createOrderFromExisting('${o.id}');closeModal('orderDetailModal')"><i class="fa-solid fa-copy"></i> Tạo đơn mới từ đơn này</button>
+        </div>` : ''}
+      ${o.status === 'Chờ xác nhận' ? `
+        <div style="display:flex;gap:10px;justify-content:center;padding-top:4px;border-top:1px solid var(--border);margin-top:4px">
+          <button class="btn btn-outline" style="padding:8px 16px;justify-content:center;color:var(--text)" onclick="createOrderFromExisting('${o.id}');closeModal('orderDetailModal')"><i class="fa-solid fa-copy"></i> Tạo đơn mới từ đơn này</button>
         </div>` : ''}
     </div>
   `;
@@ -1094,7 +1256,7 @@ async function printOrderInvoice(id) {
 
     /* ── FOOTER ── */
     .footer { margin-top: auto; padding-top: 10px; text-align: center; width: 100%; }
-    .footer p.thanks { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin: 4px 0 2px; }
+    .footer p.thanks { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin: 12px 0 4px; }
     .footer p.note { font-size: 11px; }
 
     @media print {
@@ -1140,12 +1302,12 @@ async function printOrderInvoice(id) {
       <thead>
         <tr>
           <th style="width:35px">STT</th>
-          <th style="text-align:left;padding-left:5px">Tên sản phẩm</th>
+          <th style="text-align:center">Tên sản phẩm</th>
           <th style="width:32px">SL</th>
           <th style="width:42px">ĐVT</th>
-          <th style="width:85px;text-align:right;padding-right:4px">Đơn giá</th>
-          <th style="width:105px;text-align:right;padding-right:4px">Thành tiền</th>
-          <th style="width:90px;text-align:left;padding-left:5px">Ghi chú</th>
+          <th style="width:85px;text-align:center">Đơn giá</th>
+          <th style="width:105px;text-align:center">Thành tiền</th>
+          <th style="width:90px;text-align:center">Ghi chú</th>
         </tr>
       </thead>
       <tbody>${itemRows}</tbody>
@@ -3271,6 +3433,53 @@ function initSidebarState() {
 let manualOrderItems = [];
 let ocCatalogPage = 1;
 const ocCatalogPageSize = 12;
+
+function createOrderFromExisting(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+
+  // Pre-fill customer info from the old order
+  document.getElementById('oc_customer').value = o.customer || '';
+  document.getElementById('oc_phone').value = o.phone || '';
+  document.getElementById('oc_address').value = o.address || '';
+  document.getElementById('oc_note').value = o.note || '';
+  document.getElementById('oc_productSearch').value = '';
+  document.getElementById('oc_shippingFee').value = o.shippingFee || o.shipping || '0';
+  document.getElementById('oc_status').value = 'Đã xác nhận';
+
+  // Pre-fill items from old order, preserving notes
+  manualOrderItems = (o.items || []).map(item => ({
+    ma: item.ma,
+    ten: item.ten,
+    donvi: item.donvi || 'Cái',
+    qty: Number(item.qty) || 1,
+    gia: Number(item.gia) || 0,
+    image: item.image,
+    note: item.note || ''
+  }));
+
+  ocCatalogPage = 1;
+
+  const catSelect = document.getElementById('oc_categoryFilter');
+  if (catSelect) {
+    catSelect.innerHTML = '<option value="">Danh mục</option>';
+    const categories = [...new Set(products.map(p => p.loai).filter(Boolean))];
+    categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      catSelect.appendChild(opt);
+    });
+  }
+
+  const stockSelect = document.getElementById('oc_stockFilter');
+  if (stockSelect) stockSelect.value = '';
+
+  searchProductsForOrderCreation('');
+  renderManualOrderItems();
+
+  document.getElementById('orderCreateModal').classList.add('open');
+}
 
 function showCreateOrderModal() {
   document.getElementById('oc_customer').value = '';
