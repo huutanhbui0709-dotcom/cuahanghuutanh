@@ -1951,67 +1951,124 @@ app.post('/api/admin/inventory/save-receipt', requireAdmin, async (req, res) => 
       return res.status(400).json({ ok: false, message: 'Mã chứng từ không được để trống.' });
     }
 
+    const isEdit = !!receipt.id;
+    const receiptId = isEdit ? parseInt(receipt.id) : 0;
+
     // Kiểm tra trùng Mã chứng từ
     if (IS_VERCEL) {
       const checkResult = await sql`
         SELECT id FROM stock_receipts WHERE LOWER(TRIM(receipt_code)) = LOWER(TRIM(${targetCode})) LIMIT 1
       `;
       if (checkResult.rows.length > 0) {
-        return res.status(400).json({ ok: false, message: `Mã chứng từ "${targetCode}" đã tồn tại trong hệ thống. Không thể lưu trùng.` });
+        if (!isEdit || checkResult.rows[0].id !== receiptId) {
+          return res.status(400).json({ ok: false, message: `Mã chứng từ "${targetCode}" đã tồn tại trong hệ thống. Không thể lưu trùng.` });
+        }
       }
     } else {
-      const exists = stockReceipts.some(r => String(r.receipt_code || '').trim().toLowerCase() === targetCode.toLowerCase());
+      const exists = stockReceipts.some(r => String(r.receipt_code || '').trim().toLowerCase() === targetCode.toLowerCase() && (!isEdit || r.id !== receiptId));
       if (exists) {
         return res.status(400).json({ ok: false, message: `Mã chứng từ "${targetCode}" đã tồn tại trong hệ thống. Không thể lưu trùng.` });
       }
     }
 
-    // 1. Save receipt and items to Database (or local JSON)
-    let receiptId = 0;
+    // 1. Get old items if editing to adjust stocks
+    let oldItems = [];
+    if (isEdit) {
+      if (IS_VERCEL) {
+        const oldItemsRes = await sql`SELECT * FROM stock_receipt_items WHERE receipt_id = ${receiptId}`;
+        oldItems = oldItemsRes.rows.map(item => ({
+          product_sku: item.product_sku,
+          quantity: Number(item.quantity)
+        }));
+      } else {
+        const oldReceipt = stockReceipts.find(r => r.id === receiptId);
+        if (oldReceipt) {
+          oldItems = oldReceipt.items || [];
+        }
+      }
+    }
+
+    // 2. Save/Update receipt and items to Database (or local JSON)
+    let savedReceiptId = receiptId;
     const createdAt = new Date().toISOString();
 
     if (IS_VERCEL) {
-      const receiptResult = await sql`
-        INSERT INTO stock_receipts (receipt_code, import_date, supplier_name, note, warehouse_name, total_amount, created_at)
-        VALUES (${receipt.receipt_code}, ${receipt.import_date}, ${receipt.supplier_name}, ${receipt.note}, ${receipt.warehouse_name}, ${receipt.total_amount}, NOW())
-        RETURNING id
-      `;
-      receiptId = receiptResult.rows[0].id;
+      if (isEdit) {
+        await sql`
+          UPDATE stock_receipts 
+          SET receipt_code = ${receipt.receipt_code}, import_date = ${receipt.import_date}, 
+              supplier_name = ${receipt.supplier_name}, note = ${receipt.note}, 
+              warehouse_name = ${receipt.warehouse_name}, total_amount = ${receipt.total_amount}
+          WHERE id = ${receiptId}
+        `;
+        await sql`DELETE FROM stock_receipt_items WHERE receipt_id = ${receiptId}`;
+      } else {
+        const receiptResult = await sql`
+          INSERT INTO stock_receipts (receipt_code, import_date, supplier_name, note, warehouse_name, total_amount, created_at)
+          VALUES (${receipt.receipt_code}, ${receipt.import_date}, ${receipt.supplier_name}, ${receipt.note}, ${receipt.warehouse_name}, ${receipt.total_amount}, NOW())
+          RETURNING id
+        `;
+        savedReceiptId = receiptResult.rows[0].id;
+      }
 
       for (const item of items) {
         await sql`
           INSERT INTO stock_receipt_items (receipt_id, product_sku, product_name, unit, quantity, unit_price, tax_rate, total_price, import_cost)
-          VALUES (${receiptId}, ${item.product_sku}, ${item.product_name}, ${item.unit}, ${item.quantity}, ${item.unit_price}, ${item.tax_rate}, ${item.total_price}, ${item.import_cost})
+          VALUES (${savedReceiptId}, ${item.product_sku}, ${item.product_name}, ${item.unit}, ${item.quantity}, ${item.unit_price}, ${item.tax_rate}, ${item.total_price}, ${item.import_cost})
         `;
       }
     } else {
-      // Local mode — use max existing ID to avoid duplicates when IDs are non-contiguous
-      receiptId = stockReceipts.length > 0 ? Math.max(...stockReceipts.map(r => r.id || 0)) + 1 : 1;
-      const localReceipt = {
-        id: receiptId,
-        receipt_code: receipt.receipt_code,
-        import_date: receipt.import_date,
-        supplier_name: receipt.supplier_name,
-        note: receipt.note,
-        warehouse_name: receipt.warehouse_name,
-        total_amount: receipt.total_amount,
-        created_at: createdAt,
-        items: items.map(item => ({
-          product_sku: item.product_sku,
-          product_name: item.product_name,
-          unit: item.unit,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          tax_rate: item.tax_rate,
-          total_price: item.total_price,
-          import_cost: item.import_cost
-        }))
-      };
-      stockReceipts.push(localReceipt);
+      if (isEdit) {
+        const idx = stockReceipts.findIndex(r => r.id === receiptId);
+        if (idx !== -1) {
+          stockReceipts[idx] = {
+            ...stockReceipts[idx],
+            receipt_code: receipt.receipt_code,
+            import_date: receipt.import_date,
+            supplier_name: receipt.supplier_name,
+            note: receipt.note,
+            warehouse_name: receipt.warehouse_name,
+            total_amount: receipt.total_amount,
+            items: items.map(item => ({
+              product_sku: item.product_sku,
+              product_name: item.product_name,
+              unit: item.unit,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              tax_rate: item.tax_rate,
+              total_price: item.total_price,
+              import_cost: item.import_cost
+            }))
+          };
+        }
+      } else {
+        savedReceiptId = stockReceipts.length > 0 ? Math.max(...stockReceipts.map(r => r.id || 0)) + 1 : 1;
+        const localReceipt = {
+          id: savedReceiptId,
+          receipt_code: receipt.receipt_code,
+          import_date: receipt.import_date,
+          supplier_name: receipt.supplier_name,
+          note: receipt.note,
+          warehouse_name: receipt.warehouse_name,
+          total_amount: receipt.total_amount,
+          created_at: createdAt,
+          items: items.map(item => ({
+            product_sku: item.product_sku,
+            product_name: item.product_name,
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_rate: item.tax_rate,
+            total_price: item.total_price,
+            import_cost: item.import_cost
+          }))
+        };
+        stockReceipts.push(localReceipt);
+      }
       await saveStockReceipts(stockReceipts);
     }
 
-    // 2. Update products inventory and average cost price
+    // 3. Update products inventory and average cost price
     let productsUpdatedCount = 0;
     
     // Read fresh products on Vercel to avoid cache race conditions
@@ -2025,6 +2082,19 @@ app.post('/api/admin/inventory/save-receipt', requireAdmin, async (req, res) => 
       }
     }
 
+    // Subtract old quantities
+    for (const oldItem of oldItems) {
+      const targetNorm = normalizeProductCode(oldItem.product_sku);
+      if (!targetNorm) continue;
+      const product = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+      if (product) {
+        product.stock = parseFloat(product.stock || 0) - parseFloat(oldItem.quantity || 0);
+        product.updatedAt = Date.now();
+        productsUpdatedCount++;
+      }
+    }
+
+    // Add new quantities
     for (const item of items) {
       const targetNorm = normalizeProductCode(item.product_sku);
       if (!targetNorm) continue;
@@ -2055,7 +2125,7 @@ app.post('/api/admin/inventory/save-receipt', requireAdmin, async (req, res) => 
       await broadcastUpdate('products_updated');
     }
 
-    res.json({ ok: true, message: 'Nhập kho thành công!', receiptId });
+    res.json({ ok: true, message: isEdit ? 'Cập nhật phiếu nhập thành công!' : 'Nhập kho thành công!', receiptId: savedReceiptId });
 
   } catch (err) {
     console.error('Lỗi khi lưu phiếu nhập kho:', err);
@@ -2708,6 +2778,99 @@ app.delete('/api/admin/slides', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Lỗi xoá slide:', err);
     res.status(500).json({ ok: false, message: 'Không tìm thấy ảnh slide hoặc lỗi khi xoá.' });
+  }
+});
+
+// API thêm mới nhà cung cấp
+app.post('/api/admin/suppliers', requireAdmin, async (req, res) => {
+  const { name, phone, email, address, tax_code, contact_person, contact_title, note, status } = req.body || {};
+  if (!name || !name.trim()) {
+    return res.status(400).json({ ok: false, message: 'Vui lòng nhập tên nhà cung cấp.' });
+  }
+
+  try {
+    // Tự động sinh mã nhà cung cấp NCC001, NCC002...
+    let maxNum = 0;
+    (suppliers || []).forEach(s => {
+      const match = (s.code || '').match(/^NCC(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1]);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    const nextNum = maxNum + 1;
+    const code = 'NCC' + String(nextNum).padStart(3, '0');
+
+    const newSupplier = {
+      code,
+      name: name.trim(),
+      phone: (phone || '').trim(),
+      email: (email || '').trim(),
+      address: (address || '').trim(),
+      tax_code: (tax_code || '').trim(),
+      contact_person: (contact_person || '').trim(),
+      contact_title: (contact_title || '').trim(),
+      note: (note || '').trim(),
+      status: status || 'Đang theo dõi'
+    };
+
+    suppliers.push(newSupplier);
+    await saveSuppliers(suppliers);
+    res.json({ ok: true, supplier: newSupplier });
+  } catch (err) {
+    console.error('Lỗi thêm nhà cung cấp:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi thêm nhà cung cấp.' });
+  }
+});
+
+// API cập nhật nhà cung cấp
+app.put('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
+  const code = req.params.code;
+  const { name, phone, email, address, tax_code, contact_person, contact_title, note, status } = req.body || {};
+  if (!name || !name.trim()) {
+    return res.status(400).json({ ok: false, message: 'Vui lòng nhập tên nhà cung cấp.' });
+  }
+
+  try {
+    const s = (suppliers || []).find(x => x.code === code);
+    if (!s) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy nhà cung cấp.' });
+    }
+
+    s.name = name.trim();
+    s.phone = (phone || '').trim();
+    s.email = (email || '').trim();
+    s.address = (address || '').trim();
+    s.tax_code = (tax_code || '').trim();
+    s.contact_person = (contact_person || '').trim();
+    s.contact_title = (contact_title || '').trim();
+    s.note = (note || '').trim();
+    s.status = status || 'Đang theo dõi';
+
+    await saveSuppliers(suppliers);
+    res.json({ ok: true, supplier: s });
+  } catch (err) {
+    console.error('Lỗi cập nhật nhà cung cấp:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi cập nhật nhà cung cấp.' });
+  }
+});
+
+// API xoá nhà cung cấp
+app.delete('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
+  const code = req.params.code;
+
+  try {
+    const idx = (suppliers || []).findIndex(x => x.code === code);
+    if (idx === -1) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy nhà cung cấp.' });
+    }
+
+    suppliers.splice(idx, 1);
+    await saveSuppliers(suppliers);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Lỗi xoá nhà cung cấp:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi xoá nhà cung cấp.' });
   }
 });
 

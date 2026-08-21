@@ -2810,11 +2810,11 @@
   {
     "id": 50,
     "receipt_code": "8551C26TTT",
-    "import_date": "28/07/2026",
+    "import_date": "20/08/2026",
     "supplier_name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
     "note": "Nhập kho hàng hóa hóa đơn của NCC THANHTHANGMEKONG - Số HĐ: 00000855 ngày 28/07/2026",
     "warehouse_name": "Kho mặc định",
-    "total_amount": 9785060,
+    "total_amount": 16567800,
     "created_at": "2026-08-15T04:08:40.152Z",
     "items": [
       {
@@ -2824,8 +2824,8 @@
         "quantity": 200,
         "unit_price": 7225,
         "tax_rate": 8,
-        "total_price": 1338000,
-        "import_cost": 7225.185
+        "total_price": 1560600,
+        "import_cost": 7225
       },
       {
         "product_sku": "MK39",
@@ -2834,8 +2834,8 @@
         "quantity": 20,
         "unit_price": 99000,
         "tax_rate": 8,
-        "total_price": 1833340,
-        "import_cost": 99000.35
+        "total_price": 2138400,
+        "import_cost": 99000
       },
       {
         "product_sku": "MK112",
@@ -2844,8 +2844,8 @@
         "quantity": 20,
         "unit_price": 99000,
         "tax_rate": 8,
-        "total_price": 1833340,
-        "import_cost": 99000.35
+        "total_price": 2138400,
+        "import_cost": 99000
       },
       {
         "product_sku": "DENMK179",
@@ -2854,8 +2854,8 @@
         "quantity": 20,
         "unit_price": 99000,
         "tax_rate": 8,
-        "total_price": 1833340,
-        "import_cost": 99000.35
+        "total_price": 2138400,
+        "import_cost": 99000
       },
       {
         "product_sku": "QUATTREOSENKOL1638",
@@ -2864,8 +2864,18 @@
         "quantity": 8,
         "unit_price": 300000,
         "tax_rate": 8,
-        "total_price": 2222224,
-        "import_cost": 300000.25
+        "total_price": 2592000,
+        "import_cost": 300000
+      },
+      {
+        "product_sku": "QUATTREOSENKOL1638",
+        "product_name": "Quạt treo Senko L1638",
+        "unit": "Cây",
+        "quantity": 20,
+        "unit_price": 300000,
+        "tax_rate": 0,
+        "total_price": 6000000,
+        "import_cost": 300000
       }
     ]
   },

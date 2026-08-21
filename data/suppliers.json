@@ -3,7 +3,13 @@
     "code": "THANHTHANGMEKONG",
     "name": "CÔNG TY TNHH THÀNH THẮNG MEKONG",
     "phone": "0939220234",
-    "status": "Đang theo dõi"
+    "status": "Đang theo dõi",
+    "email": "",
+    "address": "",
+    "tax_code": "",
+    "contact_person": "",
+    "contact_title": "",
+    "note": ""
   },
   {
     "code": "NCCVIP",
