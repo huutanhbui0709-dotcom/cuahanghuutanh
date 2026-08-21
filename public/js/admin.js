@@ -4604,8 +4604,11 @@ function openEditSupplierModal(code) {
     r.checked = (r.value === statusVal);
   });
 
-  // Show delete button
-  document.getElementById('sup_deleteBtn').style.display = 'inline-block';
+  // Show delete button (reset state to avoid stale "Đang xoá..." from previous attempt)
+  const deleteBtn = document.getElementById('sup_deleteBtn');
+  deleteBtn.style.display = 'inline-block';
+  deleteBtn.disabled = false;
+  deleteBtn.innerHTML = '🗑️ Xóa nhà cung cấp';
   
   // Set save button text
   document.getElementById('sup_saveBtnText').textContent = 'Lưu thay đổi';
