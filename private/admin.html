@@ -329,7 +329,9 @@
                 <i class="fa-solid fa-file-excel"></i> Import Phiếu nhập kho (Excel)
               </button>
             </div>
-            <button class="btn btn-sm btn-primary" style="background:#2563eb;color:#fff;border:none;display:flex;align-items:center;gap:6px;font-weight:600;" onclick="openStockReceiptFormModal()">
+            <button class="btn btn-sm btn-primary"
+              style="background:#2563eb;color:#fff;border:none;display:flex;align-items:center;gap:6px;font-weight:600;"
+              onclick="openStockReceiptFormModal()">
               <i class="fa-solid fa-plus"></i> Tạo phiếu nhập kho
             </button>
           </div>
@@ -553,7 +555,8 @@
 
         <!-- ORDERS -->
         <div class="admin-tab" id="tab-orders">
-          <div class="admin-card" style="display: flex; flex-direction: column; min-height: calc(100vh - 120px); box-sizing: border-box;">
+          <div class="admin-card"
+            style="display: flex; flex-direction: column; min-height: calc(100vh - 120px); box-sizing: border-box;">
             <div style="
                   display: flex;
                   justify-content: space-between;
@@ -617,7 +620,8 @@
               </div>
             </div>
             <div class="table-wrap" id="ordersTable"></div>
-            <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:auto;padding-top:16px;gap:8px;">
+            <div
+              style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 0;border-top:1px solid var(--border);margin-top:auto;padding-top:16px;gap:8px;">
               <div style="text-align:left;">
                 <span id="orderPaginationInfo" style="font-size:.8rem;color:var(--muted);"></span>
               </div>
@@ -651,7 +655,8 @@
               </div>
             </div>
             <p style="font-size: .85rem; color: var(--muted); margin-bottom: 16px;">
-              Quản lý danh sách nhà cung cấp hoặc nhập hàng loạt từ file Excel. Hệ thống sẽ tự động đồng bộ theo Mã nhà cung cấp.
+              Quản lý danh sách nhà cung cấp hoặc nhập hàng loạt từ file Excel. Hệ thống sẽ tự động đồng bộ theo Mã nhà
+              cung cấp.
             </p>
             <div class="table-wrap">
               <table class="table">
@@ -966,22 +971,24 @@
                   <label style="display:block;font-size:.8rem;font-weight:600;color:#374151;margin-bottom:5px">Đơn vị
                     tính *</label>
                   <div style="position: relative;">
-                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; font-size: 0.85rem;">
+                    <span
+                      style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; font-size: 0.85rem;">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
-                    <input class="form-control" id="pf_donvi" placeholder="Chọn hoặc nhập mới..." 
+                    <input class="form-control" id="pf_donvi" placeholder="Chọn hoặc nhập mới..."
                       style="width: 100%; padding-left: 36px; padding-right: 36px; border-radius: 8px; border: 1.5px solid #d1d5db; transition: all 0.2s;"
-                      onfocus="showComboboxDropdown('donvi')"
-                      oninput="filterComboboxOptions('donvi')"
-                      onkeydown="handleComboboxKeydown(event, 'donvi')"
-                      autocomplete="off" />
-                    <span onclick="toggleComboboxDropdown('donvi', event)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; font-size: 0.85rem; padding: 4px;">
+                      onfocus="showComboboxDropdown('donvi')" oninput="filterComboboxOptions('donvi')"
+                      onkeydown="handleComboboxKeydown(event, 'donvi')" autocomplete="off" />
+                    <span onclick="toggleComboboxDropdown('donvi', event)"
+                      style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; font-size: 0.85rem; padding: 4px;">
                       <i class="fa-solid fa-chevron-down"></i>
                     </span>
                   </div>
-                  <div id="combo_donvi_dropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 9999; margin-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); max-height: 224px; overflow-y: auto; padding: 4px 0;">
+                  <div id="combo_donvi_dropdown"
+                    style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 9999; margin-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); max-height: 224px; overflow-y: auto; padding: 4px 0;">
                     <div id="combo_donvi_list"></div>
-                    <div style="font-size: 0.72rem; color: #9ca3af; padding: 8px 12px; border-top: 1px solid #f1f5f9; background: #f9fafb; border-radius: 0 0 12px 12px; margin-top: 4px;">
+                    <div
+                      style="font-size: 0.72rem; color: #9ca3af; padding: 8px 12px; border-top: 1px solid #f1f5f9; background: #f9fafb; border-radius: 0 0 12px 12px; margin-top: 4px;">
                       Để nhập mới, gõ trực tiếp vào ô và nhấn Enter
                     </div>
                   </div>
@@ -992,22 +999,24 @@
                   <label style="display:block;font-size:.8rem;font-weight:600;color:#374151;margin-bottom:5px">Loại hàng
                     hóa *</label>
                   <div style="position: relative;">
-                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; font-size: 0.85rem;">
+                    <span
+                      style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; font-size: 0.85rem;">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
-                    <input class="form-control" id="pf_loai" placeholder="Chọn hoặc nhập mới..." 
+                    <input class="form-control" id="pf_loai" placeholder="Chọn hoặc nhập mới..."
                       style="width: 100%; padding-left: 36px; padding-right: 36px; border-radius: 8px; border: 1.5px solid #d1d5db; transition: all 0.2s;"
-                      onfocus="showComboboxDropdown('loai')"
-                      oninput="filterComboboxOptions('loai')"
-                      onkeydown="handleComboboxKeydown(event, 'loai')"
-                      autocomplete="off" />
-                    <span onclick="toggleComboboxDropdown('loai', event)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; font-size: 0.85rem; padding: 4px;">
+                      onfocus="showComboboxDropdown('loai')" oninput="filterComboboxOptions('loai')"
+                      onkeydown="handleComboboxKeydown(event, 'loai')" autocomplete="off" />
+                    <span onclick="toggleComboboxDropdown('loai', event)"
+                      style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; cursor: pointer; font-size: 0.85rem; padding: 4px;">
                       <i class="fa-solid fa-chevron-down"></i>
                     </span>
                   </div>
-                  <div id="combo_loai_dropdown" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 9999; margin-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); max-height: 224px; overflow-y: auto; padding: 4px 0;">
+                  <div id="combo_loai_dropdown"
+                    style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 9999; margin-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); max-height: 224px; overflow-y: auto; padding: 4px 0;">
                     <div id="combo_loai_list"></div>
-                    <div style="font-size: 0.72rem; color: #9ca3af; padding: 8px 12px; border-top: 1px solid #f1f5f9; background: #f9fafb; border-radius: 0 0 12px 12px; margin-top: 4px;">
+                    <div
+                      style="font-size: 0.72rem; color: #9ca3af; padding: 8px 12px; border-top: 1px solid #f1f5f9; background: #f9fafb; border-radius: 0 0 12px 12px; margin-top: 4px;">
                       Để nhập mới, gõ trực tiếp vào ô và nhấn Enter
                     </div>
                   </div>
@@ -1278,19 +1287,24 @@
 
     <!-- ======= STOCK RECEIPT FORM MODAL (THÊM / SỬA PHIẾU NHẬP KHO) ======= -->
     <div class="modal-overlay center" id="stockReceiptFormModal">
-      <div style="width:95vw;max-width:1100px;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.18);border:1px solid #e5e7eb;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
+      <div
+        style="width:95vw;max-width:1100px;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.18);border:1px solid #e5e7eb;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
 
         <!-- HEADER -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f1f3f5;flex-shrink:0;">
+        <div
+          style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f1f3f5;flex-shrink:0;">
           <div style="display:flex;align-items:center;gap:10px;">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" style="color:#374151;flex-shrink:0">
-              <path d="M3 3h18v4H3zM3 10h18v11H3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-              <path d="M9 15h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M3 3h18v4H3zM3 10h18v11H3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+              <path d="M9 15h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
             <span style="font-weight:700;font-size:1.05rem;color:#111827" id="srfm_title">Thêm phiếu nhập kho</span>
-            <span id="srfm_codeBadge" style="display:none;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.02em;border:1px solid #e5e7eb;"></span>
+            <span id="srfm_codeBadge"
+              style="display:none;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.02em;border:1px solid #e5e7eb;"></span>
           </div>
-          <button onclick="closeModal('stockReceiptFormModal')" style="background:none;border:none;font-size:1.2rem;color:#9ca3af;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;transition:color .15s" onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#9ca3af'">✕</button>
+          <button onclick="closeModal('stockReceiptFormModal')"
+            style="background:none;border:none;font-size:1.2rem;color:#9ca3af;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;transition:color .15s"
+            onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#9ca3af'">✕</button>
         </div>
 
         <!-- BODY (scrollable) -->
@@ -1299,21 +1313,24 @@
           <!-- ROW 1: Mã chứng từ | Ngày nhập | Nhà cung cấp | Kho nhập -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
             <div>
-              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Mã chứng từ <span style="color:#ef4444">*</span></label>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Mã chứng từ
+                <span style="color:#ef4444">*</span></label>
               <input id="srfm_receiptCode" type="text" placeholder="Ví dụ: PN2024001"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                 onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
             </div>
             <div>
-              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Ngày nhập <span style="color:#ef4444">*</span></label>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Ngày nhập
+                <span style="color:#ef4444">*</span></label>
               <input id="srfm_importDate" type="date"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                 onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
             </div>
             <div id="srfm_supplierWrap" style="position:relative;">
-              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Nhà cung cấp</label>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Nhà cung
+                cấp</label>
               <div style="position:relative;display:flex;align-items:center;">
                 <span style="position:absolute;left:9px;color:#9ca3af;font-size:.8rem;pointer-events:none;">🔍</span>
                 <input id="srfm_supplierName" type="text" placeholder="Chọn hoặc nhập nhà cung cấp..."
@@ -1321,16 +1338,17 @@
                   style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 28px 7px 28px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                   onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)';srfm_toggleSupplierDrop(true)"
                   onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"
-                  oninput="srfm_onSupplierInput(this)"
-                  onkeydown="srfm_supplierKeydown(event)" />
-                <span onclick="srfm_toggleSupplierDrop()" style="position:absolute;right:9px;color:#9ca3af;font-size:.8rem;cursor:pointer;user-select:none;line-height:1;">⌄</span>
+                  oninput="srfm_onSupplierInput(this)" onkeydown="srfm_supplierKeydown(event)" />
+                <span onclick="srfm_toggleSupplierDrop()"
+                  style="position:absolute;right:9px;color:#9ca3af;font-size:.8rem;cursor:pointer;user-select:none;line-height:1;">⌄</span>
               </div>
               <div id="srfm_supplierDrop"
                 style="display:none;position:absolute;left:0;right:0;top:100%;z-index:300;background:#fff;border:1px solid #d1d5db;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.13);max-height:210px;overflow-y:auto;margin-top:2px;">
               </div>
             </div>
             <div>
-              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Kho nhập</label>
+              <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Kho
+                nhập</label>
               <input id="srfm_warehouseName" type="text" placeholder="Tên kho..." value="Kho chính"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
@@ -1340,7 +1358,8 @@
 
           <!-- ROW 2: Diễn giải (full width) -->
           <div>
-            <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Diễn giải / Ghi chú</label>
+            <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Diễn giải /
+              Ghi chú</label>
             <input id="srfm_note" type="text" placeholder="Ghi chú cho phiếu nhập..."
               style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
               onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
@@ -1350,12 +1369,17 @@
           <!-- PRODUCT TABLE SECTION -->
           <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
             <!-- Table header bar -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
+            <div
+              style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
               <span style="font-size:.8rem;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px;">
                 <i class="fa-solid fa-boxes-stacked" style="color:#3b82f6"></i> Danh sách hàng hóa
-                <span id="srfm_itemCount" style="background:#eff6ff;color:#2563eb;font-size:.7rem;padding:1px 7px;border-radius:20px;font-weight:700;">0 dòng</span>
+                <span id="srfm_itemCount"
+                  style="background:#eff6ff;color:#2563eb;font-size:.7rem;padding:1px 7px;border-radius:20px;font-weight:700;">0
+                  dòng</span>
               </span>
-              <button onclick="srfm_addRow()" style="background:#2563eb;color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+              <button onclick="srfm_addRow()"
+                style="background:#2563eb;color:#fff;border:none;border-radius:7px;padding:5px 13px;font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .15s;"
+                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
                 <i class="fa-solid fa-plus"></i> Thêm dòng
               </button>
             </div>
@@ -1365,14 +1389,30 @@
               <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
                 <thead style="position:sticky;top:0;z-index:1;background:#f8fafc;">
                   <tr style="background:#f8fafc;">
-                    <th style="width:36px;padding:8px 6px;text-align:center;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;">#</th>
-                    <th style="padding:8px 10px;text-align:left;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;min-width:140px;">Mã SKU</th>
-                    <th style="padding:8px 10px;text-align:left;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;min-width:200px;">Tên hàng hóa</th>
-                    <th style="padding:8px 10px;text-align:center;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:80px;">ĐVT</th>
-                    <th style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:90px;">Số lượng</th>
-                    <th style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:120px;">Đơn giá (₫)</th>
-                    <th style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:70px;">Thuế %</th>
-                    <th style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:130px;">Thành tiền (₫)</th>
+                    <th
+                      style="width:36px;padding:8px 6px;text-align:center;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;">
+                      #</th>
+                    <th
+                      style="padding:8px 10px;text-align:left;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;min-width:140px;">
+                      Mã SKU</th>
+                    <th
+                      style="padding:8px 10px;text-align:left;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;min-width:200px;">
+                      Tên hàng hóa</th>
+                    <th
+                      style="padding:8px 10px;text-align:center;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:80px;">
+                      ĐVT</th>
+                    <th
+                      style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:90px;">
+                      Số lượng</th>
+                    <th
+                      style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:120px;">
+                      Đơn giá (₫)</th>
+                    <th
+                      style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:70px;">
+                      Thuế %</th>
+                    <th
+                      style="padding:8px 10px;text-align:right;color:#6b7280;font-weight:600;font-size:.74rem;border-bottom:1px solid #e5e7eb;width:130px;">
+                      Thành tiền (₫)</th>
                     <th style="width:36px;border-bottom:1px solid #e5e7eb;"></th>
                   </tr>
                 </thead>
@@ -1388,53 +1428,74 @@
             </div>
 
             <!-- Summary bar -->
-            <div style="display:flex;justify-content:flex-end;align-items:center;gap:24px;padding:10px 16px;background:#f8fafc;border-top:1px solid #e5e7eb;flex-wrap:wrap;">
-              <span style="font-size:.8rem;color:#6b7280;">Tiền hàng: <strong id="srfm_subtotal" style="color:#374151;">0₫</strong></span>
+            <div
+              style="display:flex;justify-content:flex-end;align-items:center;gap:24px;padding:10px 16px;background:#f8fafc;border-top:1px solid #e5e7eb;flex-wrap:wrap;">
+              <span style="font-size:.8rem;color:#6b7280;">Tiền hàng: <strong id="srfm_subtotal"
+                  style="color:#374151;">0₫</strong></span>
               <span style="color:#d1d5db;">|</span>
-              <span style="font-size:.8rem;color:#6b7280;">Thuế GTGT: <strong id="srfm_tax" style="color:#374151;">0₫</strong></span>
+              <span style="font-size:.8rem;color:#6b7280;">Thuế GTGT: <strong id="srfm_tax"
+                  style="color:#374151;">0₫</strong></span>
               <span style="color:#d1d5db;">|</span>
-              <span style="font-size:.9rem;font-weight:700;color:#111827;">Tổng thanh toán: <span id="srfm_total" style="color:#ef4444;font-size:1rem;">0₫</span></span>
+              <span style="font-size:.9rem;font-weight:700;color:#111827;">Tổng thanh toán: <span id="srfm_total"
+                  style="color:#ef4444;font-size:1rem;">0₫</span></span>
             </div>
           </div>
 
         </div><!-- end body -->
 
         <!-- FOOTER -->
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:13px 20px;border-top:1px solid #f1f3f5;background:#fafafa;flex-shrink:0;">
-          <button onclick="closeModal('stockReceiptFormModal')"
-            style="background:#fff;border:1px solid #d1d5db;border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600;color:#374151;cursor:pointer;transition:background .15s;"
-            onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#fff'">
-            Hủy
-          </button>
-          <button onclick="srfm_saveReceipt(this)" id="srfm_saveBtn"
-            style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 24px;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .15s;"
-            onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu phiếu nhập
-          </button>
+        <div
+          style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-top:1px solid #f1f3f5;background:#fafafa;flex-shrink:0;">
+          <div>
+            <button id="srfm_deleteBtn" onclick="srfm_deleteReceipt()"
+              style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 16px;font-size:.85rem;font-weight:600;color:#dc2626;cursor:pointer;transition:background .15s;"
+              onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+              <i class="fa-solid fa-trash-can"></i> Xóa phiếu nhập
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button onclick="closeModal('stockReceiptFormModal')"
+              style="background:#fff;border:1px solid #d1d5db;border-radius:8px;padding:8px 20px;font-size:.85rem;font-weight:600;color:#374151;cursor:pointer;transition:background .15s;"
+              onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#fff'">
+              Hủy
+            </button>
+            <button onclick="srfm_saveReceipt(this)" id="srfm_saveBtn"
+              style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 24px;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .15s;"
+              onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+              <i class="fa-solid fa-floppy-disk"></i> Lưu phiếu nhập
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ======= SUPPLIER ADD/EDIT MODAL ======= -->
     <div class="modal-overlay center" id="supplierFormModal">
-      <div style="width:95vw;max-width:1050px;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.18);border:1px solid #e5e7eb;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
-        
+      <div
+        style="width:95vw;max-width:1050px;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.18);border:1px solid #e5e7eb;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
+
         <!-- HEADER -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f3f5;flex-shrink:0;">
+        <div
+          style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f3f5;flex-shrink:0;">
           <div style="display:flex;flex-direction:column;gap:4px;">
             <div style="display:flex;align-items:center;gap:8px;">
               <i class="fa-solid fa-store" style="color:#374151;font-size:1.1rem;"></i>
               <span style="font-weight:700;font-size:1.05rem;color:#111827" id="sup_modalTitle">Thêm nhà cung cấp</span>
-              <span id="sup_modalBadge" style="display:none;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.02em;border:1px solid #e5e7eb;"></span>
+              <span id="sup_modalBadge"
+                style="display:none;background:#f3f4f6;color:#374151;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.02em;border:1px solid #e5e7eb;"></span>
             </div>
-            <span style="font-size:.75rem;color:#9ca3af;" id="sup_modalSubtitle">Nhập thông tin nhà cung cấp. Mã nhà cung cấp sẽ được tạo tự động sau khi lưu.</span>
+            <span style="font-size:.75rem;color:#9ca3af;" id="sup_modalSubtitle">Nhập thông tin nhà cung cấp. Mã nhà
+              cung cấp sẽ được tạo tự động sau khi lưu.</span>
           </div>
-          <button onclick="closeModal('supplierFormModal')" style="background:none;border:none;font-size:1.2rem;color:#9ca3af;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;transition:color .15s" onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#9ca3af'">✕</button>
+          <button onclick="closeModal('supplierFormModal')"
+            style="background:none;border:none;font-size:1.2rem;color:#9ca3af;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;transition:color .15s"
+            onmouseover="this.style.color='#374151'" onmouseout="this.style.color='#9ca3af'">✕</button>
         </div>
 
         <!-- BODY -->
-        <div style="overflow-y:auto;flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;">
-          
+        <div
+          style="overflow-y:auto;flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box;">
+
           <!-- Section title with left blue accent -->
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="width:4px;height:16px;background:#2563eb;border-radius:2px;display:inline-block;"></span>
@@ -1443,18 +1504,20 @@
 
           <!-- Main Form Grid Layout -->
           <div style="display:grid;grid-template-columns: 2fr 1fr; gap:16px;">
-            
+
             <!-- LEFT COLUMN (2fr) -->
             <div style="display:flex;flex-direction:column;gap:12px;">
               <!-- Row 1: Code | Name -->
               <div style="display:grid;grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Mã nhà cung cấp <span style="color:#ef4444">*</span></label>
+                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Mã nhà
+                    cung cấp <span style="color:#ef4444">*</span></label>
                   <input id="sup_code" type="text" placeholder="Hệ thống tự động tạo" disabled
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#6b7280;background:#f9fafb;outline:none;box-sizing:border-box;cursor:not-allowed;" />
                 </div>
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Tên nhà cung cấp <span style="color:#ef4444">*</span></label>
+                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Tên nhà
+                    cung cấp <span style="color:#ef4444">*</span></label>
                   <input id="sup_name" type="text" placeholder="Nhập tên nhà cung cấp..."
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
@@ -1465,14 +1528,16 @@
               <!-- Row 2: Phone | Email -->
               <div style="display:grid;grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Số điện thoại</label>
+                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Số điện
+                    thoại</label>
                   <input id="sup_phone" type="text" placeholder="Nhập số điện thoại..."
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                     onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
                 </div>
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Email</label>
+                  <label
+                    style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Email</label>
                   <input id="sup_email" type="email" placeholder="Nhập email..."
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
@@ -1483,21 +1548,24 @@
               <!-- Row 3: Tax Code | Contact Person | Title -->
               <div style="display:grid;grid-template-columns: 1fr 1fr 1fr; gap:12px;">
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Mã số thuế</label>
+                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Mã số
+                    thuế</label>
                   <input id="sup_taxCode" type="text" placeholder="Nhập mã số thuế..."
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                     onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
                 </div>
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Người liên hệ</label>
+                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Người
+                    liên hệ</label>
                   <input id="sup_contactPerson" type="text" placeholder="Nhập tên người liên hệ..."
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                     onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
                 </div>
                 <div>
-                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Chức vụ</label>
+                  <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Chức
+                    vụ</label>
                   <input id="sup_contactTitle" type="text" placeholder="Nhập chức vụ..."
                     style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                     onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
@@ -1507,12 +1575,15 @@
 
               <!-- Row 4: Note (textarea) -->
               <div style="position:relative;display:flex;flex-direction:column;gap:4px;">
-                <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:2px;">Ghi chú</label>
-                <textarea id="sup_note" placeholder="Nhập ghi chú (nếu có)..." maxlength="255" oninput="sup_updateNoteCounter(this)"
+                <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:2px;">Ghi
+                  chú</label>
+                <textarea id="sup_note" placeholder="Nhập ghi chú (nếu có)..." maxlength="255"
+                  oninput="sup_updateNoteCounter(this)"
                   style="width:100%;height:80px;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;resize:none;"
                   onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
                   onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"></textarea>
-                <span id="sup_noteCounter" style="position:absolute;right:8px;bottom:6px;font-size:.68rem;color:#9ca3af;">0/255</span>
+                <span id="sup_noteCounter"
+                  style="position:absolute;right:8px;bottom:6px;font-size:.68rem;color:#9ca3af;">0/255</span>
               </div>
             </div>
 
@@ -1520,7 +1591,8 @@
             <div style="display:flex;flex-direction:column;gap:12px;height:100%;">
               <!-- Address (textarea spanning multiple rows visually) -->
               <div style="display:flex;flex-direction:column;gap:4px;flex:1;">
-                <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:2px;">Địa chỉ</label>
+                <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:2px;">Địa
+                  chỉ</label>
                 <textarea id="sup_address" placeholder="Nhập địa chỉ nhà cung cấp..."
                   style="width:100%;height:165px;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;resize:none;"
                   onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
@@ -1529,7 +1601,8 @@
 
               <!-- Status (Radio options) -->
               <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;background:#fcfcfc;">
-                <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:8px;">Trạng thái <span style="color:#ef4444">*</span></label>
+                <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:8px;">Trạng
+                  thái <span style="color:#ef4444">*</span></label>
                 <div style="display:flex;align-items:center;gap:16px;">
                   <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;cursor:pointer;">
                     <input type="radio" name="sup_status" value="Đang theo dõi" checked style="cursor:pointer;" />
@@ -1547,12 +1620,13 @@
         </div><!-- end Body -->
 
         <!-- FOOTER -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-top:1px solid #f1f3f5;background:#fafafa;flex-shrink:0;">
+        <div
+          style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-top:1px solid #f1f3f5;background:#fafafa;flex-shrink:0;">
           <div>
             <button id="sup_deleteBtn" onclick="sup_deleteSupplier()"
               style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 16px;font-size:.85rem;font-weight:600;color:#dc2626;cursor:pointer;transition:background .15s;"
               onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
-              🗑️ Xóa nhà cung cấp
+              <i class="fa-solid fa-trash-can"></i> Xóa nhà cung cấp
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">

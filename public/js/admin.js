@@ -4003,6 +4003,9 @@ function openStockReceiptFormModal() {
   srfm_editingReceiptId = null;
   srfm_rowIndex = 0;
   
+  const deleteBtn = document.getElementById('srfm_deleteBtn');
+  if (deleteBtn) deleteBtn.style.display = 'none';
+
   const saveBtn = document.getElementById('srfm_saveBtn');
   if (saveBtn) {
     saveBtn.disabled = false;
@@ -4037,6 +4040,7 @@ function openStockReceiptFormModal() {
       </td>
     </tr>`;
   srfm_updateTotals();
+  srfm_updateItemCount();
 
   document.getElementById('stockReceiptFormModal').classList.add('open');
   // Auto-focus first field after animation
@@ -4452,6 +4456,13 @@ async function srfm_saveReceipt(btn) {
 }
 
 async function editStockReceipt(id) {
+  const deleteBtn = document.getElementById('srfm_deleteBtn');
+  if (deleteBtn) {
+    deleteBtn.style.display = 'inline-block';
+    deleteBtn.disabled = false;
+    deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa phiếu nhập';
+  }
+
   const saveBtn = document.getElementById('srfm_saveBtn');
   if (saveBtn) {
     saveBtn.disabled = false;
@@ -4608,7 +4619,7 @@ function openEditSupplierModal(code) {
   const deleteBtn = document.getElementById('sup_deleteBtn');
   deleteBtn.style.display = 'inline-block';
   deleteBtn.disabled = false;
-  deleteBtn.innerHTML = '🗑️ Xóa nhà cung cấp';
+  deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xóa nhà cung cấp';
   
   // Set save button text
   document.getElementById('sup_saveBtnText').textContent = 'Lưu thay đổi';
@@ -4712,6 +4723,47 @@ async function sup_deleteSupplier() {
     await loadSuppliersList();
     if (typeof loadSuppliers === 'function') {
       await loadSuppliers();
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+async function srfm_deleteReceipt() {
+  if (!srfm_editingReceiptId) return;
+  
+  if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn phiếu nhập kho này? Hành động này không thể hoàn tác và sẽ khôi phục lại số lượng tồn kho của các sản phẩm tương ứng.`)) return;
+
+  const btn = document.getElementById('srfm_deleteBtn');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa...';
+
+  try {
+    const res = await adminFetch(`/api/admin/inventory/receipts/${srfm_editingReceiptId}`, {
+      method: 'DELETE'
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || 'Lỗi khi xóa phiếu nhập kho.');
+    }
+
+    showToast('<i class="fa-solid fa-circle-check"></i> Xóa phiếu nhập kho thành công!', 'success');
+    closeModal('stockReceiptFormModal');
+    
+    // Tải lại lịch sử nhập kho và danh sách sản phẩm (vì số lượng tồn kho thay đổi)
+    if (typeof loadInventoryHistory === 'function') {
+      await loadInventoryHistory();
+    }
+    if (typeof loadProducts === 'function') {
+      await loadProducts();
+    }
+    if (typeof renderAdminTable === 'function') {
+      renderAdminTable();
     }
   } catch (err) {
     console.error(err);
