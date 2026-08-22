@@ -1339,6 +1339,7 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   const order = orders.find((o) => o.id === req.params.id);
   if (!order) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
 
+  const prevStatus = order.status;
   order.status = status;
   try {
     if (IS_VERCEL) {
@@ -1346,6 +1347,34 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
     } else {
       await saveOrders(orders);
     }
+
+    // Trừ tồn kho khi đơn "Chờ xác nhận" được chuyển sang "Đã xác nhận"
+    if (prevStatus === 'Chờ xác nhận' && status === 'Đã xác nhận') {
+      let productsList = [...products];
+      if (IS_VERCEL) {
+        try {
+          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+          if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+        } catch (e) { /* bỏ qua */ }
+      }
+      let updatedCount = 0;
+      for (const item of (order.items || [])) {
+        const targetNorm = normalizeProductCode(item.ma);
+        if (!targetNorm) continue;
+        const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+        if (prod) {
+          prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
+          prod.updatedAt = Date.now();
+          updatedCount++;
+        }
+      }
+      if (updatedCount > 0) {
+        products = productsList;
+        await saveProducts(productsList);
+        await broadcastUpdate('products_updated');
+      }
+    }
+
     await broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });

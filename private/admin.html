@@ -24,17 +24,21 @@
     }
   </script>
   <style>
-    .srfm-dup-row, .srfm-dup-row td {
+    .srfm-dup-row,
+    .srfm-dup-row td {
       background-color: #fef2f2 !important;
     }
+
     .srfm-dup-row input {
       background-color: #fef2f2 !important;
       border-color: #fca5a5 !important;
     }
+
     .srfm-dup-row input:focus {
       border-color: #ef4444 !important;
       box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
     }
+
     .srfm-dup-row input[id^="srfm_sku_"] {
       color: #b91c1c !important;
       font-weight: 600 !important;
@@ -105,7 +109,7 @@
           <i class="fa-solid fa-box"></i> <span>Sản phẩm</span>
         </div>
         <div class="admin-sidebar-item" onclick="adminTab('inventory', this)" title="Nhập kho">
-          <i class="fa-solid fa-warehouse"></i> <span>Nhập kho</span>
+          <i class="fa-solid fa-warehouse"></i> <span>Kho</span>
         </div>
 
         <div class="admin-sidebar-item" onclick="adminTab('orders', this)" title="Đơn hàng">
@@ -345,6 +349,10 @@
                 onclick="switchInventoryTab('import', this)">
                 <i class="fa-solid fa-file-excel"></i> Import Phiếu nhập kho (Excel)
               </button>
+              <button class="btn btn-sm inventory-tab-btn btn-outline" style="color: black;"
+                onclick="switchInventoryTab('stock', this)">
+                <i class="fa-solid fa-boxes-stacked"></i> Tồn kho sản phẩm
+              </button>
             </div>
             <button class="btn btn-sm btn-primary"
               style="background:#2563eb;color:#fff;border:none;display:flex;align-items:center;gap:6px;font-weight:600;"
@@ -564,6 +572,154 @@
                       <!-- Render dynamic items -->
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TỒN KHO SẢN PHẨM -->
+          <div id="inventory-tab-stock" class="inventory-tab-content" style="display: none;">
+            <!-- Page Header -->
+            <div class="flex items-start justify-between mb-5">
+              <div>
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Tồn kho sản phẩm
+                </h2>
+                <p class="text-xs text-gray-400 mt-0.5">Danh sách tồn kho hiện tại của tất cả sản phẩm</p>
+              </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 gap-4 mb-6" style="grid-template-columns: repeat(5,1fr);">
+              <!-- Card 1: Tổng sản phẩm -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-cube text-blue-600 text-2xl"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500 font-medium mb-0.5">Tổng số sản phẩm</div>
+                  <div class="text-lg font-bold text-gray-900" id="sk_totalProducts">--</div>
+                  <div class="text-xs text-gray-400">sản phẩm</div>
+                </div>
+              </div>
+              <!-- Card 2: Tổng số lượng tồn -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-box text-green-600 text-2xl"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500 font-medium mb-0.5">Tổng số lượng tồn</div>
+                  <div class="text-lg font-bold text-gray-900" id="sk_totalStock">--</div>
+                  <div class="text-xs text-gray-400">đơn vị</div>
+                </div>
+              </div>
+              <!-- Card 3: Sắp hết hàng -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-500 text-2xl"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500 font-medium mb-0.5">Sản phẩm sắp hết hàng</div>
+                  <div class="text-lg font-bold text-amber-600" id="sk_lowStock">--</div>
+                  <div class="text-xs text-gray-400">sản phẩm</div>
+                </div>
+              </div>
+              <!-- Card 4: Hết hàng -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-circle-exclamation text-red-500 text-2xl"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500 font-medium mb-0.5">Sản phẩm hết hàng</div>
+                  <div class="text-lg font-bold text-red-600" id="sk_outOfStock">--</div>
+                  <div class="text-xs text-gray-400">sản phẩm</div>
+                </div>
+              </div>
+              <!-- Card 5: Giá trị tồn kho -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid fa-chart-pie text-purple-600 text-2xl"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500 font-medium mb-0.5">Giá trị tồn kho</div>
+                  <div class="text-sm font-bold text-blue-600" id="sk_totalValue">--</div>
+                  <div class="text-xs text-gray-400">VNĐ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <!-- Filter Toolbar -->
+              <div class="p-4 flex items-center gap-3 border-b border-gray-100 bg-white flex-wrap">
+                <!-- Search -->
+                <div class="relative" style="width:288px;">
+                  <i class="fa-solid fa-magnifying-glass absolute text-gray-400 text-xs" style="left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"></i>
+                  <input type="text" id="sk_searchInput" placeholder="Tìm sản phẩm, mã hoặc barcode..."
+                    class="w-full border border-gray-200 rounded-lg text-xs pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    oninput="sk_filterAndRender()" />
+                </div>
+                <!-- Danh mục -->
+                <select id="sk_catFilter" class="border border-gray-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_filterAndRender()">
+                  <option value="">Tất cả danh mục</option>
+                </select>
+                <!-- Tình trạng -->
+                <select id="sk_statusFilter" class="border border-gray-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_filterAndRender()">
+                  <option value="">Tình trạng tồn</option>
+                  <option value="in">Còn hàng</option>
+                  <option value="low">Sắp hết hàng</option>
+                  <option value="out">Hết hàng</option>
+                </select>
+                <!-- Spacer -->
+                <div class="flex-1"></div>
+                <!-- Export Excel -->
+                <button class="border border-gray-200 hover:bg-gray-50 text-xs px-3 py-2 rounded-lg font-medium flex items-center gap-1.5 transition-colors" onclick="sk_exportExcel()">
+                  <i class="fa-solid fa-file-excel text-green-600"></i> Xuất Excel
+                </button>
+                <!-- Advanced Filter -->
+                <button class="border border-gray-200 hover:bg-gray-50 text-xs p-2 rounded-lg text-gray-600 transition-colors" title="Bộ lọc nâng cao">
+                  <i class="fa-solid fa-sliders"></i>
+                </button>
+              </div>
+
+              <!-- Table -->
+              <div class="overflow-x-auto">
+                <table class="min-w-full" style="border-collapse:collapse;">
+                  <thead>
+                    <tr class="bg-gray-50 border-b border-gray-100">
+                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;width:40px;">#</th>
+                      <th class="px-4 py-3 text-left text-gray-500 font-bold uppercase" style="font-size:11px;">Sản phẩm</th>
+                      <th class="px-4 py-3 text-left text-gray-500 font-bold uppercase" style="font-size:11px;">Mã SP</th>
+                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Đơn vị</th>
+                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">
+                        Tồn kho <i class="fa-regular fa-circle-question text-gray-400 ml-0.5"></i>
+                      </th>
+                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Khả dụng</th>
+                      <th class="px-4 py-3 text-right text-gray-500 font-bold uppercase" style="font-size:11px;">Giá trị tồn</th>
+                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Tình trạng</th>
+                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sk_tableBody">
+                    <tr>
+                      <td colspan="9" class="text-center text-gray-400 py-10 text-sm">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang tải...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Footer -->
+              <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 flex-wrap gap-3">
+                <div class="text-xs text-gray-500" id="sk_paginationInfo">Hiển thị 0 kết quả</div>
+                <div class="flex items-center gap-2">
+                  <select id="sk_pageSize" class="border border-gray-200 rounded-lg text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_page=1;sk_filterAndRender()">
+                    <option value="10" selected>10 / trang</option>
+                    <option value="25">25 / trang</option>
+                    <option value="50">50 / trang</option>
+                  </select>
+                  <div class="flex items-center gap-1" id="sk_pagination"></div>
                 </div>
               </div>
             </div>
@@ -1122,11 +1278,13 @@
 
                   <div
                     style="margin-left: auto; display: flex; gap: 4px; border: 1px solid var(--border); border-radius: 6px; padding: 2px; background: #f8fafc; flex-shrink: 0;">
-                    <button class="btn btn-sm"
-                      style="padding: 4px 8px; background: var(--primary); color: #fff; border-radius: 4px; border: none; height: 24px; display: inline-flex; align-items: center; justify-content: center;"><i
+                    <button class="btn btn-sm bg-blue-600 text-white shadow-sm" id="oc_btnGridView"
+                      onclick="oc_setViewMode('grid')"
+                      style="padding: 4px 8px; border-radius: 4px; border: none; height: 24px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><i
                         class="fa-solid fa-table-cells-large" style="font-size: 0.75rem;"></i></button>
-                    <button class="btn btn-sm"
-                      style="padding: 4px 8px; background: transparent; color: var(--muted); border: none; height: 24px; display: inline-flex; align-items: center; justify-content: center;"><i
+                    <button class="btn btn-sm bg-white text-gray-500 hover:bg-gray-100" id="oc_btnListView"
+                      onclick="oc_setViewMode('list')"
+                      style="padding: 4px 8px; border-radius: 4px; border: none; height: 24px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;"><i
                         class="fa-solid fa-list" style="font-size: 0.75rem;"></i></button>
                   </div>
                 </div>
@@ -1335,8 +1493,7 @@
               <input id="srfm_receiptCode" type="text" placeholder="Ví dụ: PN2024001"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
-                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"
-                oninput="srfm_syncAutoNote()" />
+                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" oninput="srfm_syncAutoNote()" />
             </div>
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Ngày nhập
@@ -1344,8 +1501,7 @@
               <input id="srfm_importDate" type="date"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
-                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"
-                onchange="srfm_syncAutoNote()" />
+                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" onchange="srfm_syncAutoNote()" />
             </div>
             <div id="srfm_supplierWrap" style="position:relative;">
               <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Nhà cung

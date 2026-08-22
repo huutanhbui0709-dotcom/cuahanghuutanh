@@ -23,6 +23,30 @@ function formatPrice(p) {
   return p.toLocaleString('vi-VN') + '₫';
 }
 
+function formatPriceInput(input) {
+  const selectionStart = input.selectionStart;
+  const selectionEnd = input.selectionEnd;
+  const originalLength = input.value.length;
+  
+  // Clean all non-digits
+  let val = input.value.replace(/\D/g, '');
+  if (val) {
+    val = parseInt(val, 10).toLocaleString('vi-VN');
+  }
+  input.value = val;
+  
+  // Adjust cursor position
+  const newLength = input.value.length;
+  const diff = newLength - originalLength;
+  input.setSelectionRange(selectionStart + diff, selectionEnd + diff);
+}
+
+function parseFormattedFloat(val) {
+  if (!val) return 0;
+  const clean = String(val).replace(/\./g, '');
+  return parseFloat(clean) || 0;
+}
+
 function getProductImageUrl(p) {
   if (!p || !p.image) return '';
   return p.image + (p.updatedAt ? `?t=${p.updatedAt}` : '');
@@ -204,7 +228,15 @@ function adminTab(tab, el) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.admin-sidebar-item').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  el.classList.add('active');
+  
+  if (el) {
+    el.classList.add('active');
+  } else {
+    // If no element passed, try to find the corresponding sidebar item and make it active
+    const sidebarItem = document.querySelector(`.admin-sidebar-item[onclick*="adminTab('${tab}'"]`);
+    if (sidebarItem) sidebarItem.classList.add('active');
+  }
+
   if (tab === 'products') renderAdminTable();
   if (tab === 'orders') renderOrdersTable();
   if (tab === 'dashboard') renderDashboard();
@@ -2749,7 +2781,213 @@ function switchInventoryTab(tabName, btn) {
   if (activeContent) {
     activeContent.style.display = 'block';
   }
+
+  if (tabName === 'stock') {
+    // Luôn load lại products mới nhất trước khi render tab Tồn kho
+    loadProducts().then(() => sk_initStockTab());
+  }
 }
+
+// =====================================================================
+// TỒN KHO SẢN PHẨM TAB LOGIC (sk_ prefix)
+// =====================================================================
+let sk_page = 1;
+let sk_filteredList = [];
+let sk_initialized = false;
+
+const SK_LOW_STOCK_THRESHOLD = 30; // Sắp hết hàng nếu <= ngưỡng này
+
+function sk_getStockStatus(stock) {
+  const q = parseFloat(stock) || 0;
+  if (q <= 0) return 'out';
+  if (q <= SK_LOW_STOCK_THRESHOLD) return 'low';
+  return 'in';
+}
+
+function sk_statusBadge(status) {
+  if (status === 'out') return `<span class="text-xs px-2.5 py-0.5 rounded-full font-medium" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;">Hết hàng</span>`;
+  if (status === 'low') return `<span class="text-xs px-2.5 py-0.5 rounded-full font-medium" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;">Sắp hết hàng</span>`;
+  return `<span class="text-xs px-2.5 py-0.5 rounded-full font-medium" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">Còn hàng</span>`;
+}
+
+function sk_initStockTab() {
+  // Populate category filter once
+  const catSel = document.getElementById('sk_catFilter');
+  if (catSel && catSel.options.length <= 1 && products && products.length > 0) {
+    const cats = [...new Set(products.map(p => p.loai).filter(Boolean))].sort();
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      catSel.appendChild(opt);
+    });
+  }
+  sk_page = 1;
+  sk_filterAndRender();
+}
+
+function sk_filterAndRender() {
+  const q = (document.getElementById('sk_searchInput')?.value || '').trim().toLowerCase();
+  const cat = document.getElementById('sk_catFilter')?.value || '';
+  const status = document.getElementById('sk_statusFilter')?.value || '';
+  const pageSize = parseInt(document.getElementById('sk_pageSize')?.value || 10);
+
+  // Tính lượng "đang chờ xác nhận" cho từng SKU từ orders
+  const pendingQtyMap = {};
+  (orders || []).filter(o => o.status === 'Chờ xác nhận').forEach(o => {
+    (o.items || []).forEach(item => {
+      const sku = (item.ma || '').trim();
+      if (sku) pendingQtyMap[sku] = (pendingQtyMap[sku] || 0) + (parseFloat(item.qty) || 0);
+    });
+  });
+
+  let list = (products || []).filter(p => p.trangthai !== 'Ngừng theo dõi');
+
+  if (q) {
+    list = list.filter(p =>
+      (p.ma || '').toLowerCase().includes(q) ||
+      (p.ten || '').toLowerCase().includes(q) ||
+      (p.barcode || '').toLowerCase().includes(q)
+    );
+  }
+  if (cat) list = list.filter(p => p.loai === cat);
+  if (status) list = list.filter(p => sk_getStockStatus(p.stock) === status);
+
+  // Đính kèm pendingQty vào mỗi sản phẩm để dùng trong render
+  list = list.map(p => ({ ...p, _pendingQty: pendingQtyMap[p.ma] || 0 }));
+
+  sk_filteredList = list;
+
+  // Update stats cards
+  const allActive = (products || []).filter(p => p.trangthai !== 'Ngừng theo dõi');
+  const totalProducts = allActive.length;
+  const totalStock = allActive.reduce((s, p) => s + (parseFloat(p.stock) || 0), 0);
+  const lowCount = allActive.filter(p => sk_getStockStatus(p.stock) === 'low').length;
+  const outCount = allActive.filter(p => sk_getStockStatus(p.stock) === 'out').length;
+  const totalValue = allActive.reduce((s, p) => s + ((parseFloat(p.stock) || 0) * (parseFloat(p.cost_price || p.gia) || 0)), 0);
+
+  const el = id => document.getElementById(id);
+  if (el('sk_totalProducts')) el('sk_totalProducts').textContent = totalProducts.toLocaleString('vi-VN');
+  if (el('sk_totalStock')) el('sk_totalStock').textContent = totalStock.toLocaleString('vi-VN');
+  if (el('sk_lowStock')) el('sk_lowStock').textContent = lowCount.toLocaleString('vi-VN');
+  if (el('sk_outOfStock')) el('sk_outOfStock').textContent = outCount.toLocaleString('vi-VN');
+  if (el('sk_totalValue')) el('sk_totalValue').textContent = Math.round(totalValue).toLocaleString('vi-VN') + 'đ';
+
+  // Pagination
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (sk_page > totalPages) sk_page = totalPages;
+  if (sk_page < 1) sk_page = 1;
+
+  const start = (sk_page - 1) * pageSize;
+  const paged = list.slice(start, start + pageSize);
+
+  sk_renderTable(paged, start);
+  sk_renderPagination(totalPages, total, start, Math.min(start + pageSize, total));
+}
+
+function sk_renderTable(list, startOffset) {
+  const tbody = document.getElementById('sk_tableBody');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-gray-400 py-12 text-sm">
+      <i class="fa-solid fa-box-open fa-2x mb-2 block text-gray-300"></i>
+      Không tìm thấy sản phẩm nào phù hợp
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((p, i) => {
+    const stock = parseFloat(p.stock) || 0;
+    const pending = parseFloat(p._pendingQty) || 0;   // SL đang chờ xác nhận
+    const available = Math.max(0, stock - pending);
+    const costPrice = parseFloat(p.cost_price || p.gia) || 0;
+    const totalVal = Math.round(stock * costPrice);
+    const status = sk_getStockStatus(stock);
+    const hasImg = !!p.image;
+    const imgSrc = getProductImageUrl(p);
+    const rowNum = startOffset + i + 1;
+
+    // Nếu có đơn đang chờ, hiện tooltip trên cột Khả dụng
+    const pendingHint = pending > 0
+      ? ` title="${pending.toLocaleString('vi-VN')} đơn đang chờ xác nhận"` : '';
+
+    return `
+      <tr class="border-b border-gray-50 hover:bg-gray-50/60 transition-colors" style="cursor:default;">
+        <td class="px-4 py-3 text-center text-xs text-gray-400 font-medium">${rowNum}</td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-3">
+            <div style="width:36px;height:36px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+              ${hasImg
+                ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box\\' style=\\'color:#cbd5e1;\\'></i>'" />`
+                : `<i class="fa-solid fa-box" style="color:#cbd5e1;font-size:0.85rem;"></i>`
+              }
+            </div>
+            <span class="text-xs font-semibold text-gray-800" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;" title="${p.ten || ''}">${p.ten || '—'}</span>
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <span style="font-size:0.65rem;font-family:monospace;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px;white-space:nowrap;">${p.ma || '—'}</span>
+        </td>
+        <td class="px-4 py-3 text-center text-xs text-gray-600">${p.donvi || 'Cái'}</td>
+        <td class="px-4 py-3 text-center text-sm font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
+        <td class="px-4 py-3 text-center text-xs font-semibold ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}" ${pendingHint}>${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span style="font-size:0.6rem;opacity:0.7">(−${pending.toLocaleString('vi-VN')})</span>` : ''}</td>
+        <td class="px-4 py-3 text-right text-xs font-bold text-blue-700">${totalVal ? totalVal.toLocaleString('vi-VN') + 'đ' : '0đ'}</td>
+        <td class="px-4 py-3 text-center">${sk_statusBadge(status)}</td>
+        <td class="px-4 py-3 text-center">
+          <button class="text-gray-400 hover:text-blue-600 p-1 border border-gray-200 rounded-lg bg-white transition-colors" title="Xem chi tiết" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function sk_renderPagination(totalPages, total, startIdx, endIdx) {
+  const info = document.getElementById('sk_paginationInfo');
+  const pag = document.getElementById('sk_pagination');
+  if (info) info.textContent = `Hiển thị ${startIdx + 1}–${endIdx} của ${total} kết quả`;
+  if (!pag) return;
+
+  let html = '';
+  // Prev
+  html += `<button onclick="sk_goPage(${sk_page - 1})" ${sk_page <= 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs"><i class="fa-solid fa-chevron-left"></i></button>`;
+
+  const delta = 2;
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= sk_page - delta && i <= sk_page + delta)) pages.push(i);
+    else if (pages[pages.length - 1] !== '…') pages.push('…');
+  }
+
+  pages.forEach(p => {
+    if (p === '…') {
+      html += `<span class="w-7 h-7 flex items-center justify-center text-gray-400 text-xs">…</span>`;
+    } else {
+      const active = p === sk_page;
+      html += `<button onclick="sk_goPage(${p})" class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium border transition-colors ${active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}">${p}</button>`;
+    }
+  });
+
+  // Next
+  html += `<button onclick="sk_goPage(${sk_page + 1})" ${sk_page >= totalPages ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs"><i class="fa-solid fa-chevron-right"></i></button>`;
+  pag.innerHTML = html;
+}
+
+function sk_goPage(p) {
+  const pageSize = parseInt(document.getElementById('sk_pageSize')?.value || 10);
+  const totalPages = Math.max(1, Math.ceil(sk_filteredList.length / pageSize));
+  if (p < 1 || p > totalPages) return;
+  sk_page = p;
+  sk_filterAndRender();
+}
+
+function sk_exportExcel() {
+  showToast('<i class="fa-solid fa-file-excel"></i> Tính năng xuất Excel đang được phát triển!', 'info');
+}
+
+
 
 let allInventoryReceipts = [];
 
@@ -3476,6 +3714,7 @@ function initSidebarState() {
 let manualOrderItems = [];
 let ocCatalogPage = 1;
 const ocCatalogPageSize = 12;
+let viewMode = 'grid';
 
 function createOrderFromExisting(id) {
   const o = orders.find(x => x.id === id);
@@ -3565,6 +3804,26 @@ function filterCatalogForOrderCreation() {
   searchProductsForOrderCreation(query);
 }
 
+function oc_setViewMode(mode) {
+  viewMode = mode;
+  
+  const gridBtn = document.getElementById('oc_btnGridView');
+  const listBtn = document.getElementById('oc_btnListView');
+  
+  if (gridBtn && listBtn) {
+    if (mode === 'grid') {
+      gridBtn.className = 'btn btn-sm bg-blue-600 text-white shadow-sm';
+      listBtn.className = 'btn btn-sm bg-white text-gray-500 hover:bg-gray-100';
+    } else {
+      listBtn.className = 'btn btn-sm bg-blue-600 text-white shadow-sm';
+      gridBtn.className = 'btn btn-sm bg-white text-gray-500 hover:bg-gray-100';
+    }
+  }
+  
+  const query = document.getElementById('oc_productSearch')?.value || '';
+  searchProductsForOrderCreation(query);
+}
+
 function searchProductsForOrderCreation(query) {
   const catalogGrid = document.getElementById('oc_catalogGrid');
   const q = String(query || '').trim().toLowerCase();
@@ -3594,6 +3853,24 @@ function searchProductsForOrderCreation(query) {
     });
   }
 
+  // Adjust container styles according to the view mode
+  if (catalogGrid) {
+    if (viewMode === 'list') {
+      catalogGrid.style.display = 'flex';
+      catalogGrid.style.flexDirection = 'column';
+      catalogGrid.style.gap = '8px';
+      catalogGrid.style.gridTemplateColumns = 'none';
+      catalogGrid.style.maxHeight = '380px';
+      catalogGrid.style.overflowY = 'auto';
+    } else {
+      catalogGrid.style.display = 'grid';
+      catalogGrid.style.gridTemplateColumns = '1fr 1fr';
+      catalogGrid.style.gap = '10px';
+      catalogGrid.style.maxHeight = '';
+      catalogGrid.style.overflowY = 'auto';
+    }
+  }
+
   // Pagination
   const totalPages = Math.ceil(matches.length / ocCatalogPageSize) || 1;
   if (ocCatalogPage > totalPages) ocCatalogPage = totalPages;
@@ -3604,7 +3881,7 @@ function searchProductsForOrderCreation(query) {
 
   if (displayList.length === 0) {
     catalogGrid.innerHTML = `
-      <div style="grid-column: span 2; text-align: center; color: var(--muted); padding: 40px; font-size: 0.85rem;">
+      <div style="grid-column: span 2; text-align: center; color: var(--muted); padding: 40px; font-size: 0.85rem; width: 100%;">
         <i class="fa-solid fa-box-open fa-2x" style="margin-bottom: 8px; display: block; color: #cbd5e1;"></i>
         Không tìm thấy sản phẩm nào phù hợp
       </div>
@@ -3613,46 +3890,90 @@ function searchProductsForOrderCreation(query) {
     return;
   }
 
-  catalogGrid.innerHTML = displayList.map(p => {
-    const isOutOfStock = (p.stock === undefined || p.stock === null || parseFloat(p.stock) <= 0);
-    const hasImage = !!p.image;
+  if (viewMode === 'list') {
+    catalogGrid.innerHTML = displayList.map(p => {
+      const isOutOfStock = (p.stock === undefined || p.stock === null || parseFloat(p.stock) <= 0);
+      const hasImage = !!p.image;
 
-    return `
-      <div class="oc-catalog-card" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: box-shadow 0.2s;">
-        <!-- Product Image -->
-        <div style="height: 90px; background: #f8fafc; border-radius: 6px; border: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
-          ${hasImage
-        ? `<img src="${getProductImageUrl(p)}" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box fa-xl\\' style=\\'color:#cbd5e1;\\'></i>'" />`
-        : `<i class="fa-solid fa-box fa-xl" style="color: #cbd5e1;"></i>`
-      }
+      return `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.8rem; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+          <!-- Left section: Image, SKU, Name, Unit, Stock -->
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+            <!-- Small Image Thumbnail (32x32px) -->
+            <div style="width: 32px; height: 32px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+              ${hasImage
+                ? `<img src="${getProductImageUrl(p)}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box\\' style=\\'color:#cbd5e1;font-size:0.75rem;\\'></i>'" />`
+                : `<i class="fa-solid fa-box" style="color: #cbd5e1; font-size: 0.75rem;"></i>`
+              }
+            </div>
+            
+            <!-- SKU -->
+            <span style="font-size: 0.65rem; color: var(--muted); font-family: monospace; background: var(--bg); padding: 1px 4px; border-radius: 3px; flex-shrink: 0;">${p.ma}</span>
+            
+            <!-- Name -->
+            <span style="font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;" title="${p.ten}">${p.ten}</span>
+            
+            <!-- Unit -->
+            <span style="color: var(--muted); flex-shrink: 0; font-size: 0.72rem;">ĐVT: ${p.donvi || 'Cái'}</span>
+            
+            <!-- Stock -->
+            <span style="color: ${isOutOfStock ? 'var(--danger)' : 'var(--success)'}; font-weight: 600; flex-shrink: 0; font-size: 0.72rem;">
+              ${isOutOfStock ? 'Hết hàng' : `Tồn: ${p.stock}`}
+            </span>
+          </div>
+          
+          <!-- Right section: Price & Action -->
+          <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+            <span style="font-weight: 700; color: var(--primary); font-size: 0.82rem;">${formatPrice(p.gia)}</span>
+            <button class="btn btn-primary btn-sm" onclick="addProdToManualOrder('${p.ma}')" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 4px; height: 22px; display: inline-flex; align-items: center; gap: 3px;">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
         </div>
-        
-        <!-- SKU Code -->
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.65rem; color: var(--muted); font-family: monospace; background: var(--bg); padding: 1px 6px; border-radius: 4px; display: inline-block;">${p.ma}</span>
+      `;
+    }).join('');
+  } else {
+    catalogGrid.innerHTML = displayList.map(p => {
+      const isOutOfStock = (p.stock === undefined || p.stock === null || parseFloat(p.stock) <= 0);
+      const hasImage = !!p.image;
+
+      return `
+        <div class="oc-catalog-card" style="border: 1px solid var(--border); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: box-shadow 0.2s;">
+          <!-- Product Image -->
+          <div style="height: 90px; background: #f8fafc; border-radius: 6px; border: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+            ${hasImage
+          ? `<img src="${getProductImageUrl(p)}" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box fa-xl\\' style=\\'color:#cbd5e1;\\'></i>'" />`
+          : `<i class="fa-solid fa-box fa-xl" style="color: #cbd5e1;"></i>`
+        }
+          </div>
+          
+          <!-- SKU Code -->
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.65rem; color: var(--muted); font-family: monospace; background: var(--bg); padding: 1px 6px; border-radius: 4px; display: inline-block;">${p.ma}</span>
+          </div>
+          
+          <!-- Title -->
+          <h5 style="margin: 0; font-size: 0.78rem; font-weight: 600; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; height: 32px;" title="${p.ten}">${p.ten}</h5>
+          
+          <!-- Unit and Stock -->
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
+            <span style="color: var(--muted);">ĐVT: <strong style="color: var(--text);">${p.donvi || 'Cái'}</strong></span>
+            <span style="color: ${isOutOfStock ? 'var(--danger)' : 'var(--success)'}; font-weight: 600;">
+              ${isOutOfStock ? 'Hết hàng' : `Tồn: ${p.stock}`}
+            </span>
+          </div>
+          
+          <!-- Price and Action -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 6px;">
+            <span style="font-weight: 700; color: var(--primary); font-size: 0.85rem;">${formatPrice(p.gia)}</span>
+            <button class="btn btn-primary btn-sm" onclick="addProdToManualOrder('${p.ma}')" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 6px; height: 24px; display: inline-flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
         </div>
-        
-        <!-- Title -->
-        <h5 style="margin: 0; font-size: 0.78rem; font-weight: 600; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; height: 32px;" title="${p.ten}">${p.ten}</h5>
-        
-        <!-- Unit and Stock -->
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
-          <span style="color: var(--muted);">ĐVT: <strong style="color: var(--text);">${p.donvi || 'Cái'}</strong></span>
-          <span style="color: ${isOutOfStock ? 'var(--danger)' : 'var(--success)'}; font-weight: 600;">
-            ${isOutOfStock ? 'Hết hàng' : `Tồn: ${p.stock}`}
-          </span>
-        </div>
-        
-        <!-- Price and Action -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 6px;">
-          <span style="font-weight: 700; color: var(--primary); font-size: 0.85rem;">${formatPrice(p.gia)}</span>
-          <button class="btn btn-primary btn-sm" onclick="addProdToManualOrder('${p.ma}')" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 6px; height: 24px; display: inline-flex; align-items: center; gap: 4px;">
-            <i class="fa-solid fa-plus"></i> Thêm
-          </button>
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  }
 
   renderCatalogPagination(totalPages);
 }
@@ -3805,8 +4126,8 @@ function renderManualOrderItems() {
       
       <!-- ĐƠN GIÁ (input field) -->
       <td style="padding: 8px 6px; text-align: right;">
-        <input type="number" value="${item.gia}" min="0"
-               oninput="updateManualOrderItemPrice('${item.ma}', this.value)"
+        <input type="text" value="${(item.gia || 0).toLocaleString('vi-VN')}"
+               oninput="formatPriceInput(this); updateManualOrderItemPrice('${item.ma}', this.value)"
                style="width: 85px; height: 26px; font-size: 0.78rem; text-align: right; padding: 0 6px; border-radius: 4px; border: 1px solid #d1d5db; outline: none;"
                onfocus="this.style.borderColor='#3b82f6'"
                onblur="this.style.borderColor='#d1d5db'" />
@@ -3855,7 +4176,7 @@ function adjustManualOrderItemQty(ma, delta) {
 }
 
 function updateManualOrderItemPrice(ma, val) {
-  const price = parseFloat(val);
+  const price = parseFormattedFloat(val);
   const item = manualOrderItems.find(i => i.ma === ma);
   if (item && !isNaN(price) && price >= 0) {
     item.gia = price;
@@ -4122,9 +4443,9 @@ function srfm_addRow(data) {
         oninput="srfm_calcRow(${idx})" />
     </td>
     <td style="padding:6px 8px;vertical-align:middle;">
-      <input type="number" id="srfm_price_${idx}" placeholder="0" value="${d.unit_price || ''}" min="0" step="any"
+      <input type="text" id="srfm_price_${idx}" placeholder="0" value="${d.unit_price ? d.unit_price.toLocaleString('vi-VN') : ''}"
         style="${inputStyle}text-align:right;" ${focusEvents}
-        oninput="srfm_calcRow(${idx})" />
+        oninput="formatPriceInput(this); srfm_calcRow(${idx})" />
     </td>
     <td style="padding:6px 8px;vertical-align:middle;">
       <input type="number" id="srfm_tax_${idx}" placeholder="0" value="${d.tax_rate !== undefined ? d.tax_rate : ''}" min="0" max="100" step="any"
@@ -4179,7 +4500,7 @@ function srfm_removeRow(idx) {
 
 function srfm_calcRow(idx) {
   const qty = parseFloat(document.getElementById(`srfm_qty_${idx}`)?.value || 0) || 0;
-  const price = parseFloat(document.getElementById(`srfm_price_${idx}`)?.value || 0) || 0;
+  const price = parseFormattedFloat(document.getElementById(`srfm_price_${idx}`)?.value || 0) || 0;
   const tax = parseFloat(document.getElementById(`srfm_tax_${idx}`)?.value || 0) || 0;
   const subtotal = qty * price;
   const total = Math.round(subtotal * (1 + tax / 100));
@@ -4195,7 +4516,7 @@ function srfm_updateTotals() {
   document.querySelectorAll('[id^="srfm_row_"]').forEach(row => {
     const idx = row.id.replace('srfm_row_', '');
     const qty = parseFloat(document.getElementById(`srfm_qty_${idx}`)?.value || 0) || 0;
-    const price = parseFloat(document.getElementById(`srfm_price_${idx}`)?.value || 0) || 0;
+    const price = parseFormattedFloat(document.getElementById(`srfm_price_${idx}`)?.value || 0) || 0;
     const taxRate = parseFloat(document.getElementById(`srfm_tax_${idx}`)?.value || 0) || 0;
     const rowSubtotal = qty * price;
     subtotal += rowSubtotal;
@@ -4339,7 +4660,7 @@ function srfm_selectSku(idx, sku, name, unit, price) {
   if (skuEl) skuEl.value = sku;
   if (nameEl) nameEl.value = name;
   if (unitEl) unitEl.value = unit;
-  if (priceEl && !priceEl.value) priceEl.value = price || '';
+  if (priceEl && !priceEl.value) priceEl.value = price ? price.toLocaleString('vi-VN') : '';
   srfm_calcRow(idx);
   srfm_checkDuplicates(); // Kiểm tra trùng sau khi chọn sản phẩm
   // Focus qty
@@ -4495,7 +4816,7 @@ async function srfm_saveReceipt(btn) {
     const name = (document.getElementById(`srfm_name_${idx}`)?.value || '').trim();
     const unit = (document.getElementById(`srfm_unit_${idx}`)?.value || 'Cái').trim();
     const qty = parseFloat(document.getElementById(`srfm_qty_${idx}`)?.value || 0) || 0;
-    const price = parseFloat(document.getElementById(`srfm_price_${idx}`)?.value || 0) || 0;
+    const price = parseFormattedFloat(document.getElementById(`srfm_price_${idx}`)?.value || 0) || 0;
     const taxRate = parseFloat(document.getElementById(`srfm_tax_${idx}`)?.value || 0) || 0;
     if (!sku) return; // skip blank rows
     if (qty <= 0) { hasError = true; showToast('<i class="fa-solid fa-triangle-exclamation"></i> Số lượng phải lớn hơn 0!', 'error'); return; }
@@ -4551,6 +4872,9 @@ async function srfm_saveReceipt(btn) {
     showToast(`<i class="fa-solid fa-circle-check"></i> Lưu phiếu nhập kho thành công! <a href="#" onclick="openInventoryReceiptDetail(${data.receiptId}); return false;" style="color:#60a5fa;text-decoration:underline;margin-left:8px;font-weight:bold;">Xem chi tiết</a>`, 'success');
     closeModal('stockReceiptFormModal');
     loadInventoryHistory();
+    // Reload products sau khi nhập kho để Tồn kho tab phản ánh số liệu mới
+    await loadProducts();
+    if (typeof renderAdminTable === 'function') renderAdminTable();
   } catch (err) {
     console.error(err);
     showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
