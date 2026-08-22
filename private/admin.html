@@ -23,6 +23,23 @@
       }
     }
   </script>
+  <style>
+    .srfm-dup-row, .srfm-dup-row td {
+      background-color: #fef2f2 !important;
+    }
+    .srfm-dup-row input {
+      background-color: #fef2f2 !important;
+      border-color: #fca5a5 !important;
+    }
+    .srfm-dup-row input:focus {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+    }
+    .srfm-dup-row input[id^="srfm_sku_"] {
+      color: #b91c1c !important;
+      font-weight: 600 !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -1318,7 +1335,8 @@
               <input id="srfm_receiptCode" type="text" placeholder="Ví dụ: PN2024001"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
-                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
+                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"
+                oninput="srfm_syncAutoNote()" />
             </div>
             <div>
               <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Ngày nhập
@@ -1326,7 +1344,8 @@
               <input id="srfm_importDate" type="date"
                 style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:7px 10px;font-size:.85rem;color:#111827;outline:none;transition:border .15s,box-shadow .15s;box-sizing:border-box;"
                 onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,.12)'"
-                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'" />
+                onblur="this.style.borderColor='#d1d5db';this.style.boxShadow='none'"
+                onchange="srfm_syncAutoNote()" />
             </div>
             <div id="srfm_supplierWrap" style="position:relative;">
               <label style="display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;">Nhà cung

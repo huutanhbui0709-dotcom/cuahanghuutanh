@@ -3999,6 +3999,37 @@ async function submitManualOrder() {
 let srfm_rowIndex = 0;
 let srfm_editingReceiptId = null;
 
+/**
+ * Tự động sinh mã chứng từ theo định dạng: PN{YYYYMMDD}{NN}
+ * Ví dụ: PN2026220801 (ngày 22/08/2026, phiếu thứ 1 trong ngày)
+ */
+function srfm_generateReceiptCode() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  // Format ngày: YYYYDDMM => ví dụ 20262208 (2026 + ngày 22 + tháng 08)
+  const datePart = `${yyyy}${dd}${mm}`;
+  const prefix = `PN${datePart}`;
+
+  // Đếm số phiếu đã có trong ngày hôm nay từ allInventoryReceipts
+  const existingToday = (allInventoryReceipts || []).filter(r => {
+    const code = (r.receipt_code || '');
+    return code.startsWith(prefix);
+  });
+
+  // Lấy số thứ tự lớn nhất đã dùng trong ngày
+  let maxSeq = 0;
+  existingToday.forEach(r => {
+    const suffix = (r.receipt_code || '').slice(prefix.length);
+    const seq = parseInt(suffix, 10);
+    if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+  });
+
+  const nextSeq = String(maxSeq + 1).padStart(2, '0');
+  return `${prefix}${nextSeq}`;
+}
+
 function openStockReceiptFormModal() {
   srfm_editingReceiptId = null;
   srfm_rowIndex = 0;
@@ -4018,7 +4049,8 @@ function openStockReceiptFormModal() {
   badge.textContent = '';
 
   const codeInput = document.getElementById('srfm_receiptCode');
-  codeInput.value = '';
+  // Tự động sinh mã chứng từ, vẫn cho phép chỉnh sửa
+  codeInput.value = srfm_generateReceiptCode();
   codeInput.disabled = false;
   codeInput.style.background = '';
   codeInput.style.cursor = '';
@@ -4028,6 +4060,7 @@ function openStockReceiptFormModal() {
   document.getElementById('srfm_importDate').value = today;
   document.getElementById('srfm_supplierName').value = '';
   document.getElementById('srfm_warehouseName').value = 'Kho chính';
+  // Khởi tạo diễn giải tự động với mã và ngày (NCC chưa chọn nên chỉ có "Nhập kho từ - Số: ... Ngày ...")
   document.getElementById('srfm_note').value = '';
 
   // Clear table
@@ -4043,8 +4076,8 @@ function openStockReceiptFormModal() {
   srfm_updateItemCount();
 
   document.getElementById('stockReceiptFormModal').classList.add('open');
-  // Auto-focus first field after animation
-  setTimeout(() => document.getElementById('srfm_receiptCode').focus(), 120);
+  // Auto-focus supplier field for better UX (mã đã có sẵn)
+  setTimeout(() => document.getElementById('srfm_supplierName').focus(), 120);
 }
 
 function srfm_addRow(data) {
@@ -4181,6 +4214,42 @@ function srfm_updateItemCount() {
   const count = document.querySelectorAll('[id^="srfm_row_"]').length;
   const el = document.getElementById('srfm_itemCount');
   if (el) el.textContent = count + ' dòng';
+  srfm_checkDuplicates();
+}
+
+/**
+ * Highlight đỏ toàn bộ dòng có SKU trùng lặp
+ */
+function srfm_checkDuplicates() {
+  const rows = document.querySelectorAll('[id^="srfm_row_"]');
+  // Thu thập tất cả SKU (không rỗng)
+  const skuMap = {}; // sku -> count
+  rows.forEach(row => {
+    const idx = row.id.replace('srfm_row_', '');
+    const sku = (document.getElementById(`srfm_sku_${idx}`)?.value || '').trim().toUpperCase();
+    if (sku) {
+      skuMap[sku] = (skuMap[sku] || 0) + 1;
+    }
+  });
+
+  // Áp dụng style bằng class CSS để tránh xung đột với style mặc định
+  rows.forEach(row => {
+    const idx = row.id.replace('srfm_row_', '');
+    const sku = (document.getElementById(`srfm_sku_${idx}`)?.value || '').trim().toUpperCase();
+    const isDup = sku && skuMap[sku] > 1;
+
+    if (isDup) {
+      row.classList.add('srfm-dup-row');
+    } else {
+      row.classList.remove('srfm-dup-row');
+    }
+
+    // Thiết lập tooltip cho ô SKU khi bị trùng
+    const skuEl = document.getElementById(`srfm_sku_${idx}`);
+    if (skuEl) {
+      skuEl.title = isDup ? `⚠ SKU "${sku}" bị trùng!` : '';
+    }
+  });
 }
 
 // Shared product autocomplete dropdown helper functions
@@ -4214,6 +4283,7 @@ function srfm_hideDropdown() {
 
 // SKU autocomplete
 function srfm_onSkuInput(input, idx) {
+  srfm_checkDuplicates(); // Kiểm tra trùng mỗi khi gõ SKU
   const val = input.value.trim().toLowerCase();
   const drop = srfm_getSharedDropdown();
   if (!val || val.length < 1) { srfm_hideDropdown(); return; }
@@ -4271,6 +4341,7 @@ function srfm_selectSku(idx, sku, name, unit, price) {
   if (unitEl) unitEl.value = unit;
   if (priceEl && !priceEl.value) priceEl.value = price || '';
   srfm_calcRow(idx);
+  srfm_checkDuplicates(); // Kiểm tra trùng sau khi chọn sản phẩm
   // Focus qty
   const qtyEl = document.getElementById(`srfm_qty_${idx}`);
   if (qtyEl) { qtyEl.focus(); qtyEl.select(); }
@@ -4326,15 +4397,48 @@ function srfm_onSupplierInput(input) {
   drop.style.display = 'block';
 }
 
+/**
+ * Xây dựng chuỗi diễn giải tự động:
+ * "Nhập kho từ {TÊN NCC} - Số: {MÃ CT} Ngày {DD/MM/YYYY}"
+ */
+function srfm_buildAutoNote() {
+  const supplier = (document.getElementById('srfm_supplierName')?.value || '').trim();
+  const code     = (document.getElementById('srfm_receiptCode')?.value || '').trim();
+  const dateVal  = (document.getElementById('srfm_importDate')?.value || '').trim(); // YYYY-MM-DD
+
+  let dateStr = '';
+  if (dateVal) {
+    const [y, m, d] = dateVal.split('-');
+    dateStr = `${d}/${m}/${y}`;
+  }
+
+  const parts = ['Nhập kho từ'];
+  if (supplier) parts.push(supplier);
+  if (code)     parts.push(`- Số: ${code}`);
+  if (dateStr)  parts.push(`Ngày ${dateStr}`);
+
+  return parts.join(' ');
+}
+
+/**
+ * Cập nhật ô Diễn giải nếu nó đang chứa nội dung tự sinh
+ * (trống hoặc bắt đầu bằng "Nhập kho từ")
+ */
+function srfm_syncAutoNote() {
+  const noteEl = document.getElementById('srfm_note');
+  if (!noteEl) return;
+  const cur = noteEl.value.trim();
+  if (!cur || cur.startsWith('Nhập kho từ')) {
+    noteEl.value = srfm_buildAutoNote();
+  }
+}
+
 function srfm_selectSupplier(name, phone) {
   const input = document.getElementById('srfm_supplierName');
   if (input) input.value = name;
   document.getElementById('srfm_supplierDrop').style.display = 'none';
-  // Optionally auto-set note if empty
-  const noteEl = document.getElementById('srfm_note');
-  if (noteEl && !noteEl.value.trim()) {
-    noteEl.value = `Nhập kho từ ${name}`;
-  }
+  // Cập nhật diễn giải nếu đang là nội dung tự sinh
+  srfm_syncAutoNote();
 }
 
 function srfm_supplierKeydown(event) {
