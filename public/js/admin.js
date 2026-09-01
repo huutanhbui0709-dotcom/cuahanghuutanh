@@ -3253,109 +3253,18 @@ function sk_filterAndRender() {
   const paged = list.slice(start, start + pageSize);
 
   sk_renderTable(paged, start);
-  sk_renderPagination(totalPages, total, start, Math.min(start + pageSize, total));
-}
 
-function sk_renderTable(list, startOffset) {
-  const tbody = document.getElementById('sk_tableBody');
-  if (!tbody) return;
+  // Render standard pagination matching all other tabs
+  renderPagination(totalPages, sk_page, 'sk_pagination', (p) => { sk_goPage(p); });
 
-  if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-gray-400 py-12 text-sm">
-      <i class="fa-solid fa-box-open fa-2x mb-2 block text-gray-300"></i>
-      Không tìm thấy sản phẩm nào phù hợp
-    </td></tr>`;
-    return;
+  const infoEl = document.getElementById('sk_paginationInfo');
+  if (infoEl && total > 0) {
+    const startIdx = (sk_page - 1) * pageSize + 1;
+    const endIdx = Math.min(sk_page * pageSize, total);
+    infoEl.innerHTML = `Hiển thị <strong>${startIdx} – ${endIdx}</strong> của <strong>${total}</strong> sản phẩm`;
+  } else if (infoEl) {
+    infoEl.innerHTML = '';
   }
-
-  tbody.innerHTML = list.map((p, i) => {
-    const stock = parseFloat(p.stock) || 0;
-    const pending = parseFloat(p._pendingQty) || 0;
-    const available = Math.max(0, stock - pending);
-    const costPrice = parseFloat(p.cost_price || p.gia) || 0;
-    const totalVal = Math.round(stock * costPrice);
-    const status = sk_getStockStatus(stock);
-    const hasImg = !!p.image;
-    const imgSrc = getProductImageUrl(p);
-    const rowNum = startOffset + i + 1;
-
-    let badgeHtml = '';
-    if (status === 'out') {
-      badgeHtml = `<span class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">Hết hàng</span>`;
-    } else if (status === 'low') {
-      badgeHtml = `<span class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">Sắp hết hàng</span>`;
-    } else {
-      badgeHtml = `<span class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">Còn hàng</span>`;
-    }
-
-    return `
-      <tr class="hover:bg-gray-50 border-b border-gray-100">
-        <td class="w-12 px-4 py-3 text-center text-gray-500 text-sm">${rowNum}</td>
-        <td class="py-3 px-4 font-medium text-gray-900">
-          <div class="flex items-center gap-2.5">
-            <div style="width:32px;height:32px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-              ${hasImg
-                ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box\\' style=\\'color:#cbd5e1;\\'></i>'" />`
-                : `<i class="fa-solid fa-box" style="color:#cbd5e1;font-size:0.8rem;"></i>`
-              }
-            </div>
-            <span style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;" title="${p.ten || ''}">${p.ten || '—'}</span>
-          </div>
-        </td>
-        <td class="py-3 px-4 text-gray-600 font-mono text-xs">${p.ma || '—'}</td>
-        <td class="py-3 px-4 text-gray-600">${p.donvi || 'Cái'}</td>
-        <td class="py-3 px-4 font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
-        <td class="py-3 px-4 font-medium ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}">
-          ${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span class="text-xs text-gray-400 font-normal">(−${pending.toLocaleString('vi-VN')})</span>` : ''}
-        </td>
-        <td class="py-3 px-4"><span class="text-red-600 font-semibold">${formatPrice(totalVal)}</span></td>
-        <td class="py-3 px-4">${badgeHtml}</td>
-        <td class="py-3 px-4">
-          <div class="flex items-center gap-1.5">
-            <button class="p-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors bg-white cursor-pointer" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);" title="Xem chi tiết">
-              <i class="fa-solid fa-eye text-xs"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function sk_renderPagination(totalPages, total, startIdx, endIdx) {
-  const info = document.getElementById('sk_paginationInfo');
-  const pag = document.getElementById('sk_pagination');
-  if (info) info.textContent = total > 0 ? `Hiển thị ${startIdx + 1}–${endIdx} của ${total} sản phẩm` : 'Hiển thị 0 kết quả';
-  if (!pag) return;
-
-  if (totalPages <= 1) {
-    pag.innerHTML = '';
-    return;
-  }
-
-  let html = '';
-  // Prev
-  html += `<button onclick="sk_goPage(${sk_page - 1})" ${sk_page <= 1 ? 'disabled' : ''} class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition-colors"><i class="fa-solid fa-chevron-left"></i></button>`;
-
-  const delta = 2;
-  const pages = [];
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= sk_page - delta && i <= sk_page + delta)) pages.push(i);
-    else if (pages[pages.length - 1] !== '…') pages.push('…');
-  }
-
-  pages.forEach(p => {
-    if (p === '…') {
-      html += `<span class="w-8 h-8 flex items-center justify-center text-gray-400 text-xs">…</span>`;
-    } else {
-      const active = p === sk_page;
-      html += `<button onclick="sk_goPage(${p})" class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold border transition-colors ${active ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}">${p}</button>`;
-    }
-  });
-
-  // Next
-  html += `<button onclick="sk_goPage(${sk_page + 1})" ${sk_page >= totalPages ? 'disabled' : ''} class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition-colors"><i class="fa-solid fa-chevron-right"></i></button>`;
-  pag.innerHTML = html;
 }
 
 function sk_goPage(p) {
