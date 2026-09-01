@@ -2038,7 +2038,12 @@ function renderInvoiceResults(results) {
     tabBtn.className = `btn btn-sm invoice-tab-btn ${index === 0 ? 'btn-primary' : 'btn-outline'}`;
     tabBtn.id = `invoice-tab-btn-${index}`;
     if (index !== 0) tabBtn.style.color = 'black';
-    tabBtn.innerHTML = `<i class="fa-solid fa-file-invoice"></i> Hóa đơn ${index + 1}`;
+    
+    let tabTitle = `Hóa đơn ${index + 1}`;
+    if (res.data && res.data.invoiceNumber) {
+      tabTitle = `HĐ ${index + 1} (Số ${res.data.invoiceNumber})`;
+    }
+    tabBtn.innerHTML = `<i class="fa-solid fa-file-invoice"></i> ${tabTitle}`;
     tabBtn.onclick = () => showInvoiceResultTab(index);
     tabsContainer.appendChild(tabBtn);
   });

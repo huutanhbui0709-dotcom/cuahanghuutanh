@@ -316,7 +316,42 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
     for (const file of req.files) {
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
       try {
-        const prompt = `Hãy đọc hóa đơn GTGT (dạng PDF hoặc hình ảnh) được cung cấp và trích xuất thông tin chi tiết chính xác theo định dạng JSON sau:\n{\n  "sellerName": "Tên đơn vị bán hàng",\n  "serial": "Ký hiệu hóa đơn (Ký hiệu / Serial, ví dụ: 1C26TAA)",\n  "invoiceNumber": "Số hóa đơn (Số / No., ví dụ: 00029613)",\n  "taxCode": "Mã của cơ quan thuế hoặc Mã số thuế người bán",\n  "invoiceDate": {\n    "date": "Ngày (dạng số ví dụ: 25)",\n    "month": "Tháng (dạng số ví dụ: 06)",\n    "year": "Năm (dạng số ví dụ: 2026)"\n  },\n  "products": [\n    {\n      "name": "Tên sản phẩm",\n      "unit": "ĐVT",\n      "quantity": 10,\n      "price": 5000,\n      "amount": 50000,\n      "taxPercent": 10\n    }\n  ]\n}\nLưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riêng cho sản phẩm đó (ví dụ: 0, 5, 8, 10). Nếu không ghi thuế hoặc thuế suất là 0% thì trả về 0.`;
+        const prompt = `Hãy đọc kỹ tài liệu hóa đơn GTGT (dạng PDF hoặc hình ảnh) được cung cấp. File có thể chứa 1 hóa đơn hoặc NHIỀU HÓA ĐƠN KHÁC NHAU (nhiều trang, mỗi trang hoặc mỗi phần có thể là một hóa đơn riêng).
+
+YÊU CẦU BẮT BUỘC:
+1. Phát hiện và trích xuất TẤT CẢ các hóa đơn có trong file thành một MẢNG JSON các đối tượng hóa đơn: [ { ... }, { ... } ].
+2. QUY TẮC TÁCH HÓA ĐƠN: Tách thành các hóa đơn riêng biệt khi phát hiện:
+   - Số hóa đơn (Số / No.) thay đổi
+   - Ký hiệu (Serial) thay đổi
+   - Mã CQT / Mã tra cứu thay đổi
+   - Ngày hóa đơn hoặc Đơn vị bán/mua thay đổi
+   - Xuất hiện tiêu đề "HÓA ĐƠN GIÁ TRỊ GIA TĂNG" mới hoặc chữ ký số mới của hóa đơn khác.
+3. QUY TẮC GỘP HÓA ĐƠN NHIỀU TRANG: Nếu một hóa đơn kéo dài qua nhiều trang (cùng Số hóa đơn, cùng Ký hiệu / Mã CQT / Đơn vị bán), hãy GỘP TOÀN BỘ danh sách sản phẩm từ tất cả các trang đó vào DUY NHẤT 1 đối tượng hóa đơn trong mảng.
+4. ĐỊNH DẠNG JSON TRẢ VỀ: Luôn luôn là một MẢNG JSON [ { ... } ] theo cấu trúc:
+[
+  {
+    "sellerName": "Tên đơn vị bán hàng",
+    "serial": "Ký hiệu hóa đơn (Ký hiệu / Serial, ví dụ: 1C26TAA)",
+    "invoiceNumber": "Số hóa đơn (Số / No., ví dụ: 00034652)",
+    "taxCode": "Mã của cơ quan thuế hoặc Mã số thuế người bán",
+    "invoiceDate": {
+      "date": "Ngày (dạng số ví dụ: 27)",
+      "month": "Tháng (dạng số ví dụ: 08)",
+      "year": "Năm (dạng số ví dụ: 2026)"
+    },
+    "products": [
+      {
+        "name": "Tên sản phẩm / hàng hóa",
+        "unit": "ĐVT",
+        "quantity": 10,
+        "price": 5000,
+        "amount": 50000,
+        "taxPercent": 8
+      }
+    ]
+  }
+]
+Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riêng cho sản phẩm (ví dụ: 0, 5, 8, 10). Nếu không ghi hoặc thuế suất 0% thì trả về 0.`;
 
         const response = await model.generateContent([
           prompt,
@@ -345,61 +380,92 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
 
         const parsed = JSON.parse(cleanedText);
 
-        if (parsed.products && Array.isArray(parsed.products)) {
-          for (const prod of parsed.products) {
-            const prodNameLower = (prod.name || '').toLowerCase().trim();
-            const prodCodeLower = (prod.code || '').toLowerCase().trim();
-            const hasMatch = systemProducts.some(sysP => {
-              const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
-              const sysNameLower = (sysP.ten || '').toLowerCase().trim();
+        // Chuẩn hóa kết quả thành danh sách hóa đơn (hỗ trợ cả Array và Object đơn)
+        let invoiceList = [];
+        if (Array.isArray(parsed)) {
+          invoiceList = parsed;
+        } else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.invoices)) invoiceList = parsed.invoices;
+          else if (Array.isArray(parsed.data)) invoiceList = parsed.data;
+          else invoiceList = [parsed];
+        }
 
-              // 1. Khớp chính xác theo mã SP
-              if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
-              // 2. Mã SP có trong tên sản phẩm hóa đơn (vd: "...model COV-22-RS")
-              if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
-              if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
+        // Lọc bỏ phần tử không hợp lệ
+        invoiceList = invoiceList.filter(inv => inv && typeof inv === 'object');
+        if (invoiceList.length === 0) {
+          invoiceList = [parsed];
+        }
 
-              // 3. So sánh tên rút gọn: bỏ khoảng trắng/dấu phân cách
-              // VD: "màn phủ 1mx100m" ↔ "màn phủ 1m x 100m" → compact khớp
-              const prodCompact = compactName(prodNameLower);
-              const sysCompact = compactName(sysNameLower);
-              if (prodCompact && sysCompact) {
-                if (prodCompact === sysCompact) return true;
-                const minLen = Math.min(prodCompact.length, sysCompact.length);
-                if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
-              }
+        for (let invIdx = 0; invIdx < invoiceList.length; invIdx++) {
+          const inv = invoiceList[invIdx];
 
-              // 4. Số chứa trong tên (soft guard — chỉ loại nếu cả hai có số VÀ khác nhau rõ ràng)
-              const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
-              const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
-              if (prodNums && sysNums && prodNums !== sysNums) return false;
+          if (inv.products && Array.isArray(inv.products)) {
+            for (const prod of inv.products) {
+              const prodNameLower = (prod.name || '').toLowerCase().trim();
+              const prodCodeLower = (prod.code || '').toLowerCase().trim();
+              const hasMatch = systemProducts.some(sysP => {
+                const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
+                const sysNameLower = (sysP.ten || '').toLowerCase().trim();
 
-              // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
-              const sim = calculateSimilarity(prodNameLower, sysNameLower);
-              if (sim >= 0.80) return true;
+                // 1. Khớp chính xác theo mã SP
+                if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
+                // 2. Mã SP có trong tên sản phẩm hóa đơn (vd: "...model COV-22-RS")
+                if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
+                if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
 
-              // 6. Tên nằm trong nhau (tên dài bao tên ngắn)
-              if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
-                if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
-              }
-              return false;
-            });
-            if (!hasMatch) prod.isNewSystemProduct = true;
+                // 3. So sánh tên rút gọn: bỏ khoảng trắng/dấu phân cách
+                // VD: "màn phủ 1mx100m" ↔ "màn phủ 1m x 100m" → compact khớp
+                const prodCompact = compactName(prodNameLower);
+                const sysCompact = compactName(sysNameLower);
+                if (prodCompact && sysCompact) {
+                  if (prodCompact === sysCompact) return true;
+                  const minLen = Math.min(prodCompact.length, sysCompact.length);
+                  if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
+                }
+
+                // 4. Số chứa trong tên (soft guard — chỉ loại nếu cả hai có số VÀ khác nhau rõ ràng)
+                const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
+                const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
+                if (prodNums && sysNums && prodNums !== sysNums) return false;
+
+                // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
+                const sim = calculateSimilarity(prodNameLower, sysNameLower);
+                if (sim >= 0.80) return true;
+
+                // 6. Tên nằm trong nhau (tên dài bao tên ngắn)
+                if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
+                  if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
+                }
+                return false;
+              });
+              if (!hasMatch) prod.isNewSystemProduct = true;
+            }
           }
-        }
 
-        if (parsed.sellerName && systemSuppliers.length > 0) {
-          const sellerLower = parsed.sellerName.toLowerCase().trim();
-          const supplierMatch = systemSuppliers.some(sup => {
-            const supName = (sup.name || '').toLowerCase().trim();
-            if (!supName) return false;
-            const sim = calculateSimilarity(sellerLower, supName);
-            return sim >= 0.8 || sellerLower.includes(supName) || supName.includes(sellerLower);
+          if (inv.sellerName && systemSuppliers.length > 0) {
+            const sellerLower = inv.sellerName.toLowerCase().trim();
+            const supplierMatch = systemSuppliers.some(sup => {
+              const supName = (sup.name || '').toLowerCase().trim();
+              if (!supName) return false;
+              const sim = calculateSimilarity(sellerLower, supName);
+              return sim >= 0.8 || sellerLower.includes(supName) || supName.includes(sellerLower);
+            });
+            if (!supplierMatch) inv.isNewSupplier = true;
+          }
+
+          const displayFileName = invoiceList.length > 1
+            ? `${originalName} (HĐ ${invIdx + 1}${inv.invoiceNumber ? ` - Số ${inv.invoiceNumber}` : ''})`
+            : originalName;
+
+          results.push({
+            ok: true,
+            fileName: displayFileName,
+            originalFileName: originalName,
+            invoiceIndex: invIdx + 1,
+            totalInFile: invoiceList.length,
+            data: inv
           });
-          if (!supplierMatch) parsed.isNewSupplier = true;
         }
-
-        results.push({ ok: true, fileName: originalName, data: parsed });
       } catch (err) {
         console.error(`Lỗi xử lý file ${originalName}:`, err);
         results.push({ ok: false, fileName: originalName, message: err.message });
