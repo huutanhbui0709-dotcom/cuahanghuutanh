@@ -3284,29 +3284,29 @@ function sk_renderTable(list, startOffset) {
       ? ` title="${pending.toLocaleString('vi-VN')} đơn đang chờ xác nhận"` : '';
 
     return `
-      <tr class="border-b border-gray-50 hover:bg-gray-50/60 transition-colors" style="cursor:default;">
+      <tr class="hover:bg-slate-50/70 border-b border-slate-100 transition-colors">
         <td class="px-4 py-3 text-center text-xs text-gray-400 font-medium">${rowNum}</td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-3">
-            <div style="width:36px;height:36px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+            <div style="width:36px;height:36px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
               ${hasImg
                 ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box\\' style=\\'color:#cbd5e1;\\'></i>'" />`
                 : `<i class="fa-solid fa-box" style="color:#cbd5e1;font-size:0.85rem;"></i>`
               }
             </div>
-            <span class="text-xs font-semibold text-gray-800" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;" title="${p.ten || ''}">${p.ten || '—'}</span>
+            <span class="text-xs font-semibold text-gray-800" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;" title="${p.ten || ''}">${p.ten || '—'}</span>
           </div>
         </td>
         <td class="px-4 py-3">
-          <span style="font-size:0.65rem;font-family:monospace;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px;white-space:nowrap;">${p.ma || '—'}</span>
+          <span style="font-size:0.75rem;font-family:monospace;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px;white-space:nowrap;font-weight:600;">${p.ma || '—'}</span>
         </td>
         <td class="px-4 py-3 text-center text-xs text-gray-600">${p.donvi || 'Cái'}</td>
         <td class="px-4 py-3 text-center text-sm font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
-        <td class="px-4 py-3 text-center text-xs font-semibold ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}" ${pendingHint}>${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span style="font-size:0.6rem;opacity:0.7">(−${pending.toLocaleString('vi-VN')})</span>` : ''}</td>
-        <td class="px-4 py-3 text-right text-xs font-bold text-blue-700">${totalVal ? totalVal.toLocaleString('vi-VN') + 'đ' : '0đ'}</td>
+        <td class="px-4 py-3 text-center text-xs font-semibold ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}" ${pendingHint}>${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span style="font-size:0.65rem;opacity:0.75">(−${pending.toLocaleString('vi-VN')})</span>` : ''}</td>
+        <td class="px-4 py-3 text-right text-xs font-bold text-blue-700">${totalVal ? totalVal.toLocaleString('vi-VN') + '₫' : '0₫'}</td>
         <td class="px-4 py-3 text-center">${sk_statusBadge(status)}</td>
         <td class="px-4 py-3 text-center">
-          <button class="text-gray-400 hover:text-blue-600 p-1 border border-gray-200 rounded-lg bg-white transition-colors" title="Xem chi tiết" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);">
+          <button class="w-8 h-8 rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-500 hover:text-blue-600 inline-flex items-center justify-center transition-colors cursor-pointer shadow-2xs" title="Xem chi tiết" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);">
             <i class="fa-regular fa-eye"></i>
           </button>
         </td>
@@ -3317,12 +3317,17 @@ function sk_renderTable(list, startOffset) {
 function sk_renderPagination(totalPages, total, startIdx, endIdx) {
   const info = document.getElementById('sk_paginationInfo');
   const pag = document.getElementById('sk_pagination');
-  if (info) info.textContent = `Hiển thị ${startIdx + 1}–${endIdx} của ${total} kết quả`;
+  if (info) info.textContent = total > 0 ? `Hiển thị ${startIdx + 1}–${endIdx} của ${total} sản phẩm` : 'Hiển thị 0 kết quả';
   if (!pag) return;
+
+  if (totalPages <= 1) {
+    pag.innerHTML = '';
+    return;
+  }
 
   let html = '';
   // Prev
-  html += `<button onclick="sk_goPage(${sk_page - 1})" ${sk_page <= 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs"><i class="fa-solid fa-chevron-left"></i></button>`;
+  html += `<button onclick="sk_goPage(${sk_page - 1})" ${sk_page <= 1 ? 'disabled' : ''} class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition-colors"><i class="fa-solid fa-chevron-left"></i></button>`;
 
   const delta = 2;
   const pages = [];
@@ -3333,20 +3338,20 @@ function sk_renderPagination(totalPages, total, startIdx, endIdx) {
 
   pages.forEach(p => {
     if (p === '…') {
-      html += `<span class="w-7 h-7 flex items-center justify-center text-gray-400 text-xs">…</span>`;
+      html += `<span class="w-8 h-8 flex items-center justify-center text-gray-400 text-xs">…</span>`;
     } else {
       const active = p === sk_page;
-      html += `<button onclick="sk_goPage(${p})" class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-medium border transition-colors ${active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}">${p}</button>`;
+      html += `<button onclick="sk_goPage(${p})" class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold border transition-colors ${active ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}">${p}</button>`;
     }
   });
 
   // Next
-  html += `<button onclick="sk_goPage(${sk_page + 1})" ${sk_page >= totalPages ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs"><i class="fa-solid fa-chevron-right"></i></button>`;
+  html += `<button onclick="sk_goPage(${sk_page + 1})" ${sk_page >= totalPages ? 'disabled' : ''} class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition-colors"><i class="fa-solid fa-chevron-right"></i></button>`;
   pag.innerHTML = html;
 }
 
 function sk_goPage(p) {
-  const pageSize = parseInt(document.getElementById('sk_pageSize')?.value || 10);
+  const pageSize = parseInt(document.getElementById('sk_pageSize')?.value || 20, 10);
   const totalPages = Math.max(1, Math.ceil(sk_filteredList.length / pageSize));
   if (p < 1 || p > totalPages) return;
   sk_page = p;
@@ -3354,7 +3359,45 @@ function sk_goPage(p) {
 }
 
 function sk_exportExcel() {
-  showToast('<i class="fa-solid fa-file-excel"></i> Tính năng xuất Excel đang được phát triển!', 'info');
+  if (!sk_filteredList || sk_filteredList.length === 0) {
+    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Không có dữ liệu để xuất', 'warning');
+    return;
+  }
+  
+  const headers = ['STT', 'Mã sản phẩm', 'Tên sản phẩm', 'Danh mục', 'Đơn vị', 'Tồn kho', 'Khả dụng', 'Đang chờ', 'Giá vốn', 'Giá trị tồn', 'Tình trạng'];
+  const rows = sk_filteredList.map((p, idx) => {
+    const stock = parseFloat(p.stock) || 0;
+    const pending = parseFloat(p._pendingQty) || 0;
+    const available = Math.max(0, stock - pending);
+    const costPrice = parseFloat(p.cost_price || p.gia) || 0;
+    const totalVal = Math.round(stock * costPrice);
+    const statusText = stock <= 0 ? 'Hết hàng' : stock <= SK_LOW_STOCK_THRESHOLD ? 'Sắp hết hàng' : 'Còn hàng';
+    return [
+      idx + 1,
+      `"${(p.ma || '').replace(/"/g, '""')}"`,
+      `"${(p.ten || '').replace(/"/g, '""')}"`,
+      `"${(p.loai || '').replace(/"/g, '""')}"`,
+      `"${(p.donvi || 'Cái').replace(/"/g, '""')}"`,
+      stock,
+      available,
+      pending,
+      costPrice,
+      totalVal,
+      `"${statusText}"`
+    ].join(',');
+  });
+
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Ton_kho_san_pham_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('<i class="fa-solid fa-circle-check"></i> Đã xuất danh sách tồn kho thành công!', 'success');
 }
 
 

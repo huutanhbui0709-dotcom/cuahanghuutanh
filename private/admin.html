@@ -651,146 +651,153 @@
 
           <!-- TỒN KHO SẢN PHẨM -->
           <div id="inventory-tab-stock" class="inventory-tab-content" style="display: none;">
-            <!-- Page Header -->
-            <div class="flex items-start justify-between mb-5">
-              <div>
-                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <i class="fa-solid fa-boxes-stacked text-blue-600"></i> Tồn kho sản phẩm
-                </h2>
-                <p class="text-xs text-gray-400 mt-0.5">Danh sách tồn kho hiện tại của tất cả sản phẩm</p>
-              </div>
-            </div>
+            <div class="admin-card">
+              <!-- ═══ HEADER ROW: Title LEFT | Search+Filters+Export RIGHT ═══ -->
+              <div class="flex flex-row justify-between items-center mb-4 gap-4" style="flex-wrap: wrap;">
+                <span class="text-xl font-bold text-gray-800 whitespace-nowrap">
+                  <i class="fa-solid fa-boxes-stacked"></i> Tồn kho sản phẩm
+                </span>
+                <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+                  <!-- Search -->
+                  <div class="relative">
+                    <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
+                      <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text"
+                      class="border border-gray-300 rounded-lg text-sm pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      style="width: 240px;" id="sk_searchInput" placeholder="Tìm sản phẩm, mã, barcode..."
+                      oninput="sk_page = 1; sk_filterAndRender()" />
+                  </div>
 
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 gap-4 mb-6" style="grid-template-columns: repeat(5,1fr);">
-              <!-- Card 1: Tổng sản phẩm -->
-              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <i class="fa-solid fa-cube text-blue-600 text-2xl"></i>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500 font-medium mb-0.5">Tổng số sản phẩm</div>
-                  <div class="text-lg font-bold text-gray-900" id="sk_totalProducts">--</div>
-                  <div class="text-xs text-gray-400">sản phẩm</div>
-                </div>
-              </div>
-              <!-- Card 2: Tổng số lượng tồn -->
-              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                  <i class="fa-solid fa-box text-green-600 text-2xl"></i>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500 font-medium mb-0.5">Tổng số lượng tồn</div>
-                  <div class="text-lg font-bold text-gray-900" id="sk_totalStock">--</div>
-                  <div class="text-xs text-gray-400">đơn vị</div>
-                </div>
-              </div>
-              <!-- Card 3: Sắp hết hàng -->
-              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                  <i class="fa-solid fa-triangle-exclamation text-amber-500 text-2xl"></i>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500 font-medium mb-0.5">Sản phẩm sắp hết hàng</div>
-                  <div class="text-lg font-bold text-amber-600" id="sk_lowStock">--</div>
-                  <div class="text-xs text-gray-400">sản phẩm</div>
-                </div>
-              </div>
-              <!-- Card 4: Hết hàng -->
-              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                  <i class="fa-solid fa-circle-exclamation text-red-500 text-2xl"></i>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500 font-medium mb-0.5">Sản phẩm hết hàng</div>
-                  <div class="text-lg font-bold text-red-600" id="sk_outOfStock">--</div>
-                  <div class="text-xs text-gray-400">sản phẩm</div>
-                </div>
-              </div>
-              <!-- Card 5: Giá trị tồn kho -->
-              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
-                  <i class="fa-solid fa-chart-pie text-purple-600 text-2xl"></i>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500 font-medium mb-0.5">Giá trị tồn kho</div>
-                  <div class="text-sm font-bold text-blue-600" id="sk_totalValue">--</div>
-                  <div class="text-xs text-gray-400">VNĐ</div>
-                </div>
-              </div>
-            </div>
+                  <!-- Danh mục -->
+                  <select
+                    class="border border-gray-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9 bg-white cursor-pointer"
+                    id="sk_catFilter" onchange="sk_page = 1; sk_filterAndRender()">
+                    <option value="">Tất cả danh mục</option>
+                  </select>
 
-            <!-- Table Card -->
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <!-- Filter Toolbar -->
-              <div class="p-4 flex items-center gap-3 border-b border-gray-100 bg-white flex-wrap">
-                <!-- Search -->
-                <div class="relative" style="width:288px;">
-                  <i class="fa-solid fa-magnifying-glass absolute text-gray-400 text-xs" style="left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"></i>
-                  <input type="text" id="sk_searchInput" placeholder="Tìm sản phẩm, mã hoặc barcode..."
-                    class="w-full border border-gray-200 rounded-lg text-xs pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    oninput="sk_filterAndRender()" />
+                  <!-- Tình trạng -->
+                  <select
+                    class="border border-gray-300 rounded-lg text-sm px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9 bg-white cursor-pointer"
+                    id="sk_statusFilter" onchange="sk_page = 1; sk_filterAndRender()">
+                    <option value="">Tất cả tình trạng</option>
+                    <option value="in">Còn hàng</option>
+                    <option value="low">Sắp hết hàng</option>
+                    <option value="out">Hết hàng</option>
+                  </select>
+
+                  <!-- Export Excel -->
+                  <button class="btn btn-sm btn-outline" style="height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; font-size: 0.85rem; border-color: #cbd5e1;" onclick="sk_exportExcel()">
+                    <i class="fa-solid fa-file-excel text-green-600"></i> Xuất Excel
+                  </button>
                 </div>
-                <!-- Danh mục -->
-                <select id="sk_catFilter" class="border border-gray-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_filterAndRender()">
-                  <option value="">Tất cả danh mục</option>
-                </select>
-                <!-- Tình trạng -->
-                <select id="sk_statusFilter" class="border border-gray-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_filterAndRender()">
-                  <option value="">Tình trạng tồn</option>
-                  <option value="in">Còn hàng</option>
-                  <option value="low">Sắp hết hàng</option>
-                  <option value="out">Hết hàng</option>
-                </select>
-                <!-- Spacer -->
-                <div class="flex-1"></div>
-                <!-- Export Excel -->
-                <button class="border border-gray-200 hover:bg-gray-50 text-xs px-3 py-2 rounded-lg font-medium flex items-center gap-1.5 transition-colors" onclick="sk_exportExcel()">
-                  <i class="fa-solid fa-file-excel text-green-600"></i> Xuất Excel
-                </button>
-                <!-- Advanced Filter -->
-                <button class="border border-gray-200 hover:bg-gray-50 text-xs p-2 rounded-lg text-gray-600 transition-colors" title="Bộ lọc nâng cao">
-                  <i class="fa-solid fa-sliders"></i>
-                </button>
               </div>
 
-              <!-- Table -->
-              <div class="overflow-x-auto">
-                <table class="min-w-full" style="border-collapse:collapse;">
-                  <thead>
-                    <tr class="bg-gray-50 border-b border-gray-100">
-                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;width:40px;">#</th>
-                      <th class="px-4 py-3 text-left text-gray-500 font-bold uppercase" style="font-size:11px;">Sản phẩm</th>
-                      <th class="px-4 py-3 text-left text-gray-500 font-bold uppercase" style="font-size:11px;">Mã SP</th>
-                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Đơn vị</th>
-                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">
-                        Tồn kho <i class="fa-regular fa-circle-question text-gray-400 ml-0.5"></i>
+              <!-- ═══ 5 STATS CARDS ═══ -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-5" id="skStatsRow">
+                <!-- Card 1: Tổng sản phẩm -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs text-gray-500 font-medium mb-1">Tổng sản phẩm</div>
+                    <div class="text-xl font-extrabold text-gray-900 leading-tight" id="sk_totalProducts">--</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Đang quản lý</div>
+                  </div>
+                  <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-cube text-blue-600 text-lg"></i>
+                  </div>
+                </div>
+
+                <!-- Card 2: Tổng số lượng tồn -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs text-gray-500 font-medium mb-1">Tổng số lượng tồn</div>
+                    <div class="text-xl font-extrabold text-gray-900 leading-tight" id="sk_totalStock">--</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Tổng số đơn vị</div>
+                  </div>
+                  <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-box text-green-600 text-lg"></i>
+                  </div>
+                </div>
+
+                <!-- Card 3: Sắp hết hàng -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs text-gray-500 font-medium mb-1">Sắp hết hàng</div>
+                    <div class="text-xl font-extrabold text-amber-600 leading-tight" id="sk_lowStock">--</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Tồn kho ≤ 30</div>
+                  </div>
+                  <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500 text-lg"></i>
+                  </div>
+                </div>
+
+                <!-- Card 4: Hết hàng -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs text-gray-500 font-medium mb-1">Hết hàng</div>
+                    <div class="text-xl font-extrabold text-red-600 leading-tight" id="sk_outOfStock">--</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Tồn kho = 0</div>
+                  </div>
+                  <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-circle-exclamation text-red-500 text-lg"></i>
+                  </div>
+                </div>
+
+                <!-- Card 5: Giá trị tồn kho -->
+                <div class="bg-white rounded-xl border border-gray-100 shadow-xs p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="text-xs text-gray-500 font-medium mb-1">Giá trị tồn kho</div>
+                    <div class="text-base font-extrabold text-blue-700 leading-tight" id="sk_totalValue">--</div>
+                    <div class="text-xs text-gray-400 mt-0.5">Theo giá vốn</div>
+                  </div>
+                  <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-sack-dollar text-purple-600 text-lg"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ═══ TABLE ═══ -->
+              <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="table min-w-full divide-y divide-slate-200" style="border-collapse:collapse;">
+                  <thead class="bg-slate-50">
+                    <tr>
+                      <th class="w-12 px-4 py-3 text-center text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">#</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Sản phẩm</th>
+                      <th class="px-4 py-3 text-left text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Mã SP</th>
+                      <th class="px-4 py-3 text-center text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Đơn vị</th>
+                      <th class="px-4 py-3 text-center text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">
+                        Tồn kho <i class="fa-regular fa-circle-question text-gray-400 ml-0.5" title="Số lượng thực tế trong kho"></i>
                       </th>
-                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Khả dụng</th>
-                      <th class="px-4 py-3 text-right text-gray-500 font-bold uppercase" style="font-size:11px;">Giá trị tồn</th>
-                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Tình trạng</th>
-                      <th class="px-4 py-3 text-center text-gray-500 font-bold uppercase" style="font-size:11px;">Thao tác</th>
+                      <th class="px-4 py-3 text-center text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Khả dụng</th>
+                      <th class="px-4 py-3 text-right text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Giá trị tồn</th>
+                      <th class="px-4 py-3 text-center text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200">Tình trạng</th>
+                      <th class="px-4 py-3 text-center text-xs text-gray-500 font-semibold uppercase tracking-wider border-b border-slate-200" style="width:70px;">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody id="sk_tableBody">
+                  <tbody id="sk_tableBody" class="bg-white divide-y divide-slate-100">
                     <tr>
-                      <td colspan="9" class="text-center text-gray-400 py-10 text-sm">
-                        <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang tải...
+                      <td colspan="9" style="text-align: center; color: var(--muted); padding: 30px 0;">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải danh sách tồn kho...
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <!-- Pagination Footer -->
-              <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 flex-wrap gap-3">
-                <div class="text-xs text-gray-500" id="sk_paginationInfo" style="min-width: 100px;">Hiển thị 0 kết quả</div>
-                <div class="flex-1 flex justify-center items-center gap-1" id="sk_pagination"></div>
-                <div class="flex justify-end items-center">
-                  <select id="sk_pageSize" class="border border-gray-200 rounded-lg text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_page=1;sk_filterAndRender()">
-                    <option value="10" selected>10 / trang</option>
-                    <option value="25">25 / trang</option>
+              <!-- ═══ PAGINATION FOOTER ═══ -->
+              <div class="flex justify-between items-center mt-4 border-t border-gray-200 pt-4 flex-wrap gap-4" id="sk_paginationWrapper">
+                <div class="hidden lg:block" style="min-width: 110px;"></div>
+                <div class="flex-1 flex justify-center items-center gap-4 flex-wrap">
+                  <div class="flex items-center gap-1" id="sk_pagination"></div>
+                  <span class="text-xs text-gray-500" id="sk_paginationInfo"></span>
+                </div>
+                <div class="flex justify-end">
+                  <select id="sk_pageSize" onchange="sk_page=1;sk_filterAndRender()"
+                    class="border border-gray-300 rounded-lg text-sm text-gray-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9 bg-white cursor-pointer shadow-sm">
+                    <option value="10">10 / trang</option>
+                    <option value="20" selected>20 / trang</option>
                     <option value="50">50 / trang</option>
+                    <option value="100">100 / trang</option>
                   </select>
                 </div>
               </div>
