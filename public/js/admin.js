@@ -167,7 +167,10 @@ async function loadAllData() {
   renderDashboard();
   renderAdminTable();
   renderOrdersTable();
+  // Load inventory in background, then refresh dashboard KPIs & charts
+  loadInventoryHistory().then(() => renderDashboard()).catch(() => {});
 }
+
 
 async function loadSuppliers() {
   try {
@@ -382,42 +385,332 @@ function filterDashboardStatus(status) {
   }
 }
 
+let _dashLineChart = null;
+let _dashDonutChart = null;
+
 function renderDashboard() {
-  const pending = orders.filter(o => o.status === 'Chờ xác nhận').length;
-  const confirmed = orders.filter(o => o.status === 'Đã xác nhận').length;
-  const revenue = orders.filter(o => o.status !== 'Đã huỷ').reduce((s, o) => s + o.total, 0);
+  _renderDashboardKpis();
+  _renderDashboardCharts();
+  _renderDashboardTopSuppliers();
+}
 
-  document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card" style="cursor:pointer" onclick="goToProductsTab()"><div class="stat-value">${products.length}</div><div class="stat-label"><i class="fa-solid fa-box"></i> Sản phẩm</div></div>
-    <div class="stat-card" style="cursor:pointer" onclick="filterDashboardStatus('')"><div class="stat-value">${orders.length}</div><div class="stat-label"><i class="fa-solid fa-clipboard-list"></i> Tổng đơn hàng</div></div>
-    <div class="stat-card" style="cursor:pointer" onclick="filterDashboardStatus('Chờ xác nhận')"><div class="stat-value" style="color:#f59e0b">${pending}</div><div class="stat-label"><i class="fa-solid fa-hourglass-half"></i> Chờ xác nhận</div></div>
-    <div class="stat-card" style="cursor:pointer" onclick="filterDashboardStatus('Đã xác nhận')"><div class="stat-value" style="color:#10b981">${confirmed}</div><div class="stat-label"><i class="fa-solid fa-circle-check"></i> Đã xác nhận</div></div>
-    <div class="stat-card"><div class="stat-value" style="font-size:1.2rem">${revenue > 0 ? revenue.toLocaleString('vi-VN') : '0'}</div><div class="stat-label"><i class="fa-solid fa-sack-dollar"></i> Doanh thu (VNĐ)</div></div>
-  `;
+function _getDashboardFilteredReceipts() {
+  const days = parseInt(document.getElementById('dashboardTimeRange')?.value || '30');
+  if (!allInventoryReceipts || allInventoryReceipts.length === 0) return [];
+  if (days === 0) return allInventoryReceipts;
 
-  const dashboardStatusFilter = document.getElementById('dashboardOrderStatusFilter')?.value || '';
-  const filteredOrders = (dashboardStatusFilter ? orders.filter(o => o.status === dashboardStatusFilter) : orders)
-    .slice().sort((a, b) => parseOrderDateTime(b.createdAt) - parseOrderDateTime(a.createdAt));
-  const recent = filteredOrders.slice(0, 5);
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - days);
 
-  if (recent.length === 0) {
-    document.getElementById('recentOrdersTable').innerHTML = '<p style="color:var(--muted);font-size:.875rem;padding:16px 0">Chưa có đơn hàng nào.</p>';
+  return allInventoryReceipts.filter(r => {
+    const parts = String(r.import_date || '').split('/');
+    let d;
+    if (parts.length === 3) {
+      d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+    } else {
+      d = r.created_at ? new Date(r.created_at) : null;
+    }
+    return d && d >= cutoff;
+  });
+}
+
+function _renderDashboardKpis() {
+  const grid = document.getElementById('dashboardKpiGrid');
+  if (!grid) return;
+
+  const receipts = _getDashboardFilteredReceipts();
+  const totalReceipts = receipts.length;
+  const totalQty = receipts.reduce((s, r) => s + (Number(r.total_quantity) || 0), 0);
+  const totalValue = receipts.reduce((s, r) => s + (Number(r.total_cost) || 0), 0);
+  const pendingOrders = orders.filter(o => o.status === 'Chờ xác nhận').length;
+  const suppCount = suppliers.length;
+
+  // Low stock count (stock <= 5 that are tracked)
+  const lowStock = (typeof sk_filteredList !== 'undefined' && sk_filteredList.length > 0)
+    ? sk_filteredList.filter(p => (p.stock !== undefined && p.stock <= 5 && p.status !== 'Ngừng theo dõi')).length
+    : products.filter(p => (p.ton !== undefined && p.ton <= 5 && p.trangthai !== 'Ngừng theo dõi')).length;
+
+  const kpiDefs = [
+    {
+      icon: 'fa-building', iconBg: '#eff6ff', iconColor: '#2563eb',
+      label: 'Nhà cung cấp', value: suppCount.toLocaleString('vi-VN'),
+      sub: 'Đang hợp tác', subColor: '#64748b',
+      onclick: "adminTab('suppliers',null)"
+    },
+    {
+      icon: 'fa-file-invoice', iconBg: '#f0fdf4', iconColor: '#16a34a',
+      label: 'Số phiếu nhập kho', value: totalReceipts.toLocaleString('vi-VN'),
+      sub: 'Trong kỳ đã chọn', subColor: '#64748b',
+      onclick: "adminTab('inventory',null)"
+    },
+    {
+      icon: 'fa-boxes-stacked', iconBg: '#fdf4ff', iconColor: '#9333ea',
+      label: 'Số lượng nhập', value: totalQty.toLocaleString('vi-VN'),
+      sub: 'Tổng số lượng', subColor: '#64748b',
+      onclick: ''
+    },
+    {
+      icon: 'fa-sack-dollar', iconBg: '#fff7ed', iconColor: '#ea580c',
+      label: 'Số tiền nhập kho', value: totalValue >= 1e9
+        ? (totalValue / 1e9).toFixed(2) + 'B'
+        : totalValue >= 1e6
+          ? (totalValue / 1e6).toFixed(1) + 'M'
+          : totalValue.toLocaleString('vi-VN'),
+      sub: totalValue >= 1e6 ? totalValue.toLocaleString('vi-VN') + '₫' : '',
+      subColor: '#64748b',
+      onclick: ''
+    },
+    {
+      icon: 'fa-clipboard-list', iconBg: '#fefce8', iconColor: '#ca8a04',
+      label: 'Đơn hàng mới', value: pendingOrders.toLocaleString('vi-VN'),
+      sub: 'Chờ xác nhận', subColor: pendingOrders > 0 ? '#dc2626' : '#64748b',
+      onclick: "adminTab('orders',null)"
+    },
+    {
+      icon: 'fa-triangle-exclamation', iconBg: '#fef2f2', iconColor: '#dc2626',
+      label: 'Cảnh báo hàng tồn', value: lowStock.toLocaleString('vi-VN'),
+      sub: 'Sắp hết hàng (≤5)', subColor: lowStock > 0 ? '#dc2626' : '#64748b',
+      onclick: "adminTab('inventory',null)"
+    }
+  ];
+
+  grid.innerHTML = kpiDefs.map(k => `
+    <div onclick="${k.onclick ? k.onclick + ';' : ''}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;cursor:${k.onclick ? 'pointer' : 'default'};transition:box-shadow .15s,transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.04);"
+      onmouseover="${k.onclick ? "this.style.boxShadow='0 4px 16px rgba(37,99,235,.10)';this.style.transform='translateY(-1px)'" : ''}"
+      onmouseout="${k.onclick ? "this.style.boxShadow='0 1px 3px rgba(0,0,0,.04)';this.style.transform=''" : ''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:0.75rem;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:85%;">${k.label}</span>
+        <div style="width:32px;height:32px;min-width:32px;border-radius:8px;background:${k.iconBg};display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid ${k.icon}" style="color:${k.iconColor};font-size:0.85rem;"></i>
+        </div>
+      </div>
+      <div style="font-size:1.5rem;font-weight:800;color:#0f172a;line-height:1;">${k.value}</div>
+      ${k.sub ? `<div style="font-size:0.72rem;color:${k.subColor};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function _renderDashboardCharts() {
+  const receipts = _getDashboardFilteredReceipts();
+
+  // ─── Line Chart ───────────────────────────────────────────────────────
+  const parseDate = r => {
+    const parts = String(r.import_date || '').split('/');
+    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    return '';
+  };
+
+  const dailyMap = {};
+  receipts.forEach(r => {
+    const d = parseDate(r);
+    if (d) dailyMap[d] = (dailyMap[d] || 0) + (Number(r.total_cost) || 0);
+  });
+
+  const sortedDays = Object.keys(dailyMap).sort();
+  const lineLabels = sortedDays.map(d => {
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}`;
+  });
+  const lineData = sortedDays.map(d => dailyMap[d]);
+
+  const lineCtx = document.getElementById('dashboardLineChart');
+  if (lineCtx) {
+    if (_dashLineChart) { _dashLineChart.destroy(); _dashLineChart = null; }
+    _dashLineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: lineLabels,
+        datasets: [{
+          label: 'Giá trị nhập (₫)',
+          data: lineData,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          borderWidth: 2,
+          pointRadius: lineData.length <= 30 ? 3 : 0,
+          pointHoverRadius: 5,
+          tension: 0.35,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 300 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + '₫'
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 10 } },
+          y: {
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              font: { size: 10 },
+              callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ─── Donut Chart ─────────────────────────────────────────────────────
+  const suppMap = {};
+  receipts.forEach(r => {
+    const name = r.supplier_name || r.supplier_code || 'Khác';
+    suppMap[name] = (suppMap[name] || 0) + (Number(r.total_cost) || 0);
+  });
+
+  const suppEntries = Object.entries(suppMap).sort((a, b) => b[1] - a[1]);
+  const TOP_N = 5;
+  let donutLabels = [], donutData = [];
+  if (suppEntries.length <= TOP_N) {
+    donutLabels = suppEntries.map(e => e[0]);
+    donutData = suppEntries.map(e => e[1]);
+  } else {
+    const top = suppEntries.slice(0, TOP_N);
+    const othersTotal = suppEntries.slice(TOP_N).reduce((s, e) => s + e[1], 0);
+    donutLabels = [...top.map(e => e[0]), 'Khác'];
+    donutData = [...top.map(e => e[1]), othersTotal];
+  }
+
+  const COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#ea580c','#94a3b8'];
+  const totalDonut = donutData.reduce((s, v) => s + v, 0);
+
+  const donutCtx = document.getElementById('dashboardDonutChart');
+  if (donutCtx) {
+    if (_dashDonutChart) { _dashDonutChart.destroy(); _dashDonutChart = null; }
+    if (donutData.length > 0) {
+      _dashDonutChart = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: donutLabels,
+          datasets: [{ data: donutData, backgroundColor: COLORS.slice(0, donutLabels.length), borderWidth: 2, borderColor: '#fff', hoverOffset: 4 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '65%',
+          animation: { duration: 300 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const pct = totalDonut > 0 ? ((ctx.raw / totalDonut) * 100).toFixed(1) : 0;
+                  return ` ${Number(ctx.raw).toLocaleString('vi-VN')}₫ (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Center label
+    const centerEl = document.getElementById('dashboardDonutCenter');
+    if (centerEl) {
+      const totalFmt = totalDonut >= 1e9
+        ? (totalDonut / 1e9).toFixed(2) + 'B'
+        : totalDonut >= 1e6
+          ? (totalDonut / 1e6).toFixed(1) + 'M'
+          : totalDonut.toLocaleString('vi-VN');
+      centerEl.innerHTML = totalDonut > 0
+        ? `<div style="font-size:0.65rem;color:#64748b;font-weight:500;">Tổng tiền</div><div style="font-size:1rem;font-weight:800;color:#0f172a;line-height:1.2;">${totalFmt}</div><div style="font-size:0.6rem;color:#94a3b8;">VND</div>`
+        : `<div style="font-size:0.7rem;color:#94a3b8;">Không có dữ liệu</div>`;
+    }
+
+    // Legend
+    const legendEl = document.getElementById('dashboardDonutLegend');
+    if (legendEl) {
+      legendEl.innerHTML = donutLabels.map((label, i) => {
+        const pct = totalDonut > 0 ? ((donutData[i] / totalDonut) * 100).toFixed(1) : 0;
+        const valFmt = donutData[i] >= 1e9
+          ? (donutData[i] / 1e9).toFixed(2) + 'B'
+          : donutData[i] >= 1e6
+            ? (donutData[i] / 1e6).toFixed(1) + 'M'
+            : donutData[i].toLocaleString('vi-VN');
+        return `
+          <div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+            <span style="width:10px;height:10px;min-width:10px;border-radius:50%;background:${COLORS[i] || '#94a3b8'};"></span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:#374151;" title="${label}">${label}</span>
+            <span style="font-weight:700;color:#0f172a;white-space:nowrap;">${valFmt}₫</span>
+            <span style="color:#94a3b8;white-space:nowrap;">(${pct}%)</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+function _renderDashboardTopSuppliers() {
+  const tbody = document.getElementById('dashboardTopSuppliersBody');
+  if (!tbody) return;
+  const receipts = _getDashboardFilteredReceipts();
+
+  if (receipts.length === 0 || suppliers.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">Chưa có dữ liệu nhập kho.</td></tr>`;
     return;
   }
-  document.getElementById('recentOrdersTable').innerHTML = `
-    <table><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Trạng thái</th></tr></thead>
-    <tbody>${recent.map(o => `
-      <tr>
-        <td>${o.id}</td>
-        <td>${o.customer}</td>
-        <td>${o.phone}</td>
-        <td><span class="order-detail" title="${o.items.map(i => `${i.ten} (x${i.qty})`).join(', ')}">${o.items.map(i => `${i.ten} (x${i.qty})`).join(', ')}</span></td>
-        <td style="font-weight:700;color:var(--primary)">${formatPrice(o.total)}</td>
-        <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
-      </tr>`).join('')}
-    </tbody></table>
-  `;
+
+  // Aggregate by supplier_code or supplier_name
+  const aggMap = {};
+  receipts.forEach(r => {
+    const key = r.supplier_code || r.supplier_name || 'unknown';
+    if (!aggMap[key]) {
+      aggMap[key] = {
+        code: r.supplier_code || key,
+        name: r.supplier_name || key,
+        receipts: 0, qty: 0, total: 0
+      };
+    }
+    aggMap[key].receipts++;
+    aggMap[key].qty += Number(r.total_quantity) || 0;
+    aggMap[key].total += Number(r.total_cost) || 0;
+  });
+
+  const sorted = Object.values(aggMap).sort((a, b) => b.total - a.total).slice(0, 10);
+
+  // Match supplier status from suppliers list
+  const getStatus = (code, name) => {
+    const s = suppliers.find(sup =>
+      (sup.code && sup.code === code) ||
+      (sup.name && (sup.name === name || sup.name.toLowerCase().includes(name.toLowerCase().substring(0, 6))))
+    );
+    return s ? (s.status || 'Đang hợp tác') : 'Đang hợp tác';
+  };
+
+  const statusBadgeSupp = (s) => {
+    if (!s || s === 'Đang hợp tác') return { text: 'Đang hợp tác', bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' };
+    if (s === 'Ngừng theo dõi' || s === 'Ngừng hợp tác') return { text: s, bg: '#fef2f2', color: '#dc2626', border: '#fecaca' };
+    return { text: s, bg: '#fffbeb', color: '#d97706', border: '#fde68a' };
+  };
+
+  tbody.innerHTML = sorted.map((row, i) => {
+    const status = getStatus(row.code, row.name);
+    const badge = statusBadgeSupp(status);
+    const valFmt = row.total.toLocaleString('vi-VN');
+    return `
+      <tr style="border-bottom:1px solid #f1f5f9;transition:background .1s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <td style="padding:10px 12px;color:#94a3b8;font-weight:600;">${i + 1}</td>
+        <td style="padding:10px 12px;"><code style="background:#f1f5f9;border-radius:4px;padding:2px 6px;font-size:0.75rem;color:#475569;">${row.code}</code></td>
+        <td style="padding:10px 12px;font-weight:500;color:#0f172a;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${row.name}">${row.name}</td>
+        <td style="padding:10px 12px;text-align:right;font-weight:600;color:#374151;">${row.receipts.toLocaleString('vi-VN')}</td>
+        <td style="padding:10px 12px;text-align:right;color:#374151;">${row.qty.toLocaleString('vi-VN')}</td>
+        <td style="padding:10px 12px;text-align:right;font-weight:700;color:#0f172a;">${valFmt}₫</td>
+        <td style="padding:10px 12px;text-align:center;">
+          <span style="display:inline-block;padding:3px 10px;border-radius:9999px;font-size:0.72rem;font-weight:600;background:${badge.bg};color:${badge.color};border:1px solid ${badge.border};">${badge.text}</span>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
+
+
 
 // ==============================
 // PRODUCTS TABLE

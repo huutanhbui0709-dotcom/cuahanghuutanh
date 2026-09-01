@@ -16,6 +16,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=1.6" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     tailwind.config = {
       corePlugins: {
@@ -43,7 +44,20 @@
       color: #b91c1c !important;
       font-weight: 600 !important;
     }
+
+    /* Dashboard responsive */
+    @media (max-width: 1280px) {
+      #dashboardKpiGrid { grid-template-columns: repeat(3, 1fr) !important; }
+    }
+    @media (max-width: 900px) {
+      #dashboardKpiGrid { grid-template-columns: repeat(2, 1fr) !important; }
+      #dashboardChartsRow { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 520px) {
+      #dashboardKpiGrid { grid-template-columns: 1fr 1fr !important; }
+    }
   </style>
+
 </head>
 
 <body>
@@ -128,19 +142,76 @@
       <div class="admin-content">
         <!-- DASHBOARD -->
         <div class="admin-tab active" id="tab-dashboard">
-          <div class="stats-row" id="statsRow"></div>
-          <div class="admin-card">
-            <div class="admin-card-title" style="display: flex; justify-content: space-between; align-items: center;">
-              <span><i class="fa-solid fa-clipboard-list"></i> Đơn hàng mới nhất</span>
-              <select class="filter-select" id="dashboardOrderStatusFilter" onchange="renderDashboard()"
-                style="padding: 5px 10px; font-size: 0.85rem; font-weight: normal; max-width: 150px;">
-                <option value="">Tất cả trạng thái</option>
-                <option value="Chờ xác nhận">Chờ xác nhận</option>
-                <option value="Đã xác nhận">Đã xác nhận</option>
-                <option value="Đã huỷ">Đã huỷ</option>
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+            <div>
+              <h2 style="margin:0;font-size:1.15rem;font-weight:700;color:#0f172a;">Tổng quan</h2>
+              <p style="margin:2px 0 0;font-size:0.8rem;color:#64748b;">Theo dõi hoạt động nhập kho và nhà cung cấp</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select id="dashboardTimeRange" onchange="renderDashboard()" style="border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;font-size:0.82rem;color:#374151;background:#fff;cursor:pointer;outline:none;">
+                <option value="7">7 ngày gần nhất</option>
+                <option value="30">30 ngày gần nhất</option>
+                <option value="90">3 tháng gần nhất</option>
+                <option value="365">12 tháng gần nhất</option>
+                <option value="0">Tất cả</option>
               </select>
             </div>
-            <div class="table-wrap" id="recentOrdersTable"></div>
+          </div>
+
+          <!-- 6-Card KPI Grid -->
+          <div id="dashboardKpiGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px;"></div>
+
+          <!-- Charts Row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;" id="dashboardChartsRow">
+            <!-- Line Chart -->
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span style="font-size:0.9rem;font-weight:700;color:#0f172a;"><i class="fa-solid fa-chart-line" style="color:#2563eb;margin-right:6px;"></i>Giá trị nhập kho theo ngày</span>
+              </div>
+              <div style="position:relative;height:200px;">
+                <canvas id="dashboardLineChart"></canvas>
+              </div>
+            </div>
+            <!-- Donut Chart -->
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span style="font-size:0.9rem;font-weight:700;color:#0f172a;"><i class="fa-solid fa-chart-pie" style="color:#7c3aed;margin-right:6px;"></i>Cơ cấu giá trị nhập kho theo nhà cung cấp</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;">
+                <div style="position:relative;width:160px;min-width:160px;height:160px;">
+                  <canvas id="dashboardDonutChart"></canvas>
+                  <div id="dashboardDonutCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;"></div>
+                </div>
+                <div id="dashboardDonutLegend" style="flex:1;font-size:0.78rem;display:flex;flex-direction:column;gap:5px;overflow:hidden;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Suppliers Table -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span style="font-size:0.9rem;font-weight:700;color:#0f172a;"><i class="fa-solid fa-truck-field" style="color:#0891b2;margin-right:6px;"></i>Nhà cung cấp giao dịch nhiều nhất</span>
+              <a href="#" onclick="adminTab('suppliers', null); return false;" style="font-size:0.8rem;color:#2563eb;text-decoration:none;font-weight:500;">Xem tất cả →</a>
+            </div>
+            <div class="table-wrap" style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+                <thead>
+                  <tr style="background:#f8fafc;">
+                    <th style="padding:8px 12px;text-align:left;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;width:32px;">#</th>
+                    <th style="padding:8px 12px;text-align:left;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Mã NCC</th>
+                    <th style="padding:8px 12px;text-align:left;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Nhà cung cấp</th>
+                    <th style="padding:8px 12px;text-align:right;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Số phiếu nhập</th>
+                    <th style="padding:8px 12px;text-align:right;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Số lượng nhập</th>
+                    <th style="padding:8px 12px;text-align:right;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Số tiền nhập kho</th>
+                    <th style="padding:8px 12px;text-align:center;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;border-bottom:1px solid #e2e8f0;">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardTopSuppliersBody">
+                  <tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
