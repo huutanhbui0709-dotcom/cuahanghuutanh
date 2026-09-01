@@ -1884,13 +1884,58 @@ function handleInvoiceFilesSelect(e) {
   }
 }
 
-function filterAndSetInvoiceFiles(filesList) {
-  // We append files now to allow pasting multiple times
+function renderSelectedInvoiceFiles() {
   const listEl = document.getElementById('invoiceFilesList');
   const btnProcess = document.getElementById('btnProcessInvoices');
   const btnClear = document.getElementById('btnClearInvoices');
   const uploadText = document.getElementById('invoiceUploadText');
 
+  if (!listEl || !uploadText) return;
+
+  if (selectedInvoiceFiles.length > 0) {
+    uploadText.innerHTML = `Đã chọn <strong>${selectedInvoiceFiles.length} file</strong> hóa đơn (Nhấn Xử lý bên dưới)`;
+    listEl.style.display = 'block';
+    listEl.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+        ${selectedInvoiceFiles.map((f, idx) => {
+          const isPDF = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+          const icon = isPDF 
+            ? '<i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 1.1rem;"></i>' 
+            : '<i class="fa-solid fa-file-image" style="color: #3b82f6; font-size: 1.1rem;"></i>';
+          const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; max-width: 80%;">
+                ${icon}
+                <span style="font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.name}">${f.name}</span>
+                <span style="color: var(--muted); font-size: 0.8rem; white-space: nowrap;">(${sizeMB} MB)</span>
+              </div>
+              <button type="button" onclick="removeSelectedInvoiceFile(${idx})" title="Xoá file này" style="background: #fee2e2; border: 1px solid #fecaca; color: #dc2626; border-radius: 4px; padding: 3px 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
+                <i class="fa-solid fa-trash-can"></i> Xoá
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    if (btnProcess) btnProcess.removeAttribute('disabled');
+    if (btnClear) btnClear.style.display = 'inline-block';
+  } else {
+    clearInvoiceSelection();
+  }
+}
+
+function removeSelectedInvoiceFile(index) {
+  if (index >= 0 && index < selectedInvoiceFiles.length) {
+    const removed = selectedInvoiceFiles.splice(index, 1);
+    if (removed.length > 0) {
+      showToast(`<i class="fa-solid fa-circle-check"></i> Đã xoá file: ${removed[0].name}`, 'info');
+    }
+  }
+  renderSelectedInvoiceFiles();
+}
+
+function filterAndSetInvoiceFiles(filesList) {
   for (let i = 0; i < filesList.length; i++) {
     const file = filesList[i];
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -1910,17 +1955,7 @@ function filterAndSetInvoiceFiles(filesList) {
     }
   }
 
-  if (selectedInvoiceFiles.length > 0) {
-    uploadText.innerHTML = `Đã chọn <strong>${selectedInvoiceFiles.length} file</strong> hóa đơn`;
-    listEl.style.display = 'block';
-    listEl.innerHTML = '<ul style="margin: 8px 0 0 16px; padding: 0;">' +
-      selectedInvoiceFiles.map(f => `<li>${f.name} (${(f.size / (1024 * 1024)).toFixed(2)} MB)</li>`).join('') +
-      '</ul>';
-    btnProcess.removeAttribute('disabled');
-    btnClear.style.display = 'inline-block';
-  } else {
-    clearInvoiceSelection();
-  }
+  renderSelectedInvoiceFiles();
 }
 
 // Paste event listener for clipboard image/pdf import in invoice tab
