@@ -2166,8 +2166,9 @@ function renderInvoiceResults(results) {
       alertHTML = `
         <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 6px; margin-top: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
-            <strong style="color: #b45309; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+            <strong style="color: #b45309; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
+               <span style="background: #fef3c7; color: #92400e; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid #fde68a; margin-left: 4px;">${newProducts.length} sản phẩm</span>
             </strong>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn btn-warning btn-sm btn-copy-new-products" onclick="copyNewProductsToClipboard(this, ${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
@@ -2211,7 +2212,10 @@ function renderInvoiceResults(results) {
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 0.9rem; font-weight: 600; color: black;">Danh sách sản phẩm</span>
+        <span style="font-size: 0.9rem; font-weight: 600; color: black; display: inline-flex; align-items: center; gap: 8px;">
+          Danh sách sản phẩm
+          <span style="background: #e0f2fe; color: #0369a1; font-size: 0.8rem; font-weight: 600; padding: 2px 8px; border-radius: 9999px; border: 1px solid #bae6fd;">${products.length} sản phẩm</span>
+        </span>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-primary btn-sm btn-save-invoice-db" onclick="saveInvoiceToInventory(this, ${index})">
             <i class="fa-solid fa-download"></i> Lưu vào Nhập kho
