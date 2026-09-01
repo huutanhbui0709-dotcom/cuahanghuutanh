@@ -88,6 +88,9 @@ let settings = {};
 let isInitialized = false;
 let initPromise = null;
 
+// Timestamps để phát hiện dữ liệu mới — giống syncVercelCache() trong server.js
+const instanceTimestamps = { products: 0, suppliers: 0, settings: 0 };
+
 async function loadSharedState() {
   const prodPath = path.join(__dirname, '..', 'data', 'products.json');
   const supPath = path.join(__dirname, '..', 'data', 'suppliers.json');
@@ -108,6 +111,12 @@ async function loadSharedState() {
       if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
       if (setRows.length > 0) settings = JSON.parse(setRows[0].value);
 
+      // Ghi lại timestamp hiện tại sau khi load xong
+      const now = Date.now();
+      instanceTimestamps.products = now;
+      instanceTimestamps.suppliers = now;
+      instanceTimestamps.settings = now;
+
       console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp từ Vercel DB.`);
       isInitialized = true;
       return;
@@ -126,6 +135,47 @@ async function loadSharedState() {
     console.error('[tools] Lỗi load shared state từ File cục bộ:', err.message);
   }
   isInitialized = true;
+}
+
+// Đồng bộ cache theo last_updates — đảm bảo tools luôn dùng dữ liệu mới nhất từ DB.
+// Giống hệt syncVercelCache() trong server.js để không bao giờ bị stale cache.
+async function syncToolsCache() {
+  if (!sql || typeof sql !== 'function') return;
+  try {
+    const updatesResult = await sql`SELECT topic, updated_at FROM last_updates`;
+    const rows = updatesResult.rows ?? updatesResult;
+    const updates = {};
+    rows.forEach(r => { updates[r.topic] = Number(r.updated_at); });
+
+    if (updates.products && updates.products > instanceTimestamps.products) {
+      const r = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      const pr = r.rows ?? r;
+      if (pr.length > 0) {
+        products = JSON.parse(pr[0].value);
+        instanceTimestamps.products = updates.products;
+        console.log(`[tools] Sync: đã cập nhật ${products.length} sản phẩm từ DB.`);
+      }
+    }
+    if (updates.suppliers && updates.suppliers > instanceTimestamps.suppliers) {
+      const r = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+      const sr = r.rows ?? r;
+      if (sr.length > 0) {
+        suppliers = JSON.parse(sr[0].value);
+        instanceTimestamps.suppliers = updates.suppliers;
+        console.log(`[tools] Sync: đã cập nhật ${suppliers.length} nhà cung cấp từ DB.`);
+      }
+    }
+    if (updates.settings && updates.settings > instanceTimestamps.settings) {
+      const r = await sql`SELECT value FROM app_settings WHERE key = 'settings'`;
+      const sr = r.rows ?? r;
+      if (sr.length > 0) {
+        settings = JSON.parse(sr[0].value);
+        instanceTimestamps.settings = updates.settings;
+      }
+    }
+  } catch (err) {
+    console.error('[tools] Lỗi sync cache:', err.message);
+  }
 }
 
 async function ensureInitialized() {
@@ -215,9 +265,12 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '2mb' }));
 
 // Middleware: initialize shared state trước khi xử lý request
+// Sau khi đã initialized, gọi syncToolsCache() để cập nhật nếu có dữ liệu mới từ DB
 app.use(async (req, res, next) => {
   try {
     await ensureInitialized();
+    // Đồng bộ cache mỗi request — phát hiện sản phẩm/nhà cung cấp mới được thêm
+    await syncToolsCache();
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
