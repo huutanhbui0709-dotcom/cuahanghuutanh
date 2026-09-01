@@ -476,13 +476,14 @@
               <!-- Footer/Pagination Bar -->
               <div class="flex justify-between items-center mt-4 border-t border-gray-200 pt-4 flex-wrap gap-4"
                 id="inventoryPaginationWrapper">
-                <div class="flex items-center gap-4">
+                <div class="hidden lg:block" style="min-width: 110px;"></div>
+                <div class="flex-1 flex justify-center items-center gap-4 flex-wrap">
                   <div class="flex items-center gap-1" id="inventoryPagination"></div>
                   <span class="text-xs text-gray-500" id="inventoryPaginationInfo"></span>
                 </div>
-                <div>
+                <div class="flex justify-end">
                   <select id="inventoryPageSizeSelect" onchange="changeInventoryPageSize(this.value)"
-                    class="border border-gray-300 rounded-lg text-sm text-gray-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9">
+                    class="border border-gray-300 rounded-lg text-sm text-gray-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 h-9 bg-white cursor-pointer shadow-sm">
                     <option value="20" selected>20 / trang</option>
                     <option value="50">50 / trang</option>
                     <option value="100">100 / trang</option>
@@ -712,14 +713,14 @@
 
               <!-- Pagination Footer -->
               <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 flex-wrap gap-3">
-                <div class="text-xs text-gray-500" id="sk_paginationInfo">Hiển thị 0 kết quả</div>
-                <div class="flex items-center gap-2">
+                <div class="text-xs text-gray-500" id="sk_paginationInfo" style="min-width: 100px;">Hiển thị 0 kết quả</div>
+                <div class="flex-1 flex justify-center items-center gap-1" id="sk_pagination"></div>
+                <div class="flex justify-end items-center">
                   <select id="sk_pageSize" class="border border-gray-200 rounded-lg text-xs px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" onchange="sk_page=1;sk_filterAndRender()">
                     <option value="10" selected>10 / trang</option>
                     <option value="25">25 / trang</option>
                     <option value="50">50 / trang</option>
                   </select>
-                  <div class="flex items-center gap-1" id="sk_pagination"></div>
                 </div>
               </div>
             </div>
