@@ -2500,7 +2500,8 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
     if (IS_VERCEL) {
       const { rows } = await sql`
         SELECT r.*,
-               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count
+               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count,
+               (SELECT COALESCE(SUM(quantity), 0)::numeric FROM stock_receipt_items WHERE receipt_id = r.id) as total_quantity
         FROM stock_receipts r
         ORDER BY r.created_at DESC, r.id DESC
       `;
@@ -2513,6 +2514,10 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
         warehouse_name: r.warehouse_name,
         total_amount: Math.round(Number(r.total_amount || 0)), // use stored value — correct at save time
         item_count: r.item_count,
+        total_quantity: Number(r.total_quantity || 0),
+        tax_code: r.tax_code,
+        invoice_number: r.invoice_number,
+        serial_number: r.serial_number,
         created_at: r.created_at
       }));
       res.json(formatted);
@@ -2526,6 +2531,10 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
         warehouse_name: r.warehouse_name,
         total_amount: Math.round(Number(r.total_amount || 0)), // use stored value — correct at save time
         item_count: r.items ? r.items.length : 0,
+        total_quantity: r.items ? r.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0) : (Number(r.total_quantity) || 0),
+        tax_code: r.tax_code,
+        invoice_number: r.invoice_number,
+        serial_number: r.serial_number,
         created_at: r.created_at
       }));
       res.json(formatted);

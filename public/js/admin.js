@@ -394,8 +394,31 @@ function renderDashboard() {
   _renderDashboardTopSuppliers();
 }
 
+function _parseReceiptDate(r) {
+  if (r.import_date) {
+    const raw = String(r.import_date).trim();
+    const parts = raw.split(/[\/\-]/);
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        if (!isNaN(d.getTime())) return d;
+      } else {
+        // DD/MM/YYYY
+        const d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        if (!isNaN(d.getTime())) return d;
+      }
+    }
+  }
+  if (r.created_at) {
+    const d = new Date(r.created_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
 function _getDashboardFilteredReceipts() {
-  const days = parseInt(document.getElementById('dashboardTimeRange')?.value || '30');
+  const days = parseInt(document.getElementById('dashboardTimeRange')?.value || '30', 10);
   if (!allInventoryReceipts || allInventoryReceipts.length === 0) return [];
   if (days === 0) return allInventoryReceipts;
 
@@ -404,13 +427,7 @@ function _getDashboardFilteredReceipts() {
   cutoff.setDate(cutoff.getDate() - days);
 
   return allInventoryReceipts.filter(r => {
-    const parts = String(r.import_date || '').split('/');
-    let d;
-    if (parts.length === 3) {
-      d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-    } else {
-      d = r.created_at ? new Date(r.created_at) : null;
-    }
+    const d = _parseReceiptDate(r);
     return d && d >= cutoff;
   });
 }
@@ -421,8 +438,8 @@ function _renderDashboardKpis() {
 
   const receipts = _getDashboardFilteredReceipts();
   const totalReceipts = receipts.length;
-  const totalQty = receipts.reduce((s, r) => s + (Number(r.total_quantity) || 0), 0);
-  const totalValue = receipts.reduce((s, r) => s + (Number(r.total_cost) || 0), 0);
+  const totalQty = receipts.reduce((s, r) => s + (Number(r.total_quantity) || Number(r.item_count) || 0), 0);
+  const totalValue = receipts.reduce((s, r) => s + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'Chờ xác nhận').length;
   const suppCount = suppliers.length;
 
@@ -453,10 +470,10 @@ function _renderDashboardKpis() {
     {
       icon: 'fa-sack-dollar', iconBg: '#fff7ed', iconColor: '#ea580c',
       label: 'Số tiền nhập kho', value: totalValue >= 1e9
-        ? (totalValue / 1e9).toFixed(2) + 'B'
+        ? (totalValue / 1e9).toFixed(2) + ' tỷ'
         : totalValue >= 1e6
-          ? (totalValue / 1e6).toFixed(1) + 'M'
-          : totalValue.toLocaleString('vi-VN'),
+          ? (totalValue / 1e6).toFixed(1) + ' tr'
+          : totalValue.toLocaleString('vi-VN') + '₫',
       sub: totalValue >= 1e6 ? totalValue.toLocaleString('vi-VN') + '₫' : '',
       subColor: '#64748b',
       onclick: ''
@@ -485,8 +502,8 @@ function _renderDashboardKpis() {
           <i class="fa-solid ${k.icon}" style="color:${k.iconColor};font-size:0.85rem;"></i>
         </div>
       </div>
-      <div style="font-size:1.5rem;font-weight:800;color:#0f172a;line-height:1;">${k.value}</div>
-      ${k.sub ? `<div style="font-size:0.72rem;color:${k.subColor};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>` : ''}
+      <div style="font-size:1.4rem;font-weight:800;color:#0f172a;line-height:1;">${k.value}</div>
+      ${k.sub ? `<div style="font-size:0.72rem;color:${k.subColor};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${k.sub}">${k.sub}</div>` : ''}
     </div>
   `).join('');
 }
@@ -495,16 +512,14 @@ function _renderDashboardCharts() {
   const receipts = _getDashboardFilteredReceipts();
 
   // ─── Line Chart ───────────────────────────────────────────────────────
-  const parseDate = r => {
-    const parts = String(r.import_date || '').split('/');
-    if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-    return '';
-  };
-
   const dailyMap = {};
   receipts.forEach(r => {
-    const d = parseDate(r);
-    if (d) dailyMap[d] = (dailyMap[d] || 0) + (Number(r.total_cost) || 0);
+    const d = _parseReceiptDate(r);
+    if (d) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const amount = Number(r.total_amount) || Number(r.total_cost) || 0;
+      dailyMap[key] = (dailyMap[key] || 0) + amount;
+    }
   });
 
   const sortedDays = Object.keys(dailyMap).sort();
@@ -551,7 +566,7 @@ function _renderDashboardCharts() {
             grid: { color: '#f1f5f9' },
             ticks: {
               font: { size: 10 },
-              callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v
+              callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
             }
           }
         }
@@ -562,11 +577,12 @@ function _renderDashboardCharts() {
   // ─── Donut Chart ─────────────────────────────────────────────────────
   const suppMap = {};
   receipts.forEach(r => {
-    const name = r.supplier_name || r.supplier_code || 'Khác';
-    suppMap[name] = (suppMap[name] || 0) + (Number(r.total_cost) || 0);
+    const name = (r.supplier_name || r.supplier_code || 'Khác').trim();
+    const amount = Number(r.total_amount) || Number(r.total_cost) || 0;
+    suppMap[name] = (suppMap[name] || 0) + amount;
   });
 
-  const suppEntries = Object.entries(suppMap).sort((a, b) => b[1] - a[1]);
+  const suppEntries = Object.entries(suppMap).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
   const TOP_N = 5;
   let donutLabels = [], donutData = [];
   if (suppEntries.length <= TOP_N) {
@@ -585,7 +601,7 @@ function _renderDashboardCharts() {
   const donutCtx = document.getElementById('dashboardDonutChart');
   if (donutCtx) {
     if (_dashDonutChart) { _dashDonutChart.destroy(); _dashDonutChart = null; }
-    if (donutData.length > 0) {
+    if (donutData.length > 0 && totalDonut > 0) {
       _dashDonutChart = new Chart(donutCtx, {
         type: 'doughnut',
         data: {
@@ -615,34 +631,38 @@ function _renderDashboardCharts() {
     const centerEl = document.getElementById('dashboardDonutCenter');
     if (centerEl) {
       const totalFmt = totalDonut >= 1e9
-        ? (totalDonut / 1e9).toFixed(2) + 'B'
+        ? (totalDonut / 1e9).toFixed(2) + ' tỷ'
         : totalDonut >= 1e6
-          ? (totalDonut / 1e6).toFixed(1) + 'M'
-          : totalDonut.toLocaleString('vi-VN');
+          ? (totalDonut / 1e6).toFixed(1) + ' tr'
+          : totalDonut.toLocaleString('vi-VN') + '₫';
       centerEl.innerHTML = totalDonut > 0
-        ? `<div style="font-size:0.65rem;color:#64748b;font-weight:500;">Tổng tiền</div><div style="font-size:1rem;font-weight:800;color:#0f172a;line-height:1.2;">${totalFmt}</div><div style="font-size:0.6rem;color:#94a3b8;">VND</div>`
+        ? `<div style="font-size:0.65rem;color:#64748b;font-weight:500;">Tổng tiền</div><div style="font-size:0.95rem;font-weight:800;color:#0f172a;line-height:1.2;">${totalFmt}</div>`
         : `<div style="font-size:0.7rem;color:#94a3b8;">Không có dữ liệu</div>`;
     }
 
     // Legend
     const legendEl = document.getElementById('dashboardDonutLegend');
     if (legendEl) {
-      legendEl.innerHTML = donutLabels.map((label, i) => {
-        const pct = totalDonut > 0 ? ((donutData[i] / totalDonut) * 100).toFixed(1) : 0;
-        const valFmt = donutData[i] >= 1e9
-          ? (donutData[i] / 1e9).toFixed(2) + 'B'
-          : donutData[i] >= 1e6
-            ? (donutData[i] / 1e6).toFixed(1) + 'M'
-            : donutData[i].toLocaleString('vi-VN');
-        return `
-          <div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
-            <span style="width:10px;height:10px;min-width:10px;border-radius:50%;background:${COLORS[i] || '#94a3b8'};"></span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:#374151;" title="${label}">${label}</span>
-            <span style="font-weight:700;color:#0f172a;white-space:nowrap;">${valFmt}₫</span>
-            <span style="color:#94a3b8;white-space:nowrap;">(${pct}%)</span>
-          </div>
-        `;
-      }).join('');
+      if (donutLabels.length === 0 || totalDonut === 0) {
+        legendEl.innerHTML = `<div style="color:#94a3b8;font-size:0.8rem;">Chưa có dữ liệu nhà cung cấp</div>`;
+      } else {
+        legendEl.innerHTML = donutLabels.map((label, i) => {
+          const pct = totalDonut > 0 ? ((donutData[i] / totalDonut) * 100).toFixed(1) : 0;
+          const valFmt = donutData[i] >= 1e9
+            ? (donutData[i] / 1e9).toFixed(2) + ' tỷ'
+            : donutData[i] >= 1e6
+              ? (donutData[i] / 1e6).toFixed(1) + ' tr'
+              : donutData[i].toLocaleString('vi-VN') + '₫';
+          return `
+            <div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+              <span style="width:10px;height:10px;min-width:10px;border-radius:50%;background:${COLORS[i] || '#94a3b8'};"></span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;color:#374151;" title="${label}">${label}</span>
+              <span style="font-weight:700;color:#0f172a;white-space:nowrap;">${valFmt}</span>
+              <span style="color:#94a3b8;white-space:nowrap;">(${pct}%)</span>
+            </div>
+          `;
+        }).join('');
+      }
     }
   }
 }
@@ -652,36 +672,51 @@ function _renderDashboardTopSuppliers() {
   if (!tbody) return;
   const receipts = _getDashboardFilteredReceipts();
 
-  if (receipts.length === 0 || suppliers.length === 0) {
+  if (receipts.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">Chưa có dữ liệu nhập kho.</td></tr>`;
     return;
   }
 
-  // Aggregate by supplier_code or supplier_name
+  // Aggregate by normalized supplier name
   const aggMap = {};
   receipts.forEach(r => {
-    const key = r.supplier_code || r.supplier_name || 'unknown';
+    const rawName = (r.supplier_name || 'Nhà cung cấp vãng lai').trim();
+    const rawTax = (r.tax_code || '').trim();
+    const key = rawName.toLowerCase();
     if (!aggMap[key]) {
       aggMap[key] = {
-        code: r.supplier_code || key,
-        name: r.supplier_name || key,
-        receipts: 0, qty: 0, total: 0
+        name: rawName,
+        tax_code: rawTax,
+        receipts: 0,
+        qty: 0,
+        total: 0
       };
     }
+    if (!aggMap[key].tax_code && rawTax) aggMap[key].tax_code = rawTax;
     aggMap[key].receipts++;
-    aggMap[key].qty += Number(r.total_quantity) || 0;
-    aggMap[key].total += Number(r.total_cost) || 0;
+    aggMap[key].qty += (Number(r.total_quantity) || Number(r.item_count) || 0);
+    aggMap[key].total += (Number(r.total_amount) || Number(r.total_cost) || 0);
   });
 
   const sorted = Object.values(aggMap).sort((a, b) => b.total - a.total).slice(0, 10);
 
-  // Match supplier status from suppliers list
-  const getStatus = (code, name) => {
-    const s = suppliers.find(sup =>
-      (sup.code && sup.code === code) ||
-      (sup.name && (sup.name === name || sup.name.toLowerCase().includes(name.toLowerCase().substring(0, 6))))
-    );
-    return s ? (s.status || 'Đang hợp tác') : 'Đang hợp tác';
+  // Match supplier info from suppliers array
+  const getSupplierInfo = (name, taxCode) => {
+    const cleanName = (name || '').trim().toLowerCase();
+    const cleanTax = (taxCode || '').trim().toLowerCase();
+    const s = suppliers.find(sup => {
+      const supCode = (sup.code || '').trim().toLowerCase();
+      const supTax = (sup.tax_code || sup.taxCode || '').trim().toLowerCase();
+      const supName = (sup.name || '').trim().toLowerCase();
+      if (cleanTax && (supTax === cleanTax || supCode === cleanTax)) return true;
+      if (cleanName && supName && (supName === cleanName || supName.includes(cleanName) || cleanName.includes(supName))) return true;
+      return false;
+    });
+    return {
+      code: s ? (s.code || s.tax_code || '—') : (cleanTax || '—'),
+      name: s ? (s.name || name) : name,
+      status: s ? (s.status || 'Đang hợp tác') : 'Đang hợp tác'
+    };
   };
 
   const statusBadgeSupp = (s) => {
@@ -691,14 +726,14 @@ function _renderDashboardTopSuppliers() {
   };
 
   tbody.innerHTML = sorted.map((row, i) => {
-    const status = getStatus(row.code, row.name);
-    const badge = statusBadgeSupp(status);
+    const suppInfo = getSupplierInfo(row.name, row.tax_code);
+    const badge = statusBadgeSupp(suppInfo.status);
     const valFmt = row.total.toLocaleString('vi-VN');
     return `
       <tr style="border-bottom:1px solid #f1f5f9;transition:background .1s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
         <td style="padding:10px 12px;color:#94a3b8;font-weight:600;">${i + 1}</td>
-        <td style="padding:10px 12px;"><code style="background:#f1f5f9;border-radius:4px;padding:2px 6px;font-size:0.75rem;color:#475569;">${row.code}</code></td>
-        <td style="padding:10px 12px;font-weight:500;color:#0f172a;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${row.name}">${row.name}</td>
+        <td style="padding:10px 12px;"><code style="background:#f1f5f9;border-radius:4px;padding:2px 6px;font-size:0.75rem;color:#475569;">${suppInfo.code}</code></td>
+        <td style="padding:10px 12px;font-weight:500;color:#0f172a;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${suppInfo.name}">${suppInfo.name}</td>
         <td style="padding:10px 12px;text-align:right;font-weight:600;color:#374151;">${row.receipts.toLocaleString('vi-VN')}</td>
         <td style="padding:10px 12px;text-align:right;color:#374151;">${row.qty.toLocaleString('vi-VN')}</td>
         <td style="padding:10px 12px;text-align:right;font-weight:700;color:#0f172a;">${valFmt}₫</td>
