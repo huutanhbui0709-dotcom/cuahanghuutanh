@@ -1677,6 +1677,14 @@ app.post('/api/admin/products/import', requireAdmin, async (req, res) => {
     }
   }
 
+  try {
+    await saveProducts(products);
+    await broadcastUpdate('products_updated');
+  } catch (err) {
+    console.error('Lỗi lưu sản phẩm sau import:', err);
+    return res.status(500).json({ ok: false, message: 'Import thành công nhưng lỗi khi lưu dữ liệu: ' + err.message });
+  }
+
   res.json({ ok: true, added, updated, errors });
 });
 
