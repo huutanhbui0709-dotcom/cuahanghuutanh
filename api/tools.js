@@ -98,10 +98,11 @@ async function loadSharedState() {
 
   if (sql && typeof sql === 'function') {
     try {
-      const [prodResult, supResult, setResult] = await Promise.all([
+      const [prodResult, supResult, setResult, updatesResult] = await Promise.all([
         sql`SELECT value FROM app_settings WHERE key = 'products'`,
         sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
         sql`SELECT value FROM app_settings WHERE key = 'settings'`,
+        sql`SELECT topic, updated_at FROM last_updates`.catch(() => ({ rows: [] })),
       ]);
       const prodRows = prodResult.rows ?? prodResult;
       const supRows = supResult.rows ?? supResult;
@@ -111,11 +112,13 @@ async function loadSharedState() {
       if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
       if (setRows.length > 0) settings = JSON.parse(setRows[0].value);
 
-      // Ghi lại timestamp hiện tại sau khi load xong
-      const now = Date.now();
-      instanceTimestamps.products = now;
-      instanceTimestamps.suppliers = now;
-      instanceTimestamps.settings = now;
+      // Lấy timestamp từ DB để syncToolsCache sau này so sánh đúng
+      // (dùng Date.now() sẽ luôn lớn hơn last_updates, làm sync không bao giờ chạy)
+      const updRows = updatesResult.rows ?? updatesResult;
+      updRows.forEach(r => {
+        const topic = r.topic;
+        if (topic in instanceTimestamps) instanceTimestamps[topic] = Number(r.updated_at);
+      });
 
       console.log(`[tools] Đã load: ${products.length} sản phẩm, ${suppliers.length} nhà cung cấp từ Vercel DB.`);
       isInitialized = true;
