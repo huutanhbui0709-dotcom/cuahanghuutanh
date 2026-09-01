@@ -1896,22 +1896,20 @@ function renderSelectedInvoiceFiles() {
     uploadText.innerHTML = `Đã chọn <strong>${selectedInvoiceFiles.length} file</strong> hóa đơn (Nhấn Xử lý bên dưới)`;
     listEl.style.display = 'block';
     listEl.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
         ${selectedInvoiceFiles.map((f, idx) => {
           const isPDF = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
           const icon = isPDF 
-            ? '<i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 1.1rem;"></i>' 
-            : '<i class="fa-solid fa-file-image" style="color: #3b82f6; font-size: 1.1rem;"></i>';
+            ? '<i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 1rem;"></i>' 
+            : '<i class="fa-solid fa-file-image" style="color: #3b82f6; font-size: 1rem;"></i>';
           const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
           return `
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; max-width: 80%;">
-                ${icon}
-                <span style="font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.name}">${f.name}</span>
-                <span style="color: var(--muted); font-size: 0.8rem; white-space: nowrap;">(${sizeMB} MB)</span>
-              </div>
-              <button type="button" onclick="removeSelectedInvoiceFile(${idx})" title="Xoá file này" style="background: #fee2e2; border: 1px solid #fecaca; color: #dc2626; border-radius: 4px; padding: 3px 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s ease;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
-                <i class="fa-solid fa-trash-can"></i> Xoá
+            <div style="display: inline-flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px 6px 4px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+              ${icon}
+              <span style="font-weight: 500; color: var(--text); font-size: 0.85rem; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.name}">${f.name}</span>
+              <span style="color: var(--muted); font-size: 0.78rem; white-space: nowrap;">(${sizeMB} MB)</span>
+              <button type="button" onclick="removeSelectedInvoiceFile(${idx})" title="Xoá file này" style="background: #fee2e2; border: 1px solid #fecaca; color: #dc2626; border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-left: 2px; transition: all 0.15s ease;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
+                <i class="fa-solid fa-xmark"></i> Xoá
               </button>
             </div>
           `;
