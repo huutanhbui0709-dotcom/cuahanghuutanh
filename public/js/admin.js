@@ -3241,7 +3241,7 @@ function sk_filterAndRender() {
   if (el('sk_totalStock')) el('sk_totalStock').textContent = totalStock.toLocaleString('vi-VN');
   if (el('sk_lowStock')) el('sk_lowStock').textContent = lowCount.toLocaleString('vi-VN');
   if (el('sk_outOfStock')) el('sk_outOfStock').textContent = outCount.toLocaleString('vi-VN');
-  if (el('sk_totalValue')) el('sk_totalValue').textContent = Math.round(totalValue).toLocaleString('vi-VN') + 'đ';
+  if (el('sk_totalValue')) el('sk_totalValue').textContent = formatPrice(Math.round(totalValue));
 
   // Pagination
   const total = list.length;
@@ -3270,7 +3270,7 @@ function sk_renderTable(list, startOffset) {
 
   tbody.innerHTML = list.map((p, i) => {
     const stock = parseFloat(p.stock) || 0;
-    const pending = parseFloat(p._pendingQty) || 0;   // SL đang chờ xác nhận
+    const pending = parseFloat(p._pendingQty) || 0;
     const available = Math.max(0, stock - pending);
     const costPrice = parseFloat(p.cost_price || p.gia) || 0;
     const totalVal = Math.round(stock * costPrice);
@@ -3279,38 +3279,46 @@ function sk_renderTable(list, startOffset) {
     const imgSrc = getProductImageUrl(p);
     const rowNum = startOffset + i + 1;
 
-    // Nếu có đơn đang chờ, hiện tooltip trên cột Khả dụng
-    const pendingHint = pending > 0
-      ? ` title="${pending.toLocaleString('vi-VN')} đơn đang chờ xác nhận"` : '';
+    let badgeHtml = '';
+    if (status === 'out') {
+      badgeHtml = `<span class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">Hết hàng</span>`;
+    } else if (status === 'low') {
+      badgeHtml = `<span class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">Sắp hết hàng</span>`;
+    } else {
+      badgeHtml = `<span class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">Còn hàng</span>`;
+    }
 
     return `
-      <tr class="hover:bg-slate-50/70 border-b border-slate-100 transition-colors">
-        <td class="px-4 py-3 text-center text-xs text-gray-400 font-medium">${rowNum}</td>
-        <td class="px-4 py-3">
-          <div class="flex items-center gap-3">
-            <div style="width:36px;height:36px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+      <tr class="hover:bg-gray-50 border-b border-gray-100">
+        <td class="w-12 px-4 py-3 text-center text-gray-500 text-sm">${rowNum}</td>
+        <td class="py-3 px-4 font-medium text-gray-900">
+          <div class="flex items-center gap-2.5">
+            <div style="width:32px;height:32px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
               ${hasImg
                 ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.parentNode.innerHTML='<i class=\\'fa-solid fa-box\\' style=\\'color:#cbd5e1;\\'></i>'" />`
-                : `<i class="fa-solid fa-box" style="color:#cbd5e1;font-size:0.85rem;"></i>`
+                : `<i class="fa-solid fa-box" style="color:#cbd5e1;font-size:0.8rem;"></i>`
               }
             </div>
-            <span class="text-xs font-semibold text-gray-800" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;" title="${p.ten || ''}">${p.ten || '—'}</span>
+            <span style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;" title="${p.ten || ''}">${p.ten || '—'}</span>
           </div>
         </td>
-        <td class="px-4 py-3">
-          <span style="font-size:0.75rem;font-family:monospace;background:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px;white-space:nowrap;font-weight:600;">${p.ma || '—'}</span>
+        <td class="py-3 px-4 text-gray-600 font-mono text-xs">${p.ma || '—'}</td>
+        <td class="py-3 px-4 text-gray-600">${p.donvi || 'Cái'}</td>
+        <td class="py-3 px-4 font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
+        <td class="py-3 px-4 font-medium ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}">
+          ${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span class="text-xs text-gray-400 font-normal">(−${pending.toLocaleString('vi-VN')})</span>` : ''}
         </td>
-        <td class="px-4 py-3 text-center text-xs text-gray-600">${p.donvi || 'Cái'}</td>
-        <td class="px-4 py-3 text-center text-sm font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
-        <td class="px-4 py-3 text-center text-xs font-semibold ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}" ${pendingHint}>${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span style="font-size:0.65rem;opacity:0.75">(−${pending.toLocaleString('vi-VN')})</span>` : ''}</td>
-        <td class="px-4 py-3 text-right text-xs font-bold text-blue-700">${totalVal ? totalVal.toLocaleString('vi-VN') + '₫' : '0₫'}</td>
-        <td class="px-4 py-3 text-center">${sk_statusBadge(status)}</td>
-        <td class="px-4 py-3 text-center">
-          <button class="w-8 h-8 rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-500 hover:text-blue-600 inline-flex items-center justify-center transition-colors cursor-pointer shadow-2xs" title="Xem chi tiết" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);">
-            <i class="fa-regular fa-eye"></i>
-          </button>
+        <td class="py-3 px-4"><span class="text-red-600 font-semibold">${formatPrice(totalVal)}</span></td>
+        <td class="py-3 px-4">${badgeHtml}</td>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-1.5">
+            <button class="p-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors bg-white cursor-pointer" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);" title="Xem chi tiết">
+              <i class="fa-solid fa-eye text-xs"></i>
+            </button>
+          </div>
         </td>
-      </tr>`;
+      </tr>
+    `;
   }).join('');
 }
 
