@@ -2386,12 +2386,38 @@ function renderInvoiceResults(results) {
     return;
   }
 
+  parsedInvoicesList = results.map(r => r.ok ? r.data : null);
+
+  // Thu thập danh sách sản phẩm mới từ tất cả các hóa đơn (loại trùng theo tên + đơn vị)
+  const allNewProducts = [];
+  const seenKeys = new Set();
+  results.forEach(res => {
+    if (!res.ok || !res.data || !res.data.products) return;
+    res.data.products.forEach(p => {
+      if (p.isNewSystemProduct) {
+        const key = (p.name || '').trim().toLowerCase() + '___' + (p.unit || '').trim().toLowerCase();
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          allNewProducts.push(p);
+        }
+      }
+    });
+  });
+
   // 1. Tạo vùng điều hướng Tab phân trang
+  const tabsWrapper = document.createElement('div');
+  tabsWrapper.className = 'invoice-tabs-wrapper';
+  tabsWrapper.style.display = 'flex';
+  tabsWrapper.style.justifyContent = 'space-between';
+  tabsWrapper.style.alignItems = 'center';
+  tabsWrapper.style.gap = '12px';
+  tabsWrapper.style.marginBottom = '16px';
+  tabsWrapper.style.flexWrap = 'wrap';
+
   const tabsContainer = document.createElement('div');
   tabsContainer.className = 'invoice-tabs';
   tabsContainer.style.display = 'flex';
   tabsContainer.style.gap = '8px';
-  tabsContainer.style.marginBottom = '16px';
   tabsContainer.style.flexWrap = 'wrap';
 
   results.forEach((res, index) => {
@@ -2409,7 +2435,27 @@ function renderInvoiceResults(results) {
     tabsContainer.appendChild(tabBtn);
   });
 
-  container.appendChild(tabsContainer);
+  tabsWrapper.appendChild(tabsContainer);
+
+  // Nút xuất tất cả hàng hóa mới từ tất cả hóa đơn nếu có sản phẩm mới
+  if (allNewProducts.length > 0) {
+    const exportAllBtn = document.createElement('button');
+    exportAllBtn.className = 'btn btn-warning btn-sm btn-export-all-misa';
+    exportAllBtn.id = 'btnExportAllNewProducts';
+    exportAllBtn.style.background = '#d97706';
+    exportAllBtn.style.color = 'white';
+    exportAllBtn.style.border = 'none';
+    exportAllBtn.style.fontWeight = '600';
+    exportAllBtn.style.display = 'inline-flex';
+    exportAllBtn.style.alignItems = 'center';
+    exportAllBtn.style.gap = '6px';
+    exportAllBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+    exportAllBtn.innerHTML = `<i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (Tất cả HĐ - ${allNewProducts.length} SP)`;
+    exportAllBtn.onclick = () => exportAllNewProductsExcel(exportAllBtn);
+    tabsWrapper.appendChild(exportAllBtn);
+  }
+
+  container.appendChild(tabsWrapper);
 
   // 2. Tạo nội dung cho từng hóa đơn
   results.forEach((res, index) => {
@@ -2986,6 +3032,77 @@ async function saveGeminiApiKey() {
 // ==============================
 // EXPORT NEW PRODUCTS TO MISA TEMPLATE
 // ==============================
+async function exportAllNewProductsExcel(btn) {
+  if (!parsedInvoicesList || parsedInvoicesList.length === 0) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
+    return;
+  }
+
+  // Thu thập và loại trùng các sản phẩm mới từ tất cả hóa đơn
+  const allNewProducts = [];
+  const seenKeys = new Set();
+
+  parsedInvoicesList.forEach(inv => {
+    if (!inv || !inv.products) return;
+    inv.products.forEach(p => {
+      if (p.isNewSystemProduct) {
+        const key = (p.name || '').trim().toLowerCase() + '___' + (p.unit || '').trim().toLowerCase();
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          allNewProducts.push(p);
+        }
+      }
+    });
+  });
+
+  if (allNewProducts.length === 0) {
+    showToast('<i class="fa-solid fa-circle-info"></i> Không có sản phẩm mới nào trong tất cả các hóa đơn.', 'info');
+    return;
+  }
+
+  let originalHTML = '';
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.setAttribute('disabled', 'true');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xuất...';
+  }
+
+  try {
+    const res = await adminFetch('/api/tools/export-new-products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(allNewProducts)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || 'Lỗi xuất file từ máy chủ.');
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Danh_sach_hang_hoa_moi_Tat_ca_HD.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    showToast(`<i class="fa-solid fa-circle-check"></i> Đã xuất ${allNewProducts.length} hàng hóa mới cho tất cả HĐ thành công!`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.removeAttribute('disabled');
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+
 async function exportNewProductsExcel(index) {
   const inv = parsedInvoicesList[index];
   if (!inv || !inv.products) {
