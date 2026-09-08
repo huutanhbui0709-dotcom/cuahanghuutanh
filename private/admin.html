@@ -188,19 +188,18 @@
         <!-- ================= DASHBOARD TAB ================= -->
         <div class="admin-tab active" id="tab-dashboard">
           <!-- Header -->
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-slate-200/80 gap-3">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+          <div class="admin-card-header">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
                 <i class="fa-solid fa-chart-pie"></i>
               </div>
-              <div>
-                <h2 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">Tổng quan hoạt động</h2>
-                <p class="text-xs text-slate-400 font-medium">Theo dõi hoạt động nhập kho, tồn kho và các giao dịch</p>
+              <div class="min-w-0">
+                <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Tổng quan hoạt động</h2>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Theo dõi hoạt động nhập kho, tồn kho và các giao dịch</p>
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <select id="dashboardTimeRange" onchange="renderDashboard()"
-                class="border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 h-9 transition cursor-pointer shadow-xs">
+            <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+              <select id="dashboardTimeRange" onchange="renderDashboard()" class="admin-select">
                 <option value="7">7 ngày gần nhất</option>
                 <option value="30" selected>30 ngày gần nhất</option>
                 <option value="90">3 tháng gần nhất</option>
@@ -303,50 +302,63 @@
           <!-- Sub-tab: Danh sách sản phẩm -->
           <div id="product-sub-tab-list">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-xs">
-              <!-- Header with Search & Filter -->
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+              <!-- Header -->
+              <div class="admin-card-header">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
                     <i class="fa-solid fa-box"></i>
                   </div>
-                  <div>
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
-                      Sản phẩm <span class="text-xs text-slate-400 font-semibold">(<span id="adminProductCount">0</span> kết quả)</span>
-                    </h3>
-                    <p class="text-xs text-slate-400 font-medium">Quản lý kho hàng hóa, dịch vụ và danh mục</p>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
+                        Sản phẩm
+                      </h3>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                        <span id="adminProductCount">0</span> kết quả
+                      </span>
+                    </div>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Quản lý kho hàng hóa, dịch vụ và danh mục</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                  <div class="relative flex-1 sm:flex-initial">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="text" id="adminSearch"
-                      class="w-full sm:w-56 pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
-                      placeholder="Tìm sản phẩm..." oninput="adminPage = 1; renderAdminTable()" />
-                  </div>
-                  <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()">
-                    <option value="">Tất cả loại</option>
-                  </select>
-                  <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="adminStatusFilter" onchange="adminPage = 1; renderAdminTable()">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="Đang theo dõi">Đang theo dõi</option>
-                    <option value="Ngừng theo dõi">Ngừng theo dõi</option>
-                  </select>
-                  <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="adminBestSellerFilter" onchange="adminPage = 1; renderAdminTable()">
-                    <option value="">Nổi bật</option>
-                    <option value="yes">Bán chạy</option>
-                    <option value="no">Không bán chạy</option>
-                  </select>
-                  <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="adminImageFilter" onchange="adminPage = 1; renderAdminTable()">
-                    <option value="">Tất cả ảnh</option>
-                    <option value="yes">Đã có ảnh</option>
-                    <option value="no">Chưa có ảnh</option>
-                  </select>
+                <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                  <button class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    onclick="exportNoImageProductsExcel()" title="Xuất Excel SP chưa ảnh">
+                    <i class="fa-solid fa-file-excel"></i> <span>Xuất SP chưa ảnh</span>
+                  </button>
+                  <button class="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer shrink-0"
+                    onclick="openProductModal()">
+                    <i class="fa-solid fa-plus text-slate-950"></i> <span>Thêm sản phẩm</span>
+                  </button>
                 </div>
+              </div>
+
+              <!-- Filter Toolbar -->
+              <div class="admin-toolbar-row">
+                <div class="admin-search-wrap">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                  <input type="text" id="adminSearch"
+                    class="admin-filter-input"
+                    placeholder="Tìm sản phẩm..." oninput="adminPage = 1; renderAdminTable()" />
+                </div>
+                <select class="admin-select" id="adminTypeFilter" onchange="adminPage = 1; renderAdminTable()">
+                  <option value="">Tất cả loại</option>
+                </select>
+                <select class="admin-select" id="adminStatusFilter" onchange="adminPage = 1; renderAdminTable()">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Đang theo dõi">Đang theo dõi</option>
+                  <option value="Ngừng theo dõi">Ngừng theo dõi</option>
+                </select>
+                <select class="admin-select" id="adminBestSellerFilter" onchange="adminPage = 1; renderAdminTable()">
+                  <option value="">Nổi bật</option>
+                  <option value="yes">Bán chạy</option>
+                  <option value="no">Không bán chạy</option>
+                </select>
+                <select class="admin-select" id="adminImageFilter" onchange="adminPage = 1; renderAdminTable()">
+                  <option value="">Tất cả ảnh</option>
+                  <option value="yes">Đã có ảnh</option>
+                  <option value="no">Chưa có ảnh</option>
+                </select>
               </div>
 
               <!-- Product Table Area -->
@@ -471,40 +483,49 @@
           <!-- LỊCH SỬ NHẬP KHO -->
           <div id="inventory-tab-history" class="inventory-tab-content">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-xs">
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+              <!-- Header -->
+              <div class="admin-card-header">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                   </div>
-                  <div>
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">Nhập kho mua hàng</h3>
-                    <p class="text-xs text-slate-400 font-medium">Quản lý và tra cứu chứng từ nhập hàng</p>
+                  <div class="min-w-0">
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Nhập kho mua hàng</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Quản lý và tra cứu chứng từ nhập hàng</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-                  <div class="relative flex-1 sm:flex-initial">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="text"
-                      class="w-full sm:w-60 pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
-                      id="inventorySearchFilter" placeholder="Tìm kiếm chứng từ, NCC..."
-                      oninput="inventoryPage = 1; filterInventoryHistory()" />
-                  </div>
-
-                  <select
-                    class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="inventoryTimePresetFilter" onchange="handleTimePresetChange()">
-                    <option value="all" selected>Tất cả thời gian</option>
-                    <option value="today">Hôm nay</option>
-                    <option value="yesterday">Hôm qua</option>
-                    <option value="7days">7 ngày qua</option>
-                    <option value="30days">30 ngày qua</option>
-                    <option value="thisMonth">Tháng này</option>
-                    <option value="lastMonth">Tháng trước</option>
-                    <option value="thisYear">Năm nay</option>
-                    <option value="custom">Tùy chọn...</option>
-                  </select>
+                <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                  <button class="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer shrink-0"
+                    onclick="openStockReceiptFormModal()">
+                    <i class="fa-solid fa-plus text-slate-950"></i> <span>Tạo phiếu nhập</span>
+                  </button>
                 </div>
+              </div>
+
+              <!-- Toolbar -->
+              <div class="admin-toolbar-row">
+                <div class="admin-search-wrap">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                  <input type="text"
+                    class="admin-filter-input"
+                    id="inventorySearchFilter" placeholder="Tìm kiếm chứng từ, NCC..."
+                    oninput="inventoryPage = 1; filterInventoryHistory()" />
+                </div>
+
+                <select
+                  class="admin-select"
+                  id="inventoryTimePresetFilter" onchange="handleTimePresetChange()">
+                  <option value="all" selected>Tất cả thời gian</option>
+                  <option value="today">Hôm nay</option>
+                  <option value="yesterday">Hôm qua</option>
+                  <option value="7days">7 ngày qua</option>
+                  <option value="30days">30 ngày qua</option>
+                  <option value="thisMonth">Tháng này</option>
+                  <option value="lastMonth">Tháng trước</option>
+                  <option value="thisYear">Năm nay</option>
+                  <option value="custom">Tùy chọn...</option>
+                </select>
               </div>
 
               <!-- Custom date range -->
@@ -673,40 +694,45 @@
           <!-- TỒN KHO SẢN PHẨM -->
           <div id="inventory-tab-stock" class="inventory-tab-content" style="display: none;">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-xs">
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+              <!-- Header -->
+              <div class="admin-card-header">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
                     <i class="fa-solid fa-boxes-stacked"></i>
                   </div>
-                  <div>
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">Tồn kho sản phẩm</h3>
-                    <p class="text-xs text-slate-400 font-medium">Theo dõi số lượng tồn thực tế và giá trị kho</p>
+                  <div class="min-w-0">
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Tồn kho sản phẩm</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Theo dõi số lượng tồn thực tế và giá trị kho</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                  <div class="relative flex-1 sm:flex-initial">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="text"
-                      class="w-full sm:w-56 pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
-                      id="sk_searchInput" placeholder="Tìm sản phẩm, mã..." oninput="sk_page = 1; sk_filterAndRender()" />
-                  </div>
-                  <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="sk_catFilter" onchange="sk_page = 1; sk_filterAndRender()">
-                    <option value="">Tất cả danh mục</option>
-                  </select>
-                  <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                    id="sk_statusFilter" onchange="sk_page = 1; sk_filterAndRender()">
-                    <option value="">Tất cả tình trạng</option>
-                    <option value="in">Còn hàng</option>
-                    <option value="low">Sắp hết hàng</option>
-                    <option value="out">Hết hàng</option>
-                  </select>
-                  <button class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                  <button class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                     onclick="sk_exportExcel()">
-                    <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                    <i class="fa-solid fa-file-excel"></i> <span>Xuất Excel</span>
                   </button>
                 </div>
+              </div>
+
+              <!-- Toolbar -->
+              <div class="admin-toolbar-row">
+                <div class="admin-search-wrap">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                  <input type="text"
+                    class="admin-filter-input"
+                    id="sk_searchInput" placeholder="Tìm sản phẩm, mã..." oninput="sk_page = 1; sk_filterAndRender()" />
+                </div>
+                <select class="admin-select"
+                  id="sk_catFilter" onchange="sk_page = 1; sk_filterAndRender()">
+                  <option value="">Tất cả danh mục</option>
+                </select>
+                <select class="admin-select"
+                  id="sk_statusFilter" onchange="sk_page = 1; sk_filterAndRender()">
+                  <option value="">Tất cả tình trạng</option>
+                  <option value="in">Còn hàng</option>
+                  <option value="low">Sắp hết hàng</option>
+                  <option value="out">Hết hàng</option>
+                </select>
               </div>
 
               <!-- Action & Metrics Bar -->
@@ -787,64 +813,63 @@
         <!-- ================= ORDERS TAB ================= -->
         <div class="admin-tab" id="tab-orders">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-xs flex flex-col min-h-[calc(100vh-140px)]">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <!-- Card Header: Title & Action CTAs -->
+            <div class="admin-card-header">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
                   <i class="fa-solid fa-clipboard-list"></i>
                 </div>
-                <div>
-                  <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
-                    Quản lý đơn hàng <span class="text-xs text-slate-400 font-semibold">(<span id="orderCount">0</span> đơn)</span>
-                  </h3>
-                  <p class="text-xs text-slate-400 font-medium">Theo dõi và xử lý đơn đặt hàng từ khách hàng</p>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
+                      Quản lý đơn hàng
+                    </h3>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0" id="orderCount">0 đơn</span>
+                  </div>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Theo dõi và xử lý đơn đặt hàng từ khách hàng</p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                <div class="relative flex-1 sm:flex-initial">
-                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                  <input type="text" id="orderSearch"
-                    class="w-full sm:w-52 pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
-                    placeholder="Tìm mã đơn, tên, SĐT..." oninput="orderPage=1; renderOrdersTable()" />
-                </div>
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
-                  <span>Từ:</span>
-                  <input type="date" id="orderDateFrom"
-                    class="border border-slate-200 bg-slate-50 rounded-xl text-xs px-2.5 py-1.5 focus:outline-none focus:border-amber-500"
-                    onchange="orderPage=1; renderOrdersTable()" />
-                </div>
-                <div class="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
-                  <span>Đến:</span>
-                  <input type="date" id="orderDateTo"
-                    class="border border-slate-200 bg-slate-50 rounded-xl text-xs px-2.5 py-1.5 focus:outline-none focus:border-amber-500"
-                    onchange="orderPage=1; renderOrdersTable()" />
-                </div>
-                <select class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer"
-                  id="orderStatusFilter" onchange="orderPage=1; renderOrdersTable()">
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="Chờ xác nhận">Chờ xác nhận</option>
-                  <option value="Đã xác nhận">Đã xác nhận</option>
-                  <option value="Đã huỷ">Đã huỷ</option>
-                </select>
-                <button class="p-2 border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-xs cursor-pointer"
-                  onclick="resetOrderFilters()" title="Xóa bộ lọc">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
-                <select onchange="changeOrderPageSize(this.value)" title="Số đơn mỗi trang"
-                  class="border border-slate-200 bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 px-3 py-2 focus:outline-none focus:border-amber-500 focus:bg-white h-9 transition cursor-pointer">
-                  <option value="10" selected>10 / trang</option>
-                  <option value="20">20 / trang</option>
-                  <option value="50">50 / trang</option>
-                </select>
-                <button class="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer"
-                  onclick="showCreateOrderModal()">
-                  <i class="fa-solid fa-plus text-slate-950"></i> Tạo đơn hàng
-                </button>
-                <button class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+              <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+                <button class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                   id="deleteAllCancelledBtn" onclick="deleteAllCancelledOrders()" title="Xóa tất cả đơn hàng đã huỷ" style="display:none;">
-                  <i class="fa-solid fa-trash"></i> Xóa đơn huỷ
+                  <i class="fa-solid fa-trash"></i> <span>Xóa đơn huỷ</span>
+                </button>
+                <button class="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer shrink-0"
+                  onclick="showCreateOrderModal()">
+                  <i class="fa-solid fa-plus text-slate-950"></i> <span>Tạo đơn hàng</span>
                 </button>
               </div>
+            </div>
+
+            <!-- Toolbar: Search, Date Filter, Status Filter, Page Size, Reset -->
+            <div class="admin-toolbar-row">
+              <div class="admin-search-wrap">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                <input type="text" id="orderSearch"
+                  class="admin-filter-input"
+                  placeholder="Tìm mã đơn, tên, SĐT..." oninput="orderPage=1; renderOrdersTable()" />
+              </div>
+              <div class="admin-date-group">
+                <span>Từ:</span>
+                <input type="date" id="orderDateFrom" onchange="orderPage=1; renderOrdersTable()" />
+                <span class="ml-1">Đến:</span>
+                <input type="date" id="orderDateTo" onchange="orderPage=1; renderOrdersTable()" />
+              </div>
+              <select class="admin-select" id="orderStatusFilter" onchange="orderPage=1; renderOrdersTable()">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Chờ xác nhận">Chờ xác nhận</option>
+                <option value="Đã xác nhận">Đã xác nhận</option>
+                <option value="Đã huỷ">Đã huỷ</option>
+              </select>
+              <select onchange="changeOrderPageSize(this.value)" title="Số đơn mỗi trang" class="admin-select">
+                <option value="10" selected>10 / trang</option>
+                <option value="20">20 / trang</option>
+                <option value="50">50 / trang</option>
+              </select>
+              <button class="admin-icon-btn" onclick="resetOrderFilters()" title="Xóa bộ lọc">
+                <i class="fa-solid fa-rotate-left text-xs"></i>
+              </button>
             </div>
 
             <!-- Orders Table Area -->
@@ -863,30 +888,30 @@
         <!-- ================= SUPPLIERS TAB ================= -->
         <div class="admin-tab" id="tab-suppliers">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-xs">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <div class="admin-card-header">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
                   <i class="fa-solid fa-truck-field"></i>
                 </div>
-                <div>
-                  <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">Quản lý Nhà cung cấp</h3>
-                  <p class="text-xs text-slate-400 font-medium">Danh sách các đối tác, nhà cung cấp hàng hóa</p>
+                <div class="min-w-0">
+                  <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Quản lý Nhà cung cấp</h3>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Danh sách các đối tác, nhà cung cấp hàng hóa</p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-2">
-                <button class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer"
-                  onclick="openAddSupplierModal()">
-                  <i class="fa-solid fa-plus text-slate-950"></i> Thêm nhà cung cấp
-                </button>
+              <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
                 <input type="file" id="supplierExcelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="importSuppliersExcel(event)" />
-                <button class="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                <button class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                   onclick="document.getElementById('supplierExcelFileInput').click()" id="btnImportSuppliers">
-                  <i class="fa-solid fa-file-import"></i> Import (Excel)
+                  <i class="fa-solid fa-file-import"></i> <span>Import (Excel)</span>
                 </button>
                 <div id="supplierImportSpinner" style="display: none;" class="text-xs text-slate-600 font-bold">
                   <i class="fa-solid fa-spinner fa-spin text-amber-500"></i> Đang xử lý...
                 </div>
+                <button class="px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer shrink-0"
+                  onclick="openAddSupplierModal()">
+                  <i class="fa-solid fa-plus text-slate-950"></i> <span>Thêm nhà cung cấp</span>
+                </button>
               </div>
             </div>
 
@@ -914,13 +939,15 @@
         <!-- ================= SLIDES TAB ================= -->
         <div class="admin-tab" id="tab-slides">
           <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-xs mb-5">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
-                <i class="fa-regular fa-images"></i>
-              </div>
-              <div>
-                <h3 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">Quản lý Slide ảnh trang chủ</h3>
-                <p class="text-xs text-slate-400 font-medium">Thêm hoặc xóa các hình ảnh hiển thị ở banner slideshow trang chủ</p>
+            <div class="admin-card-header">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
+                  <i class="fa-regular fa-images"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Quản lý Slide ảnh trang chủ</h3>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Thêm hoặc xóa các hình ảnh hiển thị ở banner slideshow trang chủ</p>
+                </div>
               </div>
             </div>
 
