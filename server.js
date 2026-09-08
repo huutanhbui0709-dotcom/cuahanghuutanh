@@ -20,6 +20,7 @@ const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
 const cookieParser = require('cookie');
+const compression = require('compression');
 const express = require('express');
 const session = require('express-session');
 const rateLimitModule = require('express-rate-limit');
@@ -551,6 +552,9 @@ async function ensureInitialized() {
 const app = express();
 app.set('trust proxy', 1); // cần thiết khi chạy sau proxy của Railway/Render
 
+// Nén gzip/brotli để giảm kích thước response (76KB JSON → ~12KB)
+app.use(compression());
+
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
@@ -600,10 +604,22 @@ app.use(async (req, res, next) => {
   try {
     await ensureInitialized();
     if (req.path.startsWith('/api/')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      await syncVercelCache();
+      // Kiểm tra admin token
+      const cookies = parseCookies(req);
+      const token = cookies.admin_token;
+      const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+      const isAdminReq = req.path.startsWith('/api/admin') || token === expectedToken;
+
+      if (isAdminReq) {
+        // Admin routes hoặc admin user: no-cache + sync DB
+        if (req.path.startsWith('/api/admin')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+        await syncVercelCache();
+      }
+      // API công khai: Cache-Control sẽ được set riêng ở từng route
     }
     next();
   } catch (err) {
@@ -792,10 +808,26 @@ app.get('/healthz', (req, res) => res.json({ ok: true }));
 // =====================================================================
 
 app.get('/api/products', (req, res) => {
-  res.json(products);
+  // Kiểm tra admin token để trả đầy đủ data cho admin
+  const cookies = parseCookies(req);
+  const token = cookies.admin_token;
+  const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+  const isAdmin = token === expectedToken;
+
+  if (isAdmin) {
+    // Admin: trả đầy đủ data, không cache
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.json(products);
+  } else {
+    // Khách hàng: cache 60s, lọc bỏ dữ liệu nhạy cảm
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    const publicProducts = products.map(({ cost_price, stock, stt, ...rest }) => rest);
+    res.json(publicProducts);
+  }
 });
 
 app.get('/api/settings', (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
   const publicSettings = { ...settings };
   if (!req.session || !req.session.isAdmin) {
     delete publicSettings.geminiApiKey;
@@ -804,6 +836,7 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.get('/api/slides', async (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=1800');
   try {
     // Lấy danh sách ảnh slide từ Cloudflare R2
     const items = await listFiles('slides');

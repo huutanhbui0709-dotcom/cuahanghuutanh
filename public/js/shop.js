@@ -161,11 +161,78 @@ function populateTypeFilter() {
   }
 }
 
+// Hiển thị skeleton loading trước khi dữ liệu sẵn sàng
+function showSkeletonGrid() {
+  const grid = document.getElementById('productGrid');
+  if (!grid) return;
+  const skeletonCount = window.innerWidth < 640 ? 6 : 12;
+  grid.innerHTML = Array.from({ length: skeletonCount }, () => `
+    <div class="sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full animate-pulse">
+      <div class="aspect-square bg-slate-200"></div>
+      <div class="p-2.5 flex flex-col gap-2">
+        <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+        <div class="h-2 bg-slate-100 rounded w-1/2"></div>
+        <div class="mt-auto flex items-end justify-between pt-2 border-t border-slate-100">
+          <div class="h-4 bg-slate-200 rounded w-16"></div>
+          <div class="w-8 h-8 bg-slate-200 rounded-lg"></div>
+        </div>
+      </div>
+    </div>
+    <div class="max-sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full animate-pulse">
+      <div class="aspect-[4/3] bg-slate-200 border-b border-slate-100"></div>
+      <div class="p-4 flex flex-col gap-2">
+        <div class="h-2 bg-slate-100 rounded w-1/3"></div>
+        <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+        <div class="mt-auto flex items-end justify-between pt-3 border-t border-slate-100">
+          <div class="h-5 bg-slate-200 rounded w-20"></div>
+          <div class="h-9 bg-slate-200 rounded-xl w-24"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+const PRODUCT_CACHE_KEY = 'cached_products';
+const PRODUCT_CACHE_TTL = 60000; // 60 giây
+
 async function loadProducts() {
+  // Hiển thị skeleton ngay lập tức
+  showSkeletonGrid();
+
+  // Kiểm tra cache trong sessionStorage
+  try {
+    const cached = sessionStorage.getItem(PRODUCT_CACHE_KEY);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < PRODUCT_CACHE_TTL) {
+        products = data;
+        populateTypeFilter();
+        renderShop();
+        // Fetch mới trong nền để cập nhật cache (stale-while-revalidate)
+        fetch('/api/products').then(r => r.json()).then(freshData => {
+          const filtered = freshData.filter(p => p.trangthai !== 'Ngừng theo dõi');
+          sessionStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify({ data: filtered, timestamp: Date.now() }));
+          // Chỉ re-render nếu data thực sự thay đổi
+          if (JSON.stringify(filtered) !== JSON.stringify(products)) {
+            products = filtered;
+            populateTypeFilter();
+            renderShop();
+          }
+        }).catch(() => {}); // Bỏ qua lỗi nền
+        return;
+      }
+    }
+  } catch (e) { /* sessionStorage không khả dụng, bỏ qua */ }
+
+  // Fetch từ server
   try {
     const res = await fetch('/api/products');
     const data = await res.json();
     products = data.filter(p => p.trangthai !== 'Ngừng theo dõi');
+    // Lưu vào cache
+    try {
+      sessionStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify({ data: products, timestamp: Date.now() }));
+    } catch (e) { /* quota exceeded, bỏ qua */ }
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Không tải được danh sách sản phẩm', 'error');
     products = [];
@@ -233,7 +300,7 @@ function renderShop() {
     <div class="sm:hidden group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-300 relative w-full">
       <!-- Image area -->
       <div class="relative aspect-square bg-slate-50 flex items-center justify-center overflow-hidden cursor-pointer active:bg-slate-100 transition duration-150" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
-        ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-4xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
+        ${p.image ? `<img src="${getProductImageUrl(p)}" loading="lazy" decoding="async" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-4xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
         <span class="absolute top-2 left-2 text-[9px] text-amber-900 bg-amber-400/90 px-1.5 py-0.5 rounded-md font-bold truncate max-w-[90px] z-10 shadow-sm">
           ${p.loai || 'Hàng hóa'}
         </span>
@@ -257,7 +324,7 @@ function renderShop() {
     <!-- ========== DESKTOP CARD (ẩn trên mobile) ========== -->
     <div class="max-sm:hidden group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-300">
       <div class="relative aspect-[4/3] bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden cursor-pointer p-4" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
-        ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-6xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
+        ${p.image ? `<img src="${getProductImageUrl(p)}" loading="lazy" decoding="async" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-6xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
         <span class="absolute top-3 left-3 text-[11px] text-amber-900 bg-amber-400/90 px-2 py-1 rounded-md font-bold shadow-sm">
           ${p.loai || 'Hàng hóa'}
         </span>
