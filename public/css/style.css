@@ -304,9 +304,9 @@
   .admin-sidebar-item { padding: 11px 16px; margin-bottom: 4px; border-radius: 12px; cursor: pointer; color: #94a3b8; font-size: .875rem; font-weight: 600; transition: all .15s ease; border-left: none; display: flex; align-items: center; gap: 12px; white-space: nowrap; overflow: hidden; }
   .admin-sidebar-item:hover { background: rgba(255,255,255,.08); color: #ffffff; }
   .admin-sidebar-item.active { background: linear-gradient(135deg, #f59e0b, #f97316); color: #0f172a; font-weight: 800; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); }
-  .admin-content { flex: 1; padding: 24px 28px; overflow-x: auto; background: #f1f5f9; min-width: 0; }
+  .admin-content { flex: 1; padding: 16px 20px; overflow-x: auto; background: #f1f5f9; min-width: 0; }
 
-  .admin-card { background: #ffffff; border-radius: 16px; border: 1px solid rgba(226, 232, 240, 0.85); padding: 22px 24px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,.03), 0 6px 16px rgba(0,0,0,.02); }
+  .admin-card { background: #ffffff; border-radius: 16px; border: 1px solid rgba(226, 232, 240, 0.85); padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.03), 0 6px 16px rgba(0,0,0,.02); }
   .admin-card-title { font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
 
   .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -316,9 +316,9 @@
 
   /* Table */
   .table-wrap { overflow-x: auto; max-height: calc(100vh - 280px); overflow-y: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
-  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
-  thead th { position: sticky; top: 0; z-index: 10; background: #f8fafc; padding: 10px 12px; text-align: left; font-size: .74rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1.5px solid #e2e8f0; white-space: nowrap; }
-  tbody td { padding: 11px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .8125rem; }
+  thead th { position: sticky; top: 0; z-index: 10; background: #f8fafc; padding: 8px 8px; text-align: left; font-size: .72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .02em; border-bottom: 1.5px solid #e2e8f0; }
+  tbody td { padding: 8px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; font-size: .8rem; }
   tbody tr { transition: background .12s ease; }
   tbody tr:hover { background: #f8fafc; }
   tbody tr:last-child td { border-bottom: none; }
@@ -716,22 +716,22 @@
   .row-actions {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex-wrap: nowrap;
     justify-content: center;
   }
   .row-actions .btn,
   .row-actions .btn-act {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
     padding: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
     border: 1px solid #e2e8f0;

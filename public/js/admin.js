@@ -1354,20 +1354,33 @@ function renderOrdersTable() {
   const pagedOrders = list.slice((orderPage - 1) * ORDERS_PER_PAGE, orderPage * ORDERS_PER_PAGE);
 
   document.getElementById('ordersTable').innerHTML = `
-    <table>
-      <thead><tr><th>#</th><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Địa chỉ</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày đặt</th><th>Trạng thái</th><th style="text-align:center">Thao tác</th></tr></thead>
+    <table class="w-full text-xs">
+      <thead>
+        <tr>
+          <th style="width:30px;text-align:center">#</th>
+          <th style="white-space:nowrap">Mã đơn</th>
+          <th>Khách hàng</th>
+          <th style="white-space:nowrap">SĐT</th>
+          <th>Địa chỉ</th>
+          <th style="white-space:nowrap;text-align:center">Sản phẩm</th>
+          <th style="white-space:nowrap">Tổng tiền</th>
+          <th style="white-space:nowrap;text-align:center">Ngày đặt</th>
+          <th style="white-space:nowrap;text-align:center">Trạng thái</th>
+          <th style="white-space:nowrap;text-align:center;width:105px">Thao tác</th>
+        </tr>
+      </thead>
       <tbody>${pagedOrders.map((o, i) => `
         <tr class="order-row">
-          <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">${(orderPage - 1) * ORDERS_PER_PAGE + i + 1}</td>
-          <td style="white-space:nowrap">${o.id}</td>
-          <td>${o.customer}</td>
-          <td>${o.phone}</td>
-          <td style="max-width:150px;font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address}">${o.address}</td>
-          <td><span class="order-detail">${o.items.length} sản phẩm</span></td>
-          <td style="font-weight:700;color:var(--primary)">${formatPrice(o.total)}</td>
-          <td style="white-space:nowrap;font-size:.82rem">${formatOrderDate(o.createdAt)}</td>
-          <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
-          <td style="white-space:nowrap" class="text-center">
+          <td style="color:var(--muted);font-size:.75rem;text-align:center">${(orderPage - 1) * ORDERS_PER_PAGE + i + 1}</td>
+          <td style="white-space:nowrap;font-weight:700">${o.id}</td>
+          <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.customer}">${o.customer}</td>
+          <td style="white-space:nowrap;font-family:monospace;font-size:.78rem">${o.phone}</td>
+          <td style="max-width:120px;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address}">${o.address}</td>
+          <td style="white-space:nowrap;text-align:center"><span class="order-detail font-bold" style="font-size:.78rem">${o.items.length} SP</span></td>
+          <td style="white-space:nowrap;font-weight:700;color:var(--primary);font-size:.8rem">${formatPrice(o.total)}</td>
+          <td style="white-space:nowrap;text-align:center">${formatOrderDate(o.createdAt)}</td>
+          <td style="white-space:nowrap;text-align:center"><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
+          <td style="white-space:nowrap;text-align:center">
             <div class="row-actions">
               <button class="btn-act btn-act-view" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')">
                 <i class="fa-solid fa-eye"></i>
