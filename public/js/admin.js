@@ -523,62 +523,167 @@ let _dashLineChart = null;
 let _dashDonutChart = null;
 let _dashQuarterChart = null;
 
-function initDashboardQuarterFilter() {
-  const thisYearOptgroup = document.getElementById('dashQuarterOptionsThisYear');
-  const prevYearOptgroup = document.getElementById('dashQuarterOptionsPrevYear');
-  if (!thisYearOptgroup) return;
+// ==============================
+// DASHBOARD FILTER STATE & CONTROLLERS
+// ==============================
+let _currentDashboardFilter = {
+  mode: 'days', // 'days' | 'quarter' | 'year'
+  days: 30,
+  year: new Date().getFullYear(),
+  quarter: Math.floor(new Date().getMonth() / 3) + 1 // 1..4 or 'year'
+};
+
+function initDashboardFilterBar() {
+  const yearSelect = document.getElementById('dashFilterYear');
+  if (!yearSelect) return;
 
   const now = new Date();
   const currentYear = now.getFullYear();
-  const prevYear = currentYear - 1;
-  const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
 
-  if (thisYearOptgroup.children.length === 0) {
-    thisYearOptgroup.label = `Thống kê theo Quý (Năm ${currentYear})`;
-    thisYearOptgroup.innerHTML = [1, 2, 3, 4].map(q => {
-      const isCurrent = q === currentQuarter;
-      const months = q === 1 ? 'T1 - T3' : q === 2 ? 'T4 - T6' : q === 3 ? 'T7 - T9' : 'T10 - T12';
-      const tag = isCurrent ? ' (Quý hiện tại)' : ` (${months})`;
-      return `<option value="Q${q}_${currentYear}">Quý ${q}/${currentYear}${tag}</option>`;
-    }).join('');
-  }
+  // Gather all available years from receipts + current year + surrounding years
+  const availableYearsSet = new Set([currentYear, currentYear - 1, currentYear - 2, currentYear + 1]);
+  (allInventoryReceipts || []).forEach(r => {
+    const d = _parseReceiptDate(r);
+    if (d) availableYearsSet.add(d.getFullYear());
+  });
+  const sortedYears = Array.from(availableYearsSet).sort((a, b) => b - a);
 
-  if (prevYearOptgroup && prevYearOptgroup.children.length === 0) {
-    prevYearOptgroup.label = `Thống kê theo Quý (Năm ${prevYear})`;
-    prevYearOptgroup.innerHTML = [1, 2, 3, 4].map(q => {
-      const months = q === 1 ? 'T1 - T3' : q === 2 ? 'T4 - T6' : q === 3 ? 'T7 - T9' : 'T10 - T12';
-      return `<option value="Q${q}_${prevYear}">Quý ${q}/${prevYear} (${months})</option>`;
-    }).join('');
-  }
-}
-
-function _getDashboardTimeFilterRange() {
-  const val = document.getElementById('dashboardTimeRange')?.value || '30';
-
-  if (val.startsWith('Q')) {
-    const parts = val.split('_');
-    const q = parseInt(parts[0].replace('Q', ''), 10);
-    const y = parseInt(parts[1], 10);
-
-    if (q >= 1 && q <= 4 && !isNaN(y)) {
-      const startMonth = (q - 1) * 3;
-      const endMonth = q * 3;
-      const startDate = new Date(y, startMonth, 1, 0, 0, 0, 0);
-      const endDate = new Date(y, endMonth, 0, 23, 59, 59, 999);
-      const qMonths = q === 1 ? 'Tháng 1 - 3' : q === 2 ? 'Tháng 4 - 6' : q === 3 ? 'Tháng 7 - 9' : 'Tháng 10 - 12';
-      return {
-        type: 'quarter',
-        quarter: q,
-        year: y,
-        label: `Quý ${q}/${y} (${qMonths})`,
-        shortLabel: `Quý ${q}/${y}`,
-        startDate,
-        endDate
-      };
+  const prevSelected = yearSelect.value ? parseInt(yearSelect.value, 10) : _currentDashboardFilter.year;
+  if (yearSelect.options.length === 0 || yearSelect.options.length !== sortedYears.length) {
+    yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Năm ${y}</option>`).join('');
+    if (sortedYears.includes(prevSelected)) {
+      yearSelect.value = prevSelected;
+    } else {
+      yearSelect.value = currentYear;
     }
   }
 
-  const days = parseInt(val, 10);
+  _updateDashboardFilterUI();
+}
+
+function _updateDashboardFilterUI() {
+  const filter = _getDashboardTimeFilterRange();
+
+  // 1. Update active text label
+  const labelEl = document.getElementById('dashFilterActiveLabel');
+  if (labelEl) {
+    labelEl.textContent = filter.label;
+  }
+
+  // 2. Update Quick buttons active styles
+  document.querySelectorAll('#dashQuickPills .dash-quick-btn').forEach(btn => {
+    const days = parseInt(btn.getAttribute('data-days'), 10);
+    const isActive = _currentDashboardFilter.mode === 'days' && _currentDashboardFilter.days === days;
+    if (isActive) {
+      btn.className = 'dash-quick-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs border border-slate-200/80 dark:border-slate-700 cursor-pointer';
+    } else {
+      btn.className = 'dash-quick-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer';
+    }
+  });
+
+  // 3. Update Quarter buttons active styles
+  document.querySelectorAll('#dashQuarterPills .dash-q-btn').forEach(btn => {
+    const qAttr = btn.getAttribute('data-q');
+    let isActive = false;
+    if (_currentDashboardFilter.mode === 'year' && qAttr === 'year') {
+      isActive = true;
+    } else if (_currentDashboardFilter.mode === 'quarter' && String(_currentDashboardFilter.quarter) === qAttr) {
+      isActive = true;
+    }
+
+    if (isActive) {
+      btn.className = 'dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-black bg-indigo-600 text-white shadow-2xs cursor-pointer';
+    } else {
+      btn.className = 'dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer';
+    }
+  });
+
+  // 4. Sync Year select
+  const yearSelect = document.getElementById('dashFilterYear');
+  if (yearSelect && _currentDashboardFilter.year) {
+    yearSelect.value = _currentDashboardFilter.year;
+  }
+}
+
+function setDashboardFilter(type, val) {
+  if (type === 'days') {
+    _currentDashboardFilter.mode = 'days';
+    _currentDashboardFilter.days = Number(val);
+  } else if (type === 'Q') {
+    const yearSelect = document.getElementById('dashFilterYear');
+    const selectedYear = yearSelect ? parseInt(yearSelect.value, 10) : _currentDashboardFilter.year;
+    _currentDashboardFilter.year = selectedYear;
+
+    if (val === 'year') {
+      _currentDashboardFilter.mode = 'year';
+      _currentDashboardFilter.quarter = 'year';
+    } else {
+      _currentDashboardFilter.mode = 'quarter';
+      _currentDashboardFilter.quarter = parseInt(val, 10);
+    }
+
+    // Synchronize the Year in the lower Quarterly section
+    const qYearSelect = document.getElementById('quarterYearSelect');
+    if (qYearSelect && qYearSelect.value !== String(selectedYear)) {
+      qYearSelect.value = selectedYear;
+    }
+  }
+
+  _updateDashboardFilterUI();
+  renderDashboard();
+}
+
+function onDashboardYearChange() {
+  const yearSelect = document.getElementById('dashFilterYear');
+  if (!yearSelect) return;
+  const newYear = parseInt(yearSelect.value, 10);
+  _currentDashboardFilter.year = newYear;
+
+  // If user changes year while in 'days' mode, default to Q1 or current active quarter of that year
+  if (_currentDashboardFilter.mode === 'days') {
+    _currentDashboardFilter.mode = 'quarter';
+    _currentDashboardFilter.quarter = 1;
+  }
+
+  setDashboardFilter('Q', _currentDashboardFilter.quarter || 1);
+}
+
+function _getDashboardTimeFilterRange() {
+  if (_currentDashboardFilter.mode === 'quarter') {
+    const q = _currentDashboardFilter.quarter;
+    const y = _currentDashboardFilter.year;
+    const startMonth = (q - 1) * 3;
+    const endMonth = q * 3;
+    const startDate = new Date(y, startMonth, 1, 0, 0, 0, 0);
+    const endDate = new Date(y, endMonth, 0, 23, 59, 59, 999);
+    const qMonths = q === 1 ? '01/01 - 31/03' : q === 2 ? '01/04 - 30/06' : q === 3 ? '01/07 - 30/09' : '01/10 - 31/12';
+    return {
+      type: 'quarter',
+      quarter: q,
+      year: y,
+      label: `Quý ${q}/${y} (${qMonths})`,
+      shortLabel: `Quý ${q}/${y}`,
+      startDate,
+      endDate
+    };
+  }
+
+  if (_currentDashboardFilter.mode === 'year') {
+    const y = _currentDashboardFilter.year;
+    const startDate = new Date(y, 0, 1, 0, 0, 0, 0);
+    const endDate = new Date(y, 11, 31, 23, 59, 59, 999);
+    return {
+      type: 'year',
+      year: y,
+      label: `Cả năm ${y}`,
+      shortLabel: `Năm ${y}`,
+      startDate,
+      endDate
+    };
+  }
+
+  // mode === 'days'
+  const days = _currentDashboardFilter.days;
   if (days === 0) {
     return { type: 'all', label: 'Toàn bộ thời gian', shortLabel: 'Toàn thời gian', startDate: null, endDate: null };
   }
@@ -598,7 +703,7 @@ function _getDashboardTimeFilterRange() {
 }
 
 function renderDashboard() {
-  initDashboardQuarterFilter();
+  initDashboardFilterBar();
   _renderDashboardKpis();
   _renderDashboardCharts();
   renderQuarterSection();
@@ -896,17 +1001,17 @@ function _renderDashboardCharts() {
 }
 
 function filterDashboardByQuarter(year, quarter) {
-  const select = document.getElementById('dashboardTimeRange');
-  if (select) {
-    select.value = `Q${quarter}_${year}`;
-    renderDashboard();
+  _currentDashboardFilter.year = parseInt(year, 10);
+  const yearSelect = document.getElementById('dashFilterYear');
+  if (yearSelect) yearSelect.value = String(year);
 
-    const dashboardTab = document.getElementById('tab-dashboard');
-    if (dashboardTab) {
-      dashboardTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    showToast(`<i class="fa-solid fa-filter"></i> Đang hiển thị thống kê Quý ${quarter}/${year}`, 'success');
+  setDashboardFilter('Q', quarter);
+
+  const dashboardTab = document.getElementById('tab-dashboard');
+  if (dashboardTab) {
+    dashboardTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+  showToast(`<i class="fa-solid fa-filter"></i> Đang hiển thị thống kê Quý ${quarter}/${year}`, 'success');
 }
 
 function renderQuarterSection() {
@@ -1016,13 +1121,13 @@ function renderQuarterSection() {
     qObj.percentage = yearTotalAmount > 0 ? Math.round((qObj.totalAmount / yearTotalAmount) * 100) : 0;
   });
 
-  const currentFilterVal = document.getElementById('dashboardTimeRange')?.value || '';
-
   // 3. Render 4 Quarter Cards
   const cardsGrid = document.getElementById('quarterCardsGrid');
   if (cardsGrid) {
     cardsGrid.innerHTML = quarterData.map(q => {
-      const isFilterActive = currentFilterVal === `Q${q.quarter}_${selectedYear}`;
+      const isFilterActive = (_currentDashboardFilter.mode === 'quarter' &&
+                              _currentDashboardFilter.year === selectedYear &&
+                              _currentDashboardFilter.quarter === q.quarter);
       const amountFmt = q.totalAmount >= 1e9
         ? (q.totalAmount / 1e9).toFixed(2) + ' tỷ'
         : q.totalAmount >= 1e6

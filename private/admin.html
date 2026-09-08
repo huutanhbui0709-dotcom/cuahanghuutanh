@@ -187,31 +187,66 @@
       <main class="admin-content">
         <!-- ================= DASHBOARD TAB ================= -->
         <div class="admin-tab active" id="tab-dashboard">
-          <!-- Header -->
-          <div class="admin-card-header">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
-                <i class="fa-solid fa-chart-pie"></i>
+          <!-- ================= DASHBOARD HEADER & SMART FILTER BAR ================= -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs mb-6">
+            <!-- Top Row: Title + Active Filter Tag -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
+                  <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div class="min-w-0">
+                  <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Tổng quan hoạt động</h2>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Theo dõi hoạt động nhập kho, tồn kho và các giao dịch</p>
+                </div>
               </div>
-              <div class="min-w-0">
-                <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Tổng quan hoạt động</h2>
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">Theo dõi hoạt động nhập kho, tồn kho và các giao dịch</p>
+
+              <!-- Active Status Badge -->
+              <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-xl px-3.5 py-1.5 self-start sm:self-auto shrink-0 shadow-2xs">
+                <i class="fa-solid fa-calendar-check text-indigo-500 text-xs"></i>
+                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Đang lọc:</span>
+                <span id="dashFilterActiveLabel" class="text-xs font-black text-indigo-600 dark:text-indigo-400">30 ngày gần nhất</span>
               </div>
             </div>
-            <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-              <select id="dashboardTimeRange" onchange="renderDashboard()" class="admin-select font-semibold text-xs py-2 px-3">
-                <optgroup label="Khoảng ngày gần nhất">
-                  <option value="7">7 ngày gần nhất</option>
-                  <option value="30" selected>30 ngày gần nhất</option>
-                  <option value="90">3 tháng gần nhất</option>
-                  <option value="365">12 tháng gần nhất</option>
-                  <option value="0">Tất cả thời gian</option>
-                </optgroup>
-                <optgroup label="Thống kê theo Quý (Năm nay)" id="dashQuarterOptionsThisYear">
-                </optgroup>
-                <optgroup label="Thống kê theo Quý (Năm trước)" id="dashQuarterOptionsPrevYear">
-                </optgroup>
-              </select>
+
+            <!-- Bottom Row: Filter Controls -->
+            <div class="flex flex-wrap items-center justify-between gap-3.5">
+              <!-- Nhóm 1: Theo Quý & Năm (Hỗ trợ mọi năm) -->
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+                  <i class="fa-solid fa-layer-group text-indigo-500 text-[11px]"></i> Theo Quý:
+                </span>
+
+                <!-- Dropdown Chọn Năm (Tất cả các năm) -->
+                <div class="relative">
+                  <select id="dashFilterYear" onchange="onDashboardYearChange()" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-xl py-1.5 pl-3 pr-7 text-xs font-bold cursor-pointer focus:ring-2 focus:ring-indigo-500 appearance-none shadow-2xs">
+                    <!-- Tự động sinh danh sách năm -->
+                  </select>
+                  <i class="fa-solid fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
+                </div>
+
+                <!-- 4 Nút Quý + Cả Năm (Segmented Control) -->
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60 gap-0.5" id="dashQuarterPills">
+                  <button type="button" onclick="setDashboardFilter('Q', 1)" data-q="1" class="dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Q1</button>
+                  <button type="button" onclick="setDashboardFilter('Q', 2)" data-q="2" class="dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Q2</button>
+                  <button type="button" onclick="setDashboardFilter('Q', 3)" data-q="3" class="dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Q3</button>
+                  <button type="button" onclick="setDashboardFilter('Q', 4)" data-q="4" class="dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Q4</button>
+                  <button type="button" onclick="setDashboardFilter('Q', 'year')" data-q="year" class="dash-q-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Cả năm</button>
+                </div>
+              </div>
+
+              <!-- Nhóm 2: Lọc Nhanh ngày -->
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+                  <i class="fa-solid fa-bolt text-amber-500 text-[11px]"></i> Nhanh:
+                </span>
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60 gap-0.5" id="dashQuickPills">
+                  <button type="button" onclick="setDashboardFilter('days', 7)" data-days="7" class="dash-quick-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">7 ngày</button>
+                  <button type="button" onclick="setDashboardFilter('days', 30)" data-days="30" class="dash-quick-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs cursor-pointer">30 ngày</button>
+                  <button type="button" onclick="setDashboardFilter('days', 90)" data-days="90" class="dash-quick-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">90 ngày</button>
+                  <button type="button" onclick="setDashboardFilter('days', 0)" data-days="0" class="dash-quick-btn px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Tất cả</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1798,7 +1833,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/admin.js?v=3.8"></script>
+  <script src="js/admin.js?v=3.9"></script>
 </body>
 
 </html>
