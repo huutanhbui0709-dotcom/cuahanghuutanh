@@ -533,41 +533,60 @@ let _currentDashboardFilter = {
   quarter: Math.floor(new Date().getMonth() / 3) + 1 // 1..4 or 'year'
 };
 
+const _customYearsSet = new Set();
+
+function _getAllAvailableYears(selectedYear) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const yearSet = new Set();
+
+  // 1. Broad standard range: past 10 years to future 5 years (e.g. 2016 to 2031)
+  for (let y = currentYear + 5; y >= currentYear - 10; y--) {
+    yearSet.add(y);
+  }
+
+  // 2. All years found in receipts
+  (allInventoryReceipts || []).forEach(r => {
+    const d = _parseReceiptDate(r);
+    if (d) yearSet.add(d.getFullYear());
+  });
+
+  // 3. Any custom years entered by user
+  _customYearsSet.forEach(y => yearSet.add(y));
+  if (selectedYear && !isNaN(Number(selectedYear))) {
+    yearSet.add(Number(selectedYear));
+  }
+
+  return Array.from(yearSet).sort((a, b) => b - a);
+}
+
 function initDashboardFilterBar() {
   const yearSelect = document.getElementById('dashFilterYear');
   if (!yearSelect) return;
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
+  const activeYear = _currentDashboardFilter.year || new Date().getFullYear();
+  const sortedYears = _getAllAvailableYears(activeYear);
 
-  // Gather all available years from receipts + current year + surrounding years
-  const availableYearsSet = new Set([currentYear, currentYear - 1, currentYear - 2, currentYear + 1]);
-  (allInventoryReceipts || []).forEach(r => {
-    const d = _parseReceiptDate(r);
-    if (d) availableYearsSet.add(d.getFullYear());
-  });
-  const sortedYears = Array.from(availableYearsSet).sort((a, b) => b - a);
-
-  const prevSelected = yearSelect.value ? parseInt(yearSelect.value, 10) : _currentDashboardFilter.year;
-  if (yearSelect.options.length === 0 || yearSelect.options.length !== sortedYears.length) {
-    yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Năm ${y}</option>`).join('');
-    if (sortedYears.includes(prevSelected)) {
-      yearSelect.value = prevSelected;
-    } else {
-      yearSelect.value = currentYear;
-    }
-  }
+  yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Năm ${y}</option>`).join('') +
+    `<option value="custom">✏️ Nhập năm khác...</option>`;
+  yearSelect.value = String(activeYear);
 
   _updateDashboardFilterUI();
 }
 
 function _updateDashboardFilterUI() {
   const filter = _getDashboardTimeFilterRange();
+  const receipts = _getDashboardFilteredReceipts();
+  const hasData = receipts.length > 0;
 
   // 1. Update active text label
   const labelEl = document.getElementById('dashFilterActiveLabel');
   if (labelEl) {
-    labelEl.textContent = filter.label;
+    if (!hasData) {
+      labelEl.innerHTML = `${filter.label} <span class="text-amber-500 dark:text-amber-400 font-bold ml-1">(Chưa có dữ liệu)</span>`;
+    } else {
+      labelEl.textContent = filter.label;
+    }
   }
 
   // 2. Update Quick buttons active styles
@@ -601,7 +620,7 @@ function _updateDashboardFilterUI() {
   // 4. Sync Year select
   const yearSelect = document.getElementById('dashFilterYear');
   if (yearSelect && _currentDashboardFilter.year) {
-    yearSelect.value = _currentDashboardFilter.year;
+    yearSelect.value = String(_currentDashboardFilter.year);
   }
 }
 
@@ -625,7 +644,7 @@ function setDashboardFilter(type, val) {
     // Synchronize the Year in the lower Quarterly section
     const qYearSelect = document.getElementById('quarterYearSelect');
     if (qYearSelect && qYearSelect.value !== String(selectedYear)) {
-      qYearSelect.value = selectedYear;
+      qYearSelect.value = String(selectedYear);
     }
   }
 
@@ -636,16 +655,98 @@ function setDashboardFilter(type, val) {
 function onDashboardYearChange() {
   const yearSelect = document.getElementById('dashFilterYear');
   if (!yearSelect) return;
+
+  if (yearSelect.value === 'custom') {
+    const cur = _currentDashboardFilter.year || new Date().getFullYear();
+    const input = prompt('Nhập năm bạn muốn xem (VD: 2012, 2035):', String(cur));
+    if (input) {
+      const parsedYear = parseInt(input.trim(), 10);
+      if (!isNaN(parsedYear) && parsedYear >= 1900 && parsedYear <= 2100) {
+        _customYearsSet.add(parsedYear);
+        _currentDashboardFilter.year = parsedYear;
+        initDashboardFilterBar();
+        setDashboardFilter('Q', _currentDashboardFilter.quarter || 1);
+        return;
+      } else {
+        showToast('Năm không hợp lệ (hỗ trợ 1900 - 2100)', 'error');
+      }
+    }
+    yearSelect.value = String(_currentDashboardFilter.year);
+    return;
+  }
+
   const newYear = parseInt(yearSelect.value, 10);
   _currentDashboardFilter.year = newYear;
 
-  // If user changes year while in 'days' mode, default to Q1 or current active quarter of that year
+  // If user changes year while in 'days' mode, default to Q1 or keep quarter
   if (_currentDashboardFilter.mode === 'days') {
     _currentDashboardFilter.mode = 'quarter';
     _currentDashboardFilter.quarter = 1;
   }
 
   setDashboardFilter('Q', _currentDashboardFilter.quarter || 1);
+}
+
+function stepDashboardYear(delta) {
+  const cur = _currentDashboardFilter.year || new Date().getFullYear();
+  const nextYear = cur + delta;
+  if (nextYear < 1900 || nextYear > 2100) return;
+
+  _customYearsSet.add(nextYear);
+  _currentDashboardFilter.year = nextYear;
+
+  if (_currentDashboardFilter.mode === 'days') {
+    _currentDashboardFilter.mode = 'quarter';
+    _currentDashboardFilter.quarter = 1;
+  }
+
+  initDashboardFilterBar();
+  setDashboardFilter('Q', _currentDashboardFilter.quarter || 1);
+}
+
+function onQuarterYearSelectChange() {
+  const qSelect = document.getElementById('quarterYearSelect');
+  if (!qSelect) return;
+
+  if (qSelect.value === 'custom') {
+    const cur = _currentDashboardFilter.year || new Date().getFullYear();
+    const input = prompt('Nhập năm thống kê bạn muốn xem (VD: 2012, 2035):', String(cur));
+    if (input) {
+      const parsedYear = parseInt(input.trim(), 10);
+      if (!isNaN(parsedYear) && parsedYear >= 1900 && parsedYear <= 2100) {
+        _customYearsSet.add(parsedYear);
+        _currentDashboardFilter.year = parsedYear;
+        initDashboardFilterBar();
+        renderQuarterSection();
+        return;
+      } else {
+        showToast('Năm không hợp lệ (hỗ trợ 1900 - 2100)', 'error');
+      }
+    }
+    qSelect.value = String(_currentDashboardFilter.year);
+    return;
+  }
+
+  const newYear = parseInt(qSelect.value, 10);
+  _currentDashboardFilter.year = newYear;
+
+  const topYear = document.getElementById('dashFilterYear');
+  if (topYear) topYear.value = String(newYear);
+
+  renderQuarterSection();
+}
+
+function stepQuarterYear(delta) {
+  const qSelect = document.getElementById('quarterYearSelect');
+  const cur = parseInt(qSelect?.value || _currentDashboardFilter.year || new Date().getFullYear(), 10);
+  const nextYear = cur + delta;
+  if (nextYear < 1900 || nextYear > 2100) return;
+
+  _customYearsSet.add(nextYear);
+  _currentDashboardFilter.year = nextYear;
+
+  initDashboardFilterBar();
+  renderQuarterSection();
 }
 
 function _getDashboardTimeFilterRange() {
@@ -856,53 +957,65 @@ function _renderDashboardCharts() {
   const lineData = sortedDays.map(d => dailyMap[d]);
 
   const lineCtx = document.getElementById('dashboardLineChart');
-  if (lineCtx) {
-    if (_dashLineChart) { _dashLineChart.destroy(); _dashLineChart = null; }
-    const isDark = document.documentElement.classList.contains('dark');
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
+  const lineEmptyEl = document.getElementById('dashboardLineEmptyState');
+  const lineEmptyText = document.getElementById('dashboardLineEmptyText');
 
-    _dashLineChart = new Chart(lineCtx, {
-      type: 'line',
-      data: {
-        labels: lineLabels,
-        datasets: [{
-          label: 'Giá trị nhập (₫)',
-          data: lineData,
-          borderColor: '#2563eb',
-          backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
-          borderWidth: 2,
-          pointRadius: lineData.length <= 30 ? 3 : 0,
-          pointHoverRadius: 5,
-          tension: 0.35,
-          fill: true,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 300 },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + '₫'
-            }
-          }
+  if (lineData.length === 0) {
+    if (_dashLineChart) { _dashLineChart.destroy(); _dashLineChart = null; }
+    if (lineEmptyEl) {
+      if (lineEmptyText) lineEmptyText.textContent = `Không có dữ liệu nhập kho trong ${filter.shortLabel}`;
+      lineEmptyEl.classList.remove('hidden');
+    }
+  } else {
+    if (lineEmptyEl) lineEmptyEl.classList.add('hidden');
+    if (lineCtx) {
+      if (_dashLineChart) { _dashLineChart.destroy(); _dashLineChart = null; }
+      const isDark = document.documentElement.classList.contains('dark');
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+
+      _dashLineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: lineLabels,
+          datasets: [{
+            label: 'Giá trị nhập (₫)',
+            data: lineData,
+            borderColor: '#2563eb',
+            backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
+            borderWidth: 2,
+            pointRadius: lineData.length <= 30 ? 3 : 0,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: true,
+          }]
         },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 10 } },
-          y: {
-            grid: { color: gridColor },
-            ticks: {
-              color: textColor,
-              font: { size: 10 },
-              callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          animation: { duration: 300 },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + '₫'
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 10 } },
+            y: {
+              grid: { color: gridColor },
+              ticks: {
+                color: textColor,
+                font: { size: 10 },
+                callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+              }
             }
           }
         }
-      }
-    });
+      });
+    }
   }
 
   // ─── Donut Chart ─────────────────────────────────────────────────────
@@ -1023,27 +1136,16 @@ function renderQuarterSection() {
   const currentYear = now.getFullYear();
   const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
 
-  // 1. Gather all available years from allInventoryReceipts
-  const availableYearsSet = new Set([currentYear, currentYear - 1]);
-  (allInventoryReceipts || []).forEach(r => {
-    const d = _parseReceiptDate(r);
-    if (d) availableYearsSet.add(d.getFullYear());
-  });
-  const sortedYears = Array.from(availableYearsSet).sort((a, b) => b - a);
+  const selectedYear = parseInt(yearSelect?.value || _currentDashboardFilter.year || currentYear, 10);
 
+  // 1. Populate all available years
   if (yearSelect) {
-    const prevVal = yearSelect.value;
-    if (yearSelect.options.length === 0 || yearSelect.options.length !== sortedYears.length) {
-      yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Năm ${y}</option>`).join('');
-      if (prevVal && sortedYears.includes(Number(prevVal))) {
-        yearSelect.value = prevVal;
-      } else {
-        yearSelect.value = currentYear;
-      }
-    }
+    const sortedYears = _getAllAvailableYears(selectedYear);
+    yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}">Năm ${y}</option>`).join('') +
+      `<option value="custom">✏️ Nhập năm khác...</option>`;
+    yearSelect.value = String(selectedYear);
   }
 
-  const selectedYear = parseInt(yearSelect?.value || currentYear, 10);
   const yearBadge = document.getElementById('quarterYearBadge');
   if (yearBadge) yearBadge.textContent = `Năm ${selectedYear}`;
 
@@ -1063,7 +1165,12 @@ function renderQuarterSection() {
 
     let statusText = 'Đã kết thúc';
     let statusClass = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60';
-    if (selectedYear === currentYear) {
+    if (receiptCount === 0) {
+      statusText = (selectedYear > currentYear || (selectedYear === currentYear && q > currentQuarter))
+        ? 'Chưa tới'
+        : 'Chưa có dữ liệu';
+      statusClass = 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200/40 dark:border-slate-800';
+    } else if (selectedYear === currentYear) {
       if (q === currentQuarter) {
         statusText = 'Đang diễn ra';
         statusClass = 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 font-extrabold';
@@ -1101,7 +1208,12 @@ function renderQuarterSection() {
 
   quarterData.forEach((qObj, index) => {
     const prevAmount = index === 0 ? prevYearQ4Amount : quarterData[index - 1].totalAmount;
-    if (prevAmount > 0) {
+    if (qObj.receiptCount === 0) {
+      qObj.growthRate = 0;
+      qObj.growthText = 'Chưa có dữ liệu';
+      qObj.growthColor = 'text-slate-400 dark:text-slate-500';
+      qObj.growthIcon = 'fa-minus';
+    } else if (prevAmount > 0) {
       const rate = ((qObj.totalAmount - prevAmount) / prevAmount) * 100;
       qObj.growthRate = rate;
       qObj.growthText = (rate >= 0 ? `+${rate.toFixed(1)}%` : `${rate.toFixed(1)}%`) + ' so với quý trước';
@@ -1153,7 +1265,7 @@ function renderQuarterSection() {
             <div class="mt-2.5">
               <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">${amountFmt}</div>
               <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                ${q.receiptCount.toLocaleString('vi-VN')} phiếu · ${q.totalQuantity.toLocaleString('vi-VN')} sản phẩm
+                ${q.receiptCount > 0 ? `${q.receiptCount.toLocaleString('vi-VN')} phiếu · ${q.totalQuantity.toLocaleString('vi-VN')} sản phẩm` : 'Chưa có phát sinh nhập kho'}
               </div>
             </div>
 
@@ -1188,10 +1300,25 @@ function renderQuarterSection() {
   // 4. Render Chart
   const chartSubtext = document.getElementById('quarterChartSubtext');
   if (chartSubtext) {
-    const yearFmt = yearTotalAmount >= 1e9
-      ? (yearTotalAmount / 1e9).toFixed(2) + ' tỷ'
-      : (yearTotalAmount / 1e6).toFixed(1) + ' tr';
-    chartSubtext.textContent = `Tổng năm ${selectedYear}: ${yearFmt} (${yearTotalReceipts} phiếu)`;
+    if (yearTotalReceipts === 0) {
+      chartSubtext.innerHTML = `<span class="text-amber-500 dark:text-amber-400 font-bold"><i class="fa-solid fa-circle-exclamation text-[10px]"></i> Năm ${selectedYear}: Chưa có dữ liệu phát sinh</span>`;
+    } else {
+      const yearFmt = yearTotalAmount >= 1e9
+        ? (yearTotalAmount / 1e9).toFixed(2) + ' tỷ'
+        : (yearTotalAmount / 1e6).toFixed(1) + ' tr';
+      chartSubtext.textContent = `Tổng năm ${selectedYear}: ${yearFmt} (${yearTotalReceipts} phiếu)`;
+    }
+  }
+
+  const chartEmptyEl = document.getElementById('quarterChartEmptyState');
+  const chartEmptyText = document.getElementById('quarterChartEmptyText');
+  if (yearTotalReceipts === 0) {
+    if (chartEmptyEl) {
+      if (chartEmptyText) chartEmptyText.textContent = `Năm ${selectedYear} chưa có dữ liệu giao dịch nhập kho`;
+      chartEmptyEl.classList.remove('hidden');
+    }
+  } else {
+    if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
   }
 
   const chartCanvas = document.getElementById('quarterComparisonChart');
@@ -1298,83 +1425,95 @@ function renderQuarterSection() {
   // 5. Render Insights
   const insightsContainer = document.getElementById('quarterInsightsContainer');
   if (insightsContainer) {
-    const sortedByAmount = [...quarterData].sort((a, b) => b.totalAmount - a.totalAmount);
-    const peakQuarter = sortedByAmount[0];
-    const avgPerQuarter = yearTotalAmount / 4;
+    if (yearTotalReceipts === 0) {
+      insightsContainer.innerHTML = `
+        <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 my-auto">
+          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 text-xl mb-3 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Năm ${selectedYear} chưa có dữ liệu</p>
+          <p class="text-[11px] text-slate-400 max-w-[220px] leading-relaxed">Không tìm thấy chứng từ hoặc phiếu nhập kho nào trong năm ${selectedYear}.</p>
+        </div>
+      `;
+    } else {
+      const sortedByAmount = [...quarterData].sort((a, b) => b.totalAmount - a.totalAmount);
+      const peakQuarter = sortedByAmount[0];
+      const avgPerQuarter = yearTotalAmount / 4;
 
-    const avgFmt = avgPerQuarter >= 1e9
-      ? (avgPerQuarter / 1e9).toFixed(2) + ' tỷ'
-      : avgPerQuarter >= 1e6
-        ? (avgPerQuarter / 1e6).toFixed(1) + ' tr'
-        : avgPerQuarter.toLocaleString('vi-VN') + '₫';
+      const avgFmt = avgPerQuarter >= 1e9
+        ? (avgPerQuarter / 1e9).toFixed(2) + ' tỷ'
+        : avgPerQuarter >= 1e6
+          ? (avgPerQuarter / 1e6).toFixed(1) + ' tr'
+          : avgPerQuarter.toLocaleString('vi-VN') + '₫';
 
-    const peakFmt = peakQuarter.totalAmount >= 1e9
-      ? (peakQuarter.totalAmount / 1e9).toFixed(2) + ' tỷ'
-      : peakQuarter.totalAmount >= 1e6
-        ? (peakQuarter.totalAmount / 1e6).toFixed(1) + ' tr'
-        : peakQuarter.totalAmount.toLocaleString('vi-VN') + '₫';
+      const peakFmt = peakQuarter.totalAmount >= 1e9
+        ? (peakQuarter.totalAmount / 1e9).toFixed(2) + ' tỷ'
+        : peakQuarter.totalAmount >= 1e6
+          ? (peakQuarter.totalAmount / 1e6).toFixed(1) + ' tr'
+          : peakQuarter.totalAmount.toLocaleString('vi-VN') + '₫';
 
-    const yearSuppMap = {};
-    (allInventoryReceipts || []).forEach(r => {
-      const d = _parseReceiptDate(r);
-      if (d && d.getFullYear() === selectedYear) {
-        const name = (r.supplier_name || 'Khác').trim();
-        yearSuppMap[name] = (yearSuppMap[name] || 0) + (Number(r.total_amount) || Number(r.total_cost) || 0);
-      }
-    });
-    const topYearSupp = Object.entries(yearSuppMap).sort((a, b) => b[1] - a[1])[0] || null;
+      const yearSuppMap = {};
+      (allInventoryReceipts || []).forEach(r => {
+        const d = _parseReceiptDate(r);
+        if (d && d.getFullYear() === selectedYear) {
+          const name = (r.supplier_name || 'Khác').trim();
+          yearSuppMap[name] = (yearSuppMap[name] || 0) + (Number(r.total_amount) || Number(r.total_cost) || 0);
+        }
+      });
+      const topYearSupp = Object.entries(yearSuppMap).sort((a, b) => b[1] - a[1])[0] || null;
 
-    insightsContainer.innerHTML = `
-      <div>
-        <div class="flex items-center justify-between gap-2 mb-3">
-          <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-            <i class="fa-solid fa-lightbulb text-amber-500"></i> Đánh giá hoạt động năm ${selectedYear}
-          </span>
+      insightsContainer.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-lightbulb text-amber-500"></i> Đánh giá hoạt động năm ${selectedYear}
+            </span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-crown text-amber-500 text-[10px]"></i> Quý cao điểm nhất
+                </span>
+                <span class="font-extrabold text-indigo-600 dark:text-indigo-400">Quý ${peakQuarter.quarter}</span>
+              </div>
+              <div class="text-sm font-black text-slate-900 dark:text-white">${peakFmt}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${peakQuarter.receiptCount} phiếu nhập (${peakQuarter.percentage}% tổng cả năm)</div>
+            </div>
+
+            <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-calculator text-blue-500 text-[10px]"></i> Trung bình mỗi quý
+                </span>
+              </div>
+              <div class="text-sm font-black text-slate-900 dark:text-white">${avgFmt}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Trung bình ${Math.round(yearTotalReceipts / 4)} phiếu / quý</div>
+            </div>
+
+            <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+              <div class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mb-1">
+                <i class="fa-solid fa-truck-ramp-box text-emerald-500 text-[10px]"></i> NCC lớn nhất năm
+              </div>
+              <div class="font-extrabold text-slate-900 dark:text-white truncate" title="${topYearSupp ? topYearSupp[0] : 'Chưa có'}">
+                ${topYearSupp ? topYearSupp[0] : 'Chưa có dữ liệu'}
+              </div>
+              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
+                ${topYearSupp ? (topYearSupp[1] >= 1e6 ? (topYearSupp[1]/1e6).toFixed(1)+' tr' : topYearSupp[1].toLocaleString('vi-VN')+'₫') : ''}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="space-y-3 text-xs">
-          <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-crown text-amber-500 text-[10px]"></i> Quý cao điểm nhất
-              </span>
-              <span class="font-extrabold text-indigo-600 dark:text-indigo-400">Quý ${peakQuarter.quarter}</span>
-            </div>
-            <div class="text-sm font-black text-slate-900 dark:text-white">${peakFmt}</div>
-            <div class="text-[10px] text-slate-400 mt-0.5">${peakQuarter.receiptCount} phiếu nhập (${peakQuarter.percentage}% tổng cả năm)</div>
-          </div>
-
-          <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-calculator text-blue-500 text-[10px]"></i> Trung bình mỗi quý
-              </span>
-            </div>
-            <div class="text-sm font-black text-slate-900 dark:text-white">${avgFmt}</div>
-            <div class="text-[10px] text-slate-400 mt-0.5">Trung bình ${Math.round(yearTotalReceipts / 4)} phiếu / quý</div>
-          </div>
-
-          <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-            <div class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mb-1">
-              <i class="fa-solid fa-truck-ramp-box text-emerald-500 text-[10px]"></i> NCC lớn nhất năm
-            </div>
-            <div class="font-extrabold text-slate-900 dark:text-white truncate" title="${topYearSupp ? topYearSupp[0] : 'Chưa có'}">
-              ${topYearSupp ? topYearSupp[0] : 'Chưa có dữ liệu'}
-            </div>
-            <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
-              ${topYearSupp ? (topYearSupp[1] >= 1e6 ? (topYearSupp[1]/1e6).toFixed(1)+' tr' : topYearSupp[1].toLocaleString('vi-VN')+'₫') : ''}
-            </div>
-          </div>
+        <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
+          <button type="button" onclick="adminTab('inventory', null)"
+            class="w-full py-2 px-3 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+            <i class="fa-solid fa-file-lines text-xs"></i> Xem tất cả phiếu nhập kho
+          </button>
         </div>
-      </div>
-
-      <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
-        <button type="button" onclick="adminTab('inventory', null)"
-          class="w-full py-2 px-3 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
-          <i class="fa-solid fa-file-lines text-xs"></i> Xem tất cả phiếu nhập kho
-        </button>
-      </div>
-    `;
+      `;
+    }
   }
 }
 
@@ -1385,7 +1524,14 @@ function _renderDashboardTopSuppliers() {
   const receipts = _getDashboardFilteredReceipts();
 
   if (receipts.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">Chưa có dữ liệu nhập kho.</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center py-8 text-slate-400 dark:text-slate-500">
+          <i class="fa-solid fa-inbox text-2xl mb-1.5 opacity-40 block"></i>
+          <span class="text-xs font-bold">Không có dữ liệu nhà cung cấp trong khoảng thời gian này</span>
+        </td>
+      </tr>
+    `;
     return;
   }
 
