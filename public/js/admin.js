@@ -4894,10 +4894,12 @@ async function submitManualOrder() {
     return;
   }
 
-  const saveBtn = document.querySelector('#orderCreateModal .modal-footer .btn-primary');
-  const originalHTML = saveBtn.innerHTML;
-  saveBtn.disabled = true;
-  saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+  const saveBtn = document.getElementById('btnSubmitManualOrder') || document.querySelector('#orderCreateModal button[onclick*="submitManualOrder"]');
+  const originalHTML = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+  }
 
   // Chuyển đổi định dạng payload gửi lên API theo chuẩn mới
   const payloadItems = manualOrderItems.map(item => ({
@@ -4950,8 +4952,10 @@ async function submitManualOrder() {
     console.error('Lỗi khi lưu đơn hàng:', err);
     showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
   } finally {
-    saveBtn.disabled = false;
-    saveBtn.innerHTML = originalHTML;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = originalHTML;
+    }
   }
 }
 

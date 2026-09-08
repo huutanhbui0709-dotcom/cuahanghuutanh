@@ -1326,6 +1326,7 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
         deviceId: r.device_id,
         visitorId: r.visitor_id
       }));
+      orders = freshOrders;
       return res.json(freshOrders);
     } catch (err) {
       console.error('Lỗi tải danh sách đơn từ DB:', err);
@@ -1348,7 +1349,33 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   if (!ALLOWED_STATUS.includes(status)) {
     return res.status(400).json({ ok: false, message: 'Trạng thái không hợp lệ.' });
   }
-  const order = orders.find((o) => o.id === req.params.id);
+
+  let order = orders.find((o) => o.id === req.params.id);
+  if (!order && IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT * FROM orders WHERE id = ${req.params.id}`;
+      if (rows.length > 0) {
+        const r = rows[0];
+        order = {
+          id: r.id,
+          createdAt: r.created_at,
+          customer: r.customer,
+          phone: r.phone,
+          address: r.address,
+          note: r.note,
+          items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
+          total: Number(r.total),
+          status: r.status,
+          deviceId: r.device_id,
+          visitorId: r.visitor_id
+        };
+        orders.push(order);
+      }
+    } catch (e) {
+      console.error('Lỗi tìm đơn hàng từ DB:', e);
+    }
+  }
+
   if (!order) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
 
   const prevStatus = order.status;
@@ -1422,13 +1449,23 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   }
   res.json({ ok: true, order });
 });
+
 app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
-  const idx = orders.findIndex((o) => o.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
-  if (orders[idx].status !== 'Đã huỷ') {
+  let order = orders.find((o) => o.id === req.params.id);
+  if (!order && IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT * FROM orders WHERE id = ${req.params.id}`;
+      if (rows.length > 0) {
+        order = rows[0];
+      }
+    } catch (e) {}
+  }
+  if (!order) return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng.' });
+  if (order.status !== 'Đã huỷ') {
     return res.status(400).json({ ok: false, message: 'Chỉ có thể xoá đơn hàng đã huỷ.' });
   }
-  orders.splice(idx, 1);
+  const idx = orders.findIndex((o) => o.id === req.params.id);
+  if (idx !== -1) orders.splice(idx, 1);
   try {
     if (IS_VERCEL) {
       await sql`DELETE FROM orders WHERE id = ${req.params.id}`;
@@ -1444,6 +1481,16 @@ app.delete('/api/admin/orders/:id', requireAdmin, async (req, res) => {
 
 // Xóa TẤT CẢ đơn hàng đã huỷ
 app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => {
+  if (IS_VERCEL) {
+    try {
+      await sql`DELETE FROM orders WHERE status = 'Đã huỷ'`;
+      orders = orders.filter((o) => o.status !== 'Đã huỷ');
+      await broadcastUpdate('orders_updated');
+      return res.json({ ok: true, message: 'Đã xóa tất cả đơn hàng đã hủy.' });
+    } catch (err) {
+      return res.status(500).json({ ok: false, message: 'Lỗi xóa đơn hàng từ DB.' });
+    }
+  }
   const before = orders.length;
   orders = orders.filter((o) => o.status !== 'Đã huỷ');
   const deleted = before - orders.length;
@@ -1451,11 +1498,7 @@ app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => 
     return res.json({ ok: true, deleted: 0, message: 'Không có đơn hàng đã huỷ nào.' });
   }
   try {
-    if (IS_VERCEL) {
-      await sql`DELETE FROM orders WHERE status = 'Đã huỷ'`;
-    } else {
-      await saveOrders(orders);
-    }
+    await saveOrders(orders);
     await broadcastUpdate('orders_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
