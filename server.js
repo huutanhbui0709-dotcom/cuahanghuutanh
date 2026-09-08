@@ -26,7 +26,11 @@ const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
 const { uploadImageFile, deleteImageFile, listFiles } = require('./lib/storage');
-const { sendOrderNotification } = require('./lib/mailer');
+const { sendOrderNotification, testEmailConnection } = require('./lib/mailer');
+let vercelWaitUntil = null;
+try {
+  vercelWaitUntil = require('@vercel/functions').waitUntil;
+} catch (e) {}
 const { neon } = require('@neondatabase/serverless');
 const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 const sql = dbUrl ? neon(dbUrl, { fullResults: true }) : null;
@@ -1250,19 +1254,22 @@ app.post('/api/orders', async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu đơn hàng, vui lòng thử lại.' });
   }
 
-  // Gửi mail thông báo bất đồng bộ — không chặn response trả về khách
-  if (IS_VERCEL) {
-    await sendOrderNotification(order);
-  } else {
-    // Local: không cần chờ, server luôn chạy nền được
-    sendOrderNotification(order);
-  }
-
+  // Phản hồi cho khách hàng ngay lập tức sau khi lưu đơn thành công (chỉ mất ~50-150ms)
   res.json({
     ok: true,
     order,
     warning: hasOrderInTwoMin ? 'Hệ thống ghi nhận bạn đã có đơn đặt trong 2 phút qua. Đơn này vẫn được gửi đi thành công!' : undefined
   });
+
+  // Gửi mail thông báo không đồng bộ trong nền — hoàn toàn không chặn hoặc làm chậm khách hàng
+  try {
+    const mailPromise = sendOrderNotification(order);
+    if (typeof vercelWaitUntil === 'function') {
+      vercelWaitUntil(mailPromise);
+    }
+  } catch (mailErr) {
+    console.error('Lỗi khi kích hoạt gửi mail nền:', mailErr);
+  }
 });
 
 // =====================================================================
@@ -1340,6 +1347,12 @@ app.get('/api/admin/orders', requireAdmin, async (req, res) => {
     return db - da;
   });
   res.json(sorted);
+});
+
+// Endpoint kiểm tra kết nối email cho quản trị viên
+app.get('/api/admin/test-email', requireAdmin, async (req, res) => {
+  const result = await testEmailConnection();
+  res.json(result);
 });
 
 const ALLOWED_STATUS = ['Chờ xác nhận', 'Đã xác nhận', 'Đã huỷ'];

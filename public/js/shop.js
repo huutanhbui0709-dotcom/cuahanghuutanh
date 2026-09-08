@@ -829,9 +829,15 @@ async function submitOrder(force = false) {
         force: force
       }),
     });
-    const data = await res.json();
 
-    if (data.requireConfirmation) {
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      console.warn('Phản hồi từ server không phải JSON hợp lệ:', parseErr);
+    }
+
+    if (data && data.requireConfirmation) {
       // Hiện cảnh báo trùng đơn ngay trong tab Thông tin đặt hàng (cho cả Mobile và Desktop/DC)
       const warningEl = document.getElementById('orderModalWarning');
       const warningTextEl = document.getElementById('orderModalWarningText');
@@ -841,11 +847,20 @@ async function submitOrder(force = false) {
         const bodyEl = document.getElementById('orderModalBody');
         if (bodyEl) bodyEl.scrollTop = 0;
       }
+      btn.disabled = false;
+      btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
       return;
     }
 
-    if (!res.ok || !data.ok) {
-      showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Đặt hàng thất bại'), 'error');
+    if (!res.ok || !data || !data.ok) {
+      const errorMsg = (data && data.message)
+        ? data.message
+        : (res.status === 504
+            ? 'Máy chủ phản hồi chậm (504 Gateway Timeout). Vui lòng thử lại sau giây lát.'
+            : (res.status >= 500
+                ? `Máy chủ tạm thời bận (${res.status}). Vui lòng thử lại.`
+                : 'Đặt hàng thất bại. Vui lòng thử lại.'));
+      showToast('<i class="fa-solid fa-xmark"></i> ' + errorMsg, 'error');
       btn.disabled = false;
       btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
       return;
@@ -857,12 +872,13 @@ async function submitOrder(force = false) {
     ['orderName', 'orderPhone', 'orderAddress', 'orderNote'].forEach(id => document.getElementById(id).value = '');
 
     // Hiển thị Popup đặt hàng thành công
-    showOrderSuccessModal(data.order.id);
+    showOrderSuccessModal((data.order && data.order.id) || '');
 
     btn.disabled = false;
     btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
   } catch (err) {
-    showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
+    console.error('Lỗi khi gửi đơn hàng:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối mạng.', 'error');
     btn.disabled = false;
     btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';
   }
