@@ -965,31 +965,33 @@ app.post('/api/orders', async (req, res) => {
         await saveOrders(orders);
       }
 
-      // Giảm trừ số lượng tồn kho của các sản phẩm tương ứng
-      let productsList = [...products];
-      if (IS_VERCEL) {
-        try {
-          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
-          if (rows.length > 0) productsList = JSON.parse(rows[0].value);
-        } catch (e) { /* bỏ qua */ }
-      }
-
-      let updatedCount = 0;
-      for (const item of orderItems) {
-        const targetNorm = normalizeProductCode(item.ma);
-        if (!targetNorm) continue;
-        const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
-        if (prod) {
-          prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
-          prod.updatedAt = Date.now();
-          updatedCount++;
+      // Chỉ giảm trừ số lượng tồn kho nếu trạng thái là "Đã xác nhận"
+      if (orderStatus === 'Đã xác nhận') {
+        let productsList = [...products];
+        if (IS_VERCEL) {
+          try {
+            const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+            if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+          } catch (e) { /* bỏ qua */ }
         }
-      }
 
-      if (updatedCount > 0) {
-        products = productsList;
-        await saveProducts(productsList);
-        await broadcastUpdate('products_updated');
+        let updatedCount = 0;
+        for (const item of orderItems) {
+          const targetNorm = normalizeProductCode(item.ma || item.sku || item.productId);
+          if (!targetNorm) continue;
+          const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+          if (prod) {
+            prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
+            prod.updatedAt = Date.now();
+            updatedCount++;
+          }
+        }
+
+        if (updatedCount > 0) {
+          products = productsList;
+          await saveProducts(productsList);
+          await broadcastUpdate('products_updated');
+        }
       }
 
       await broadcastUpdate('orders_updated');
@@ -1348,8 +1350,9 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       await saveOrders(orders);
     }
 
-    // Trừ tồn kho khi đơn "Chờ xác nhận" được chuyển sang "Đã xác nhận"
-    if (prevStatus === 'Chờ xác nhận' && status === 'Đã xác nhận') {
+    // Cập nhật tồn kho khi trạng thái đơn hàng thay đổi
+    // 1. Từ chưa xác nhận (Chờ xác nhận / Đã huỷ) sang "Đã xác nhận": TRỪ tồn kho
+    if (prevStatus !== 'Đã xác nhận' && status === 'Đã xác nhận') {
       let productsList = [...products];
       if (IS_VERCEL) {
         try {
@@ -1359,11 +1362,39 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       }
       let updatedCount = 0;
       for (const item of (order.items || [])) {
-        const targetNorm = normalizeProductCode(item.ma);
+        const targetNorm = normalizeProductCode(item.ma || item.sku || item.productId);
         if (!targetNorm) continue;
         const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
         if (prod) {
-          prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
+          const qty = parseFloat(item.quantity !== undefined ? item.quantity : (item.qty || 0)) || 0;
+          prod.stock = parseFloat(prod.stock || 0) - qty;
+          prod.updatedAt = Date.now();
+          updatedCount++;
+        }
+      }
+      if (updatedCount > 0) {
+        products = productsList;
+        await saveProducts(productsList);
+        await broadcastUpdate('products_updated');
+      }
+    }
+    // 2. Từ "Đã xác nhận" sang trạng thái khác (Đã huỷ / Chờ xác nhận): CỘNG LẠI tồn kho
+    else if (prevStatus === 'Đã xác nhận' && status !== 'Đã xác nhận') {
+      let productsList = [...products];
+      if (IS_VERCEL) {
+        try {
+          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+          if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+        } catch (e) { /* bỏ qua */ }
+      }
+      let updatedCount = 0;
+      for (const item of (order.items || [])) {
+        const targetNorm = normalizeProductCode(item.ma || item.sku || item.productId);
+        if (!targetNorm) continue;
+        const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+        if (prod) {
+          const qty = parseFloat(item.quantity !== undefined ? item.quantity : (item.qty || 0)) || 0;
+          prod.stock = parseFloat(prod.stock || 0) + qty;
           prod.updatedAt = Date.now();
           updatedCount++;
         }

@@ -247,7 +247,12 @@ function adminTab(tab, el) {
   if (tab === 'slides') loadAdminSlides();
   if (tab === 'suppliers') loadSuppliersList();
   if (tab === 'tools') loadGeminiApiKeyToInput();
-  if (tab === 'inventory') loadInventoryHistory();
+  if (tab === 'inventory') {
+    loadInventoryHistory();
+    Promise.all([loadProducts(), loadOrders()]).then(() => {
+      if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
+    }).catch(() => {});
+  }
 }
 
 async function loadSettingsForm() {
@@ -1371,9 +1376,11 @@ async function deleteOrder(id) {
       showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi xoá đơn hàng'), 'error');
       return;
     }
-    await loadOrders();
+    await Promise.all([loadOrders(), loadProducts()]);
     renderOrdersTable();
     renderDashboard();
+    renderAdminTable();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
     showToast(`<i class="fa-solid fa-trash"></i> Đã xoá đơn hàng ${id}`, 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
@@ -1395,10 +1402,12 @@ async function deleteAllCancelledOrders() {
       showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi xoá đơn hàng'), 'error');
       return;
     }
-    await loadOrders();
+    await Promise.all([loadOrders(), loadProducts()]);
     orderPage = 1;
     renderOrdersTable();
     renderDashboard();
+    renderAdminTable();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
     showToast(`<i class="fa-solid fa-trash"></i> Đã xoá ${data.deleted} đơn hàng đã huỷ`, 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
@@ -1418,9 +1427,11 @@ async function updateOrderStatus(id, status) {
       showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi cập nhật trạng thái'), 'error');
       return;
     }
-    await loadOrders();
+    await Promise.all([loadOrders(), loadProducts()]);
     renderOrdersTable();
     renderDashboard();
+    renderAdminTable();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
     showToast(`Đơn ${id} → ${status}`, 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
@@ -2160,11 +2171,14 @@ async function handleTopicUpdate(topic) {
     populateProductTypeFilter();
     renderAdminTable();
     renderDashboard();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
   } else if (topic === 'orders') {
     console.log('⚡ Nhận cập nhật đơn hàng...');
-    await loadOrders();
+    await Promise.all([loadOrders(), loadProducts()]);
     renderOrdersTable();
     renderDashboard();
+    renderAdminTable();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
   } else if (topic === 'settings') {
     console.log('⚡ Nhận cập nhật cấu hình...');
     await loadSettingsForm();
@@ -3270,8 +3284,8 @@ function switchInventoryTab(tabName, btn) {
   }
 
   if (tabName === 'stock') {
-    // Luôn load lại products mới nhất trước khi render tab Tồn kho
-    loadProducts().then(() => sk_initStockTab());
+    // Luôn load lại cả products và orders mới nhất trước khi render tab Tồn kho
+    Promise.all([loadProducts(), loadOrders()]).then(() => sk_initStockTab()).catch(() => sk_initStockTab());
   }
 }
 
@@ -3321,10 +3335,13 @@ function sk_filterAndRender() {
 
   // Tính lượng "đang chờ xác nhận" cho từng SKU từ orders
   const pendingQtyMap = {};
-  (orders || []).filter(o => o.status === 'Chờ xác nhận').forEach(o => {
+  (orders || []).filter(o => o && o.status === 'Chờ xác nhận').forEach(o => {
     (o.items || []).forEach(item => {
-      const sku = (item.ma || '').trim();
-      if (sku) pendingQtyMap[sku] = (pendingQtyMap[sku] || 0) + (parseFloat(item.qty) || 0);
+      const sku = (item.sku || item.productId || item.ma || '').trim().toUpperCase();
+      const qty = parseFloat(item.quantity !== undefined ? item.quantity : (item.qty || 0)) || 0;
+      if (sku && qty > 0) {
+        pendingQtyMap[sku] = (pendingQtyMap[sku] || 0) + qty;
+      }
     });
   });
 
@@ -3341,7 +3358,10 @@ function sk_filterAndRender() {
   if (status) list = list.filter(p => sk_getStockStatus(p.stock) === status);
 
   // Đính kèm pendingQty vào mỗi sản phẩm để dùng trong render
-  list = list.map(p => ({ ...p, _pendingQty: pendingQtyMap[p.ma] || 0 }));
+  list = list.map(p => {
+    const pCode = (p.ma || '').trim().toUpperCase();
+    return { ...p, _pendingQty: pendingQtyMap[pCode] || 0 };
+  });
 
   sk_filteredList = list;
 
@@ -4196,6 +4216,9 @@ async function deleteInventoryReceipt(id) {
 
     showToast('<i class="fa-solid fa-circle-check"></i> Đã xóa chứng từ nhập kho thành công!', 'success');
     loadInventoryHistory();
+    await loadProducts();
+    if (typeof renderAdminTable === 'function') renderAdminTable();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
 
   } catch (err) {
     console.error('Lỗi khi xóa chứng từ:', err);
