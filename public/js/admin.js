@@ -66,6 +66,96 @@ function closeModal(id) {
 }
 
 // ==============================
+// STITCH-DESIGNED DELETE CONFIRMATION MODAL
+// ==============================
+let _deleteConfirmResolver = null;
+
+function showDeleteConfirmModal({
+  title = 'Xác nhận xoá vĩnh viễn',
+  target = '',
+  desc = 'Bạn có chắc chắn muốn thực hiện thao tác này? Dữ liệu sẽ bị xóa vĩnh viễn và không thể hoàn tác.',
+  confirmText = 'Xác nhận xoá',
+  cancelText = 'Hủy bỏ',
+  icon = 'fa-trash-can'
+} = {}) {
+  return new Promise((resolve) => {
+    if (_deleteConfirmResolver) {
+      _deleteConfirmResolver(false);
+    }
+    _deleteConfirmResolver = resolve;
+
+    const modal = document.getElementById('deleteConfirmModal');
+    const card = document.getElementById('deleteConfirmCard');
+    const titleEl = document.getElementById('delConfirmTitle');
+    const targetBox = document.getElementById('delConfirmTargetBox');
+    const targetEl = document.getElementById('delConfirmTargetName');
+    const descEl = document.getElementById('delConfirmDesc');
+    const confirmBtnText = document.getElementById('delConfirmBtnText');
+    const cancelBtn = document.getElementById('delConfirmCancelBtn');
+    const iconEl = document.getElementById('delConfirmIcon');
+
+    if (!modal) {
+      const promptText = `${title}${target ? `\n[ ${target} ]` : ''}\n${desc}`;
+      resolve(window.confirm(promptText));
+      _deleteConfirmResolver = null;
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (targetEl && target) {
+      targetEl.textContent = target;
+      targetBox?.classList.remove('hidden');
+    } else {
+      targetBox?.classList.add('hidden');
+    }
+    if (descEl) descEl.textContent = desc;
+    if (confirmBtnText) confirmBtnText.textContent = confirmText;
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+    if (iconEl) {
+      iconEl.className = `fa-solid ${icon}`;
+    }
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
+    if (card) {
+      card.classList.remove('scale-95');
+      card.classList.add('scale-100');
+    }
+
+    setTimeout(() => {
+      document.getElementById('delConfirmCancelBtn')?.focus();
+    }, 50);
+  });
+}
+
+function closeDeleteConfirmModal(isConfirmed = false) {
+  const modal = document.getElementById('deleteConfirmModal');
+  const card = document.getElementById('deleteConfirmCard');
+
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    if (card) {
+      card.classList.remove('scale-100');
+      card.classList.add('scale-95');
+    }
+  }
+
+  if (typeof _deleteConfirmResolver === 'function') {
+    const resolve = _deleteConfirmResolver;
+    _deleteConfirmResolver = null;
+    resolve(!!isConfirmed);
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && _deleteConfirmResolver) {
+    closeDeleteConfirmModal(false);
+  }
+});
+
+
+// ==============================
 // THEME (DARK / LIGHT)
 // ==============================
 function toggleTheme() {
@@ -387,7 +477,13 @@ async function uploadNewSlide(event) {
 }
 
 async function deleteSlide(url) {
-  if (!confirm('Bạn có chắc chắn muốn xóa slide này? Hành động này không thể hoàn tác.')) return;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa Slide Banner',
+    target: 'Banner trình chiếu trang chủ',
+    desc: 'Bạn có chắc chắn muốn xóa slide này? Hình ảnh sẽ không còn xuất hiện trên trang chủ và thao tác này không thể hoàn tác.',
+    confirmText: 'Xóa slide'
+  });
+  if (!confirmed) return;
   try {
     const res = await adminFetch('/api/admin/slides', {
       method: 'DELETE',
@@ -1144,7 +1240,15 @@ async function saveProductForm() {
 }
 
 async function deleteProduct(ma) {
-  if (!confirm('Xoá sản phẩm "' + ma + '"? Hành động này không thể hoàn tác.')) return;
+  const p = (products || []).find(x => x.ma === ma);
+  const targetLabel = p ? `${p.ma} - ${p.ten}` : `Mã sản phẩm: ${ma}`;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xoá vĩnh viễn sản phẩm',
+    target: targetLabel,
+    desc: 'Bạn có chắc chắn muốn xoá vĩnh viễn sản phẩm này khỏi hệ thống? Toàn bộ dữ liệu, lịch sử và hình ảnh của sản phẩm sẽ bị xoá.',
+    confirmText: 'Xoá sản phẩm'
+  });
+  if (!confirmed) return;
   try {
     const res = await adminFetch('/api/admin/products/remove?ma=' + encodeURIComponent(ma), { method: 'DELETE' });
     if (res.status === 401) return;
@@ -1433,7 +1537,13 @@ function renderOrdersTable() {
 }
 
 async function deleteOrder(id) {
-  if (!confirm(`Bạn có chắc chắn muốn xoá vĩnh viễn đơn hàng ${id}?`)) return;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xoá vĩnh viễn đơn hàng',
+    target: `Đơn hàng #${id}`,
+    desc: `Bạn có chắc chắn muốn xoá vĩnh viễn đơn hàng ${id}? Toàn bộ chi tiết giỏ hàng và lịch sử đơn sẽ bị xoá hoàn toàn khỏi hệ thống.`,
+    confirmText: 'Xoá đơn hàng'
+  });
+  if (!confirmed) return;
   try {
     const res = await adminFetch('/api/admin/orders/' + encodeURIComponent(id), {
       method: 'DELETE',
@@ -1461,7 +1571,13 @@ async function deleteAllCancelledOrders() {
     showToast('<i class="fa-solid fa-circle-info"></i> Không có đơn hàng đã huỷ nào', 'error');
     return;
   }
-  if (!confirm(`Xoá vĩnh viễn TẤT CẢ ${cancelledCount} đơn hàng đã huỷ?\nHành động này không thể hoàn tác!`)) return;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Dọn sạch đơn hàng đã huỷ',
+    target: `Tổng cộng ${cancelledCount} đơn hàng đã huỷ`,
+    desc: `Bạn có chắc chắn muốn xoá vĩnh viễn toàn bộ ${cancelledCount} đơn hàng đã huỷ? Thao tác này không thể hoàn tác!`,
+    confirmText: `Xoá ${cancelledCount} đơn`
+  });
+  if (!confirmed) return;
   try {
     const res = await adminFetch('/api/admin/orders-cancelled/all', { method: 'DELETE' });
     if (res.status === 401) return;
@@ -3786,7 +3902,14 @@ function updateSelectedInventoryCount() {
 
 async function deleteSelectedInventoryReceipts() {
   if (selectedInventoryIds.length === 0) return;
-  if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedInventoryIds.length} chứng từ đã chọn? Hành động này không thể hoàn tác.`)) {
+  const count = selectedInventoryIds.length;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa hàng loạt chứng từ',
+    target: `${count} chứng từ nhập kho đã chọn`,
+    desc: `Bạn có chắc chắn muốn xóa ${count} chứng từ đã chọn? Hành động này không thể hoàn tác và số lượng tồn kho có thể bị thay đổi.`,
+    confirmText: `Xóa ${count} chứng từ`
+  });
+  if (!confirmed) {
     return;
   }
   
@@ -4369,7 +4492,13 @@ async function saveStockReceipt() {
 }
 
 async function deleteInventoryReceipt(id) {
-  if (!confirm('Bạn có chắc chắn muốn xóa chứng từ nhập kho này? Hành động này không thể hoàn tác.')) {
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa chứng từ nhập kho',
+    target: `Chứng từ: ${id}`,
+    desc: 'Bạn có chắc chắn muốn xóa chứng từ nhập kho này? Hành động này không thể hoàn tác và sẽ khôi phục lại số lượng tồn kho của các sản phẩm tương ứng.',
+    confirmText: 'Xóa chứng từ'
+  });
+  if (!confirmed) {
     return;
   }
 
@@ -4757,9 +4886,16 @@ function addProdToManualOrder(ma) {
   renderManualOrderItems();
 }
 
-function clearAllManualOrderItems() {
+async function clearAllManualOrderItems() {
   if (manualOrderItems.length === 0) return;
-  if (confirm('Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng của đơn?')) {
+  const count = manualOrderItems.length;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa giỏ hàng đơn',
+    target: `${count} sản phẩm đang có trong đơn`,
+    desc: 'Bạn có chắc chắn muốn xóa toàn bộ sản phẩm đang chọn trong giỏ hàng của đơn này không?',
+    confirmText: 'Xóa tất cả'
+  });
+  if (confirmed) {
     manualOrderItems = [];
     renderManualOrderItems();
   }
@@ -5833,8 +5969,16 @@ async function sup_saveSupplier(btn) {
 async function sup_deleteSupplier() {
   const code = document.getElementById('sup_code').value;
   if (!code) return;
+  const name = document.getElementById('sup_name')?.value?.trim() || '';
+  const targetLabel = name ? `${code} - ${name}` : `Nhà cung cấp: ${code}`;
 
-  if (!confirm(`Bạn có chắc chắn muốn xoá vĩnh viễn nhà cung cấp ${code}?`)) return;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xoá vĩnh viễn nhà cung cấp',
+    target: targetLabel,
+    desc: `Bạn có chắc chắn muốn xoá vĩnh viễn nhà cung cấp ${code}? Thao tác này không thể hoàn tác và các dữ liệu liên quan sẽ bị xóa hoàn toàn khỏi hệ thống.`,
+    confirmText: 'Xoá nhà cung cấp'
+  });
+  if (!confirmed) return;
 
   const btn = document.getElementById('sup_deleteBtn');
   const originalHTML = btn.innerHTML;
@@ -5870,7 +6014,13 @@ async function sup_deleteSupplier() {
 async function srfm_deleteReceipt() {
   if (!srfm_editingReceiptId) return;
   
-  if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn phiếu nhập kho này? Hành động này không thể hoàn tác và sẽ khôi phục lại số lượng tồn kho của các sản phẩm tương ứng.`)) return;
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa vĩnh viễn phiếu nhập',
+    target: `Phiếu nhập kho #${srfm_editingReceiptId}`,
+    desc: 'Bạn có chắc chắn muốn xóa vĩnh viễn phiếu nhập kho này? Hành động này không thể hoàn tác và sẽ khôi phục lại số lượng tồn kho của các sản phẩm tương ứng.',
+    confirmText: 'Xóa phiếu nhập'
+  });
+  if (!confirmed) return;
 
   const btn = document.getElementById('srfm_deleteBtn');
   const originalHTML = btn.innerHTML;
