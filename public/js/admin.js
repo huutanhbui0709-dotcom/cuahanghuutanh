@@ -1266,7 +1266,7 @@ function changeOrderPageSize(size) {
   renderOrdersTable();
 }
 
-function resetOrderFilters() {
+async function resetOrderFilters(btn) {
   const searchInput = document.getElementById('orderSearch');
   const dateFromInput = document.getElementById('orderDateFrom');
   const dateToInput = document.getElementById('orderDateTo');
@@ -1276,7 +1276,21 @@ function resetOrderFilters() {
   if (dateToInput) dateToInput.value = '';
   if (statusFilter) statusFilter.value = '';
   orderPage = 1;
-  renderOrdersTable();
+
+  // Hiệu ứng icon quay
+  const icon = (btn && btn.querySelector('i')) || document.querySelector('button[onclick*="resetOrderFilters"] i');
+  if (icon) icon.classList.add('fa-spin');
+
+  try {
+    await loadOrders();
+    renderOrdersTable();
+    showToast('<i class="fa-solid fa-circle-check"></i> Đã làm mới danh sách đơn hàng', 'success');
+  } catch (err) {
+    console.error('Lỗi khi tải lại đơn hàng:', err);
+    showToast('<i class="fa-solid fa-xmark"></i> Không thể tải lại đơn hàng', 'error');
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
+  }
 }
 
 function renderOrdersTable() {
