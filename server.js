@@ -22,7 +22,6 @@ const crypto = require('crypto');
 const cookieParser = require('cookie');
 const compression = require('compression');
 const express = require('express');
-const session = require('express-session');
 const rateLimitModule = require('express-rate-limit');
 const rateLimit = rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule;
 const multer = require('multer');
@@ -537,16 +536,6 @@ app.set('trust proxy', 1); // cần thiết khi chạy sau proxy của Railway/R
 // Nén gzip/brotli để giảm kích thước response (76KB JSON → ~12KB)
 app.use(compression());
 
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    secure: 'auto',
-    maxAge: 3600000 * 24 // 24 giờ
-  }
-}));
-
 const instanceTimestamps = { products: 0, settings: 0, suppliers: 0 };
 
 async function syncVercelCache() {
@@ -811,8 +800,12 @@ app.get('/api/products', (req, res) => {
 app.get('/api/settings', (req, res) => {
   // Browser cache 5 phút, Vercel Edge CDN cache 1 giờ, stale-while-revalidate 24h
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
+  const cookies = parseCookies(req);
+  const token = cookies.admin_token;
+  const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
+  const isAdmin = token === expectedToken;
   const publicSettings = { ...settings };
-  if (!req.session || !req.session.isAdmin) {
+  if (!isAdmin) {
     delete publicSettings.geminiApiKey;
   }
   res.json(publicSettings);
