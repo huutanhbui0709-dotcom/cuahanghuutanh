@@ -199,12 +199,18 @@
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
-              <select id="dashboardTimeRange" onchange="renderDashboard()" class="admin-select">
-                <option value="7">7 ngày gần nhất</option>
-                <option value="30" selected>30 ngày gần nhất</option>
-                <option value="90">3 tháng gần nhất</option>
-                <option value="365">12 tháng gần nhất</option>
-                <option value="0">Tất cả thời gian</option>
+              <select id="dashboardTimeRange" onchange="renderDashboard()" class="admin-select font-semibold text-xs py-2 px-3">
+                <optgroup label="Khoảng ngày gần nhất">
+                  <option value="7">7 ngày gần nhất</option>
+                  <option value="30" selected>30 ngày gần nhất</option>
+                  <option value="90">3 tháng gần nhất</option>
+                  <option value="365">12 tháng gần nhất</option>
+                  <option value="0">Tất cả thời gian</option>
+                </optgroup>
+                <optgroup label="Thống kê theo Quý (Năm nay)" id="dashQuarterOptionsThisYear">
+                </optgroup>
+                <optgroup label="Thống kê theo Quý (Năm trước)" id="dashQuarterOptionsPrevYear">
+                </optgroup>
               </select>
             </div>
           </div>
@@ -215,10 +221,10 @@
           <!-- Charts Row -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6" id="dashboardChartsRow">
             <!-- Line Chart -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
               <div class="flex justify-between items-center mb-4">
-                <span class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <i class="fa-solid fa-chart-line text-blue-600"></i> Giá trị nhập kho theo ngày
+                <span class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-chart-line text-blue-600 dark:text-blue-400"></i> <span id="dashLineChartTitle">Giá trị nhập kho theo ngày</span>
                 </span>
               </div>
               <div class="relative h-[220px]">
@@ -226,10 +232,10 @@
               </div>
             </div>
             <!-- Donut Chart -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
               <div class="flex justify-between items-center mb-4">
-                <span class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <i class="fa-solid fa-chart-pie text-purple-600"></i> Cơ cấu giá trị theo nhà cung cấp
+                <span class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-chart-pie text-purple-600 dark:text-purple-400"></i> <span id="dashDonutChartTitle">Cơ cấu giá trị theo nhà cung cấp</span>
                 </span>
               </div>
               <div class="flex items-center gap-4 flex-col sm:flex-row">
@@ -238,6 +244,60 @@
                   <div id="dashboardDonutCenter" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none"></div>
                 </div>
                 <div id="dashboardDonutLegend" class="flex-1 text-xs flex flex-col gap-1.5 overflow-hidden w-full"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================= THỐNG KÊ HOẠT ĐỘNG THEO QUÝ (QUARTERLY PERFORMANCE) ================= -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs mb-6" id="dashboardQuarterSection">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
+                  <i class="fa-solid fa-chart-column text-lg"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Thống kê hoạt động theo Quý</h3>
+                    <span id="quarterYearBadge" class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                      Năm 2026
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">So sánh quy mô nhập kho, chi phí và mức tăng trưởng qua 4 quý trong năm</p>
+                </div>
+              </div>
+
+              <!-- Year selector -->
+              <div class="flex items-center gap-2 self-start sm:self-auto">
+                <label for="quarterYearSelect" class="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">Năm thống kê:</label>
+                <select id="quarterYearSelect" onchange="renderQuarterSection()" class="admin-select font-bold text-xs py-1.5 px-3 min-w-[110px]">
+                </select>
+              </div>
+            </div>
+
+            <!-- 4 Quarters Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="quarterCardsGrid">
+              <!-- Dynamically populated Q1, Q2, Q3, Q4 cards -->
+            </div>
+
+            <!-- Chart & Summary Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <!-- Bar Chart Comparison (2 cols) -->
+              <div class="lg:col-span-2 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/60 dark:border-slate-700/60 flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <span class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chart-simple text-indigo-600 dark:text-indigo-400"></i> Biểu đồ so sánh giá trị & số phiếu 4 Quý
+                  </span>
+                  <span id="quarterChartSubtext" class="text-xs font-bold text-slate-500 dark:text-slate-400"></span>
+                </div>
+                <div class="relative h-[230px] w-full">
+                  <canvas id="quarterComparisonChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Insights & Key Metrics (1 col) -->
+              <div class="bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/60 dark:border-slate-700/60 flex flex-col justify-between" id="quarterInsightsContainer">
+                <!-- Dynamically populated quarterly insights -->
               </div>
             </div>
           </div>
@@ -1738,7 +1798,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/admin.js?v=3.7"></script>
+  <script src="js/admin.js?v=3.8"></script>
 </body>
 
 </html>
