@@ -1,15 +1,22 @@
-name: Keep Vercel App Alive   # đổi tên cho đúng, không còn liên quan Azure
+name: Keep Vercel & DB Alive
 on:
   schedule:
-    - cron: '*/10 * * * *'    # có thể tăng lên 10 phút/lần cho chắc
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping website để giữ app luôn "thức"
+      - name: Ping API & Website để giữ serverless và database luôn "ấm"
         run: |
-          echo "Đang ping https://cuahanghuutanh.vercel.app/ lúc $(date)"
-          curl -sSL -o /dev/null -w "HTTP Status: %{http_code} | Thời gian phản hồi: %{time_total}s\n" \
-            --max-time 60 \
+          echo "Đang ping lúc $(date)"
+          curl -sSL -o /dev/null -w "Products API Status: %{http_code} | Thời gian: %{time_total}s\n" \
+            --max-time 30 \
+            https://cuahanghuutanh.vercel.app/api/products
+          curl -sSL -o /dev/null -w "Slides API Status: %{http_code} | Thời gian: %{time_total}s\n" \
+            --max-time 30 \
+            https://cuahanghuutanh.vercel.app/api/slides
+          curl -sSL -o /dev/null -w "Homepage Status: %{http_code} | Thời gian: %{time_total}s\n" \
+            --max-time 30 \
             https://cuahanghuutanh.vercel.app/
+

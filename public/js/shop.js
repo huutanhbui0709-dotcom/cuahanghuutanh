@@ -192,53 +192,61 @@ function showSkeletonGrid() {
   `).join('');
 }
 
-const PRODUCT_CACHE_KEY = 'cached_products';
-const PRODUCT_CACHE_TTL = 60000; // 60 giây
+const PRODUCT_CACHE_KEY = 'cached_products_v1';
 
 async function loadProducts() {
-  // Hiển thị skeleton ngay lập tức
-  showSkeletonGrid();
+  let hasRenderedFromCache = false;
 
-  // Kiểm tra cache trong sessionStorage
+  // 1. Kiểm tra cache trong localStorage để hiển thị tức thì (0ms)
   try {
-    const cached = sessionStorage.getItem(PRODUCT_CACHE_KEY);
+    const cached = localStorage.getItem(PRODUCT_CACHE_KEY);
     if (cached) {
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < PRODUCT_CACHE_TTL) {
+      const { data } = JSON.parse(cached);
+      if (Array.isArray(data) && data.length > 0) {
         products = data;
         populateTypeFilter();
         renderShop();
-        // Fetch mới trong nền để cập nhật cache (stale-while-revalidate)
-        fetch('/api/products').then(r => r.json()).then(freshData => {
-          const filtered = freshData.filter(p => p.trangthai !== 'Ngừng theo dõi');
-          sessionStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify({ data: filtered, timestamp: Date.now() }));
-          // Chỉ re-render nếu data thực sự thay đổi
-          if (JSON.stringify(filtered) !== JSON.stringify(products)) {
-            products = filtered;
-            populateTypeFilter();
-            renderShop();
-          }
-        }).catch(() => {}); // Bỏ qua lỗi nền
-        return;
+        hasRenderedFromCache = true;
       }
     }
-  } catch (e) { /* sessionStorage không khả dụng, bỏ qua */ }
+  } catch (e) { /* localStorage không khả dụng, bỏ qua */ }
 
-  // Fetch từ server
+  // Nếu chưa có cache (lần đầu truy cập), hiển thị skeleton loader
+  if (!hasRenderedFromCache) {
+    showSkeletonGrid();
+  }
+
+  // 2. Luôn fetch mới trong nền (Stale-While-Revalidate) để cập nhật giá & sản phẩm mới nhất
   try {
     const res = await fetch('/api/products');
-    const data = await res.json();
-    products = data.filter(p => p.trangthai !== 'Ngừng theo dõi');
-    // Lưu vào cache
-    try {
-      sessionStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify({ data: products, timestamp: Date.now() }));
-    } catch (e) { /* quota exceeded, bỏ qua */ }
+    if (res.ok) {
+      const freshData = await res.json();
+      const filtered = freshData.filter(p => p.trangthai !== 'Ngừng theo dõi');
+      
+      const hasChanged = JSON.stringify(filtered) !== JSON.stringify(products);
+      products = filtered;
+
+      try {
+        localStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify({ data: filtered, timestamp: Date.now() }));
+      } catch (e) { /* quota exceeded, bỏ qua */ }
+
+      // Chỉ render lại nếu chưa render từ cache hoặc dữ liệu thực sự có thay đổi
+      if (!hasRenderedFromCache || hasChanged) {
+        populateTypeFilter();
+        renderShop();
+      }
+    } else if (!hasRenderedFromCache) {
+      showToast('<i class="fa-solid fa-xmark"></i> Không tải được danh sách sản phẩm', 'error');
+      products = [];
+      renderShop();
+    }
   } catch (err) {
-    showToast('<i class="fa-solid fa-xmark"></i> Không tải được danh sách sản phẩm', 'error');
-    products = [];
+    if (!hasRenderedFromCache) {
+      showToast('<i class="fa-solid fa-xmark"></i> Không tải được danh sách sản phẩm', 'error');
+      products = [];
+      renderShop();
+    }
   }
-  populateTypeFilter();
-  renderShop();
 }
 
 // ==============================
@@ -991,20 +999,39 @@ function showToast(msg, type = '') {
 // ==============================
 // LOAD SETTINGS (FOOTER)
 // ==============================
+const SETTINGS_CACHE_KEY = 'cached_settings_v1';
+const SLIDES_CACHE_KEY = 'cached_slides_v1';
+
+function applySettingsUI(settings) {
+  if (!settings) return;
+  const addr = document.getElementById('footer-address');
+  const phone = document.getElementById('footer-phone');
+  const email = document.getElementById('footer-email');
+  const map = document.getElementById('footer-map-container');
+  if (addr) addr.innerHTML = `<span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-location-dot"></i></span><span><strong>Địa chỉ:</strong> ${settings.address || '-'}</span>`;
+  if (phone) phone.innerHTML = `<span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-phone"></i></span><span><strong>SĐT:</strong> ${settings.phone || '-'}</span>`;
+  if (email) email.innerHTML = `<span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-envelope"></i></span><span><strong>Email:</strong> ${settings.email || '-'}</span>`;
+  if (map) {
+    if (settings.mapUrl) {
+      map.innerHTML = `<iframe src="${settings.mapUrl}" width="100%" height="250" style="border:0; border-radius:8px;" allowfullscreen="" loading="lazy"></iframe>`;
+    } else {
+      map.innerHTML = `<p style="color:var(--muted)">Chưa cấu hình bản đồ.</p>`;
+    }
+  }
+}
+
 async function loadSettings() {
   try {
-    const res = await fetch('/api/settings');
-    const settings = await res.json();
-    document.getElementById('footer-address').innerHTML = `<span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-location-dot"></i></span><span><strong>Địa chỉ:</strong> ${settings.address || '-'}</span>`;
-    document.getElementById('footer-phone').innerHTML = `<span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-phone"></i></span><span><strong>SĐT:</strong> ${settings.phone || '-'}</span>`;
-    document.getElementById('footer-email').innerHTML = `<span class="text-amber-400 flex-shrink-0"><i class="fa-solid fa-envelope"></i></span><span><strong>Email:</strong> ${settings.email || '-'}</span>`;
+    const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
+    if (cached) applySettingsUI(JSON.parse(cached));
+  } catch (e) {}
 
-    if (settings.mapUrl) {
-      document.getElementById('footer-map-container').innerHTML = `
-        <iframe src="${settings.mapUrl}" width="100%" height="250" style="border:0; border-radius:8px;" allowfullscreen="" loading="lazy"></iframe>
-      `;
-    } else {
-      document.getElementById('footer-map-container').innerHTML = `<p style="color:var(--muted)">Chưa cấu hình bản đồ.</p>`;
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) {
+      const settings = await res.json();
+      applySettingsUI(settings);
+      try { localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(settings)); } catch (e) {}
     }
   } catch (err) {
     console.error('Không tải được cài đặt footer:', err);
@@ -1014,32 +1041,56 @@ async function loadSettings() {
 let currentSlideIdx = 0;
 let slideInterval;
 
-async function initSlider() {
+function renderSliderDOM(slideUrls) {
   const slidesContainer = document.getElementById('heroSlides');
   const dotsContainer = document.getElementById('slideDots');
-  if (!slidesContainer) return;
+  if (!slidesContainer || !dotsContainer || !Array.isArray(slideUrls) || slideUrls.length === 0) return false;
 
-  // Load danh sách ảnh từ API
-  let slideUrls = [];
-  try {
-    const res = await fetch('/api/slides');
-    if (res.ok) slideUrls = await res.json();
-  } catch (err) {
-    console.warn('Không tải được danh sách slide:', err);
-  }
-
-  // Nếu không có ảnh nào thì giữ placeholder
-  if (!slideUrls || slideUrls.length === 0) return;
-
-  // Render slide elements
   slidesContainer.innerHTML = slideUrls.map((url, i) =>
     `<div class="hero-slide${i === 0 ? ' active' : ''}" style="background-image:url('${url}');"></div>`
   ).join('');
 
-  // Render dot indicators
   dotsContainer.innerHTML = slideUrls.map((_, i) =>
     `<span class="dot${i === 0 ? ' active' : ''}" onclick="setSlide(${i})"></span>`
   ).join('');
+  return true;
+}
+
+async function initSlider() {
+  const slidesContainer = document.getElementById('heroSlides');
+  if (!slidesContainer) return;
+
+  // Hiển thị từ cache ngay lập tức nếu có
+  let cachedUrls = null;
+  try {
+    const cached = localStorage.getItem(SLIDES_CACHE_KEY);
+    if (cached) {
+      cachedUrls = JSON.parse(cached);
+      if (Array.isArray(cachedUrls) && cachedUrls.length > 0) {
+        renderSliderDOM(cachedUrls);
+      }
+    }
+  } catch (e) {}
+
+  // Fetch mới trong nền
+  let slideUrls = [];
+  try {
+    const res = await fetch('/api/slides');
+    if (res.ok) {
+      slideUrls = await res.json();
+      if (Array.isArray(slideUrls) && slideUrls.length > 0) {
+        try { localStorage.setItem(SLIDES_CACHE_KEY, JSON.stringify(slideUrls)); } catch (e) {}
+        if (!cachedUrls || JSON.stringify(slideUrls) !== JSON.stringify(cachedUrls)) {
+          renderSliderDOM(slideUrls);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Không tải được danh sách slide:', err);
+  }
+
+  // Nếu không có cả cache lẫn API thì giữ placeholder
+  if ((!slideUrls || slideUrls.length === 0) && (!cachedUrls || cachedUrls.length === 0)) return;
 
   // Lấy lại các element sau khi render
   function getSlides() { return slidesContainer.querySelectorAll('.hero-slide'); }

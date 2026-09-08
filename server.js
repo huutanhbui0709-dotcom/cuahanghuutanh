@@ -355,94 +355,77 @@ async function initializeData() {
       // Môi trường Vercel: tất cả data từ Vercel DB, không dùng filesystem
       // ================================================================
       
-      // Luôn đồng bộ schema khi khởi động (idempotent, an toàn)
-      await initDbSchema();
-
-      // Chạy song song các truy vấn tải dữ liệu chính để giảm thiểu roundtrip latency
-      const results = await Promise.allSettled([
-        sql`SELECT value FROM app_settings WHERE key = 'products'`,
-        sql`SELECT value FROM app_settings WHERE key = 'settings'`,
-        sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
-        sql`SELECT * FROM orders ORDER BY created_at DESC`,
+      // Truy vấn song song app_settings và visitor_activity (chỉ 2 truy vấn tối ưu)
+      let results = await Promise.allSettled([
+        sql`SELECT key, value FROM app_settings WHERE key IN ('products', 'settings', 'suppliers')`,
         sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
       ]);
 
-      const [prodRes, setRes, supRes, orderRes, visitorRes] = results;
+      // Nếu app_settings chưa tồn tại (lần đầu setup database), khởi tạo schema và query lại
+      if (results[0].status === 'rejected' && String(results[0].reason).includes('does not exist')) {
+        await initDbSchema();
+        results = await Promise.allSettled([
+          sql`SELECT key, value FROM app_settings WHERE key IN ('products', 'settings', 'suppliers')`,
+          sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
+        ]);
+      }
 
-      // 1. Parse products từ kết quả
-      if (prodRes.status === 'fulfilled' && prodRes.value.rows.length > 0) {
-        products = JSON.parse(prodRes.value.rows[0].value);
-        console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
-      } else {
-        try {
-          const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
-          products = JSON.parse(raw);
-        } catch {
-          products = [];
-        }
-        if (prodRes.status === 'fulfilled') {
+      const [setRes, visitorRes] = results;
+
+      if (setRes.status === 'fulfilled') {
+        const rowMap = {};
+        setRes.value.rows.forEach(r => { rowMap[r.key] = r.value; });
+
+        // 1. Parse products
+        if (rowMap.products) {
+          try { products = JSON.parse(rowMap.products); } catch { products = []; }
+          console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
+        } else {
+          try {
+            const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
+            products = JSON.parse(raw);
+          } catch {
+            products = [];
+          }
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('products', ${JSON.stringify(products)}, NOW())
             ON CONFLICT (key) DO NOTHING
           `.catch(e => console.error('Lỗi seed products:', e));
+          console.log(`📦 Seeded/Loaded default ${products.length} products.`);
         }
-        console.log(`📦 Seeded/Loaded default ${products.length} products.`);
-      }
 
-      // 2. Parse settings từ kết quả
-      if (setRes.status === 'fulfilled' && setRes.value.rows.length > 0) {
-        settings = JSON.parse(setRes.value.rows[0].value);
-        console.log('✅ Loaded settings from Vercel DB.');
-      } else {
-        if (setRes.status === 'fulfilled') {
+        // 2. Parse settings
+        if (rowMap.settings) {
+          try { settings = JSON.parse(rowMap.settings); } catch {}
+          console.log('✅ Loaded settings from Vercel DB.');
+        } else {
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('settings', ${JSON.stringify(settings)}, NOW())
             ON CONFLICT (key) DO NOTHING
           `.catch(e => console.error('Lỗi seed settings:', e));
+          console.log('⚙️ Seeded/Loaded default settings.');
         }
-        console.log('⚙️ Seeded/Loaded default settings.');
-      }
 
-      // 3. Parse suppliers từ kết quả
-      if (supRes.status === 'fulfilled' && supRes.value.rows.length > 0) {
-        suppliers = JSON.parse(supRes.value.rows[0].value);
-        console.log(`✅ Loaded ${suppliers.length} suppliers from Vercel DB.`);
-      } else {
-        if (supRes.status === 'fulfilled') {
+        // 3. Parse suppliers
+        if (rowMap.suppliers) {
+          try { suppliers = JSON.parse(rowMap.suppliers); } catch { suppliers = []; }
+          console.log(`✅ Loaded ${suppliers.length} suppliers from Vercel DB.`);
+        } else {
+          suppliers = [];
           await sql`
             INSERT INTO app_settings (key, value, updated_at)
             VALUES ('suppliers', '[]', NOW())
             ON CONFLICT (key) DO NOTHING
           `.catch(e => console.error('Lỗi seed suppliers:', e));
+          console.log('📦 Seeded/Loaded default suppliers.');
         }
-        suppliers = [];
-        console.log('📦 Seeded/Loaded default suppliers.');
-      }
-
-      // 4. Parse orders từ kết quả
-      if (orderRes.status === 'fulfilled') {
-        orders = orderRes.value.rows.map(r => ({
-          id: r.id,
-          createdAt: r.created_at,
-          customer: r.customer,
-          phone: r.phone,
-          address: r.address,
-          note: r.note,
-          items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
-          total: Number(r.total),
-          status: r.status,
-          deviceId: r.device_id,
-          visitorId: r.visitor_id
-        }));
-        console.log(`✅ Loaded ${orders.length} orders from Vercel DB.`);
       } else {
-        console.error('❌ Lỗi load orders từ Vercel DB:', orderRes.reason);
-        orders = [];
+        console.error('❌ Lỗi load app_settings từ Vercel DB:', setRes.reason);
       }
 
-      // 5. Parse spam visitor activity từ kết quả
+      // 4. Parse spam visitor activity từ kết quả
       if (visitorRes.status === 'fulfilled') {
         blockedDevices.clear();
         spamDevices = visitorRes.value.rows.map(r => ({
@@ -463,7 +446,6 @@ async function initializeData() {
         });
         console.log(`✅ Loaded ${spamDevices.length} blocked visitors from Vercel DB.`);
       } else {
-        console.error('❌ Lỗi load spamDevices từ Vercel DB:', visitorRes.reason);
         spamDevices = [];
       }
 
@@ -819,15 +801,16 @@ app.get('/api/products', (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.json(products);
   } else {
-    // Khách hàng: cache 60s, lọc bỏ dữ liệu nhạy cảm
-    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    // Khách hàng: Browser cache 60s, Vercel Edge CDN cache 5 phút, stale-while-revalidate 24h
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400');
     const publicProducts = products.map(({ cost_price, stock, stt, ...rest }) => rest);
     res.json(publicProducts);
   }
 });
 
 app.get('/api/settings', (req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+  // Browser cache 5 phút, Vercel Edge CDN cache 1 giờ, stale-while-revalidate 24h
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
   const publicSettings = { ...settings };
   if (!req.session || !req.session.isAdmin) {
     delete publicSettings.geminiApiKey;
@@ -836,7 +819,8 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.get('/api/slides', async (req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=1800');
+  // Browser cache 10 phút, Vercel Edge CDN cache 1 giờ, stale-while-revalidate 24h
+  res.setHeader('Cache-Control', 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400');
   try {
     // Lấy danh sách ảnh slide từ Cloudflare R2
     const items = await listFiles('slides');
