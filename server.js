@@ -1452,8 +1452,10 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       }
       if (updatedCount > 0) {
         products = productsList;
-        await saveProducts(productsList);
-        await broadcastUpdate('products_updated');
+        await Promise.all([
+          saveProducts(productsList),
+          broadcastUpdate('products_updated')
+        ]);
       }
     }
     // 2. Từ "Đã xác nhận" sang trạng thái khác (Đã huỷ / Chờ xác nhận): CỘNG LẠI tồn kho
@@ -1479,12 +1481,20 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       }
       if (updatedCount > 0) {
         products = productsList;
-        await saveProducts(productsList);
-        await broadcastUpdate('products_updated');
+        await Promise.all([
+          saveProducts(productsList),
+          broadcastUpdate('products_updated')
+        ]);
       }
     }
 
-    await broadcastUpdate('orders_updated');
+    // Broadcast cập nhật ngầm không chặn response
+    try {
+      const bPromise = broadcastUpdate('orders_updated');
+      if (typeof vercelWaitUntil === 'function') {
+        vercelWaitUntil(bPromise);
+      }
+    } catch (e) {}
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
   }

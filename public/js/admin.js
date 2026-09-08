@@ -1404,11 +1404,11 @@ function renderOrdersTable() {
       : ''
     }
               ${o.status === 'Chờ xác nhận'
-      ? `<button class="btn-act btn-act-confirm" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
+      ? `<button class="btn-act btn-act-confirm" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận', this)"><i class="fa-solid fa-circle-check"></i></button>`
       : ''
     }
               ${o.status === 'Chờ xác nhận'
-      ? `<button class="btn-act btn-act-delete" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
+      ? `<button class="btn-act btn-act-delete" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ', this)"><i class="fa-solid fa-xmark"></i></button>`
       : o.status === 'Đã huỷ'
         ? `<button class="btn-act btn-act-delete" title="Xóa vĩnh viễn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash-can"></i></button>`
         : ''
@@ -1482,27 +1482,75 @@ async function deleteAllCancelledOrders() {
   }
 }
 
-async function updateOrderStatus(id, status) {
+async function updateOrderStatus(id, status, triggerBtn = null) {
+  const btn = triggerBtn || document.querySelector(`button[onclick*="updateOrderStatus('${id}'"]`);
+  let icon = null;
+  let originalIconClass = '';
+  let siblingButtons = [];
+
+  if (btn) {
+    btn.disabled = true;
+    icon = btn.querySelector('i');
+    if (icon) {
+      originalIconClass = icon.className;
+      icon.className = 'fa-solid fa-circle-notch fa-spin text-amber-500';
+    }
+    const row = btn.closest('tr') || btn.closest('div');
+    if (row) {
+      siblingButtons = Array.from(row.querySelectorAll('button.btn-act, button.btn'));
+      siblingButtons.forEach(b => b.disabled = true);
+    }
+  }
+
+  const actionName = status === 'Đã xác nhận' ? 'Đang xác nhận đơn' : (status === 'Đã huỷ' ? 'Đang huỷ đơn' : 'Đang cập nhật');
+  showToast(`<i class="fa-solid fa-spinner fa-spin"></i> ${actionName} ${id}...`, 'info');
+
   try {
     const res = await adminFetch('/api/admin/orders/' + encodeURIComponent(id), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
+
     if (res.status === 401) return;
     const data = await res.json();
+
     if (!res.ok || !data.ok) {
       showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi cập nhật trạng thái'), 'error');
+      if (btn) btn.disabled = false;
+      if (icon && originalIconClass) icon.className = originalIconClass;
+      siblingButtons.forEach(b => b.disabled = false);
       return;
     }
-    await Promise.all([loadOrders(), loadProducts()]);
+
+    // 1. Cập nhật state cục bộ ngay lập tức (< 10ms)
+    const localOrder = orders.find(x => x.id === id);
+    if (localOrder) {
+      localOrder.status = status;
+    }
+
+    // 2. Render lại bảng đơn hàng ngay lập tức
     renderOrdersTable();
-    renderDashboard();
-    renderAdminTable();
-    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
-    showToast(`Đơn ${id} → ${status}`, 'success');
+
+    // 3. Thông báo hoàn tất
+    const successMsg = status === 'Đã xác nhận' ? `Đã xác nhận đơn ${id} thành công!` : `Đã huỷ đơn ${id}!`;
+    showToast(`<i class="fa-solid fa-circle-check"></i> ${successMsg}`, 'success');
+
+    // 4. Đồng bộ nền số lượng tồn kho & KPI mà không gây đơ màn hình
+    Promise.all([loadOrders(), loadProducts()])
+      .then(() => {
+        renderDashboard();
+        renderAdminTable();
+        if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
+      })
+      .catch(console.warn);
+
   } catch (err) {
+    console.error('Lỗi cập nhật trạng thái đơn:', err);
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
+    if (btn) btn.disabled = false;
+    if (icon && originalIconClass) icon.className = originalIconClass;
+    siblingButtons.forEach(b => b.disabled = false);
   }
 }
 
@@ -1550,8 +1598,8 @@ function viewOrderDetail(id) {
       </div>
       ${o.status === 'Chờ xác nhận' ? `
         <div style="display:flex;gap:10px;justify-content:center;padding-top:4px">
-          <button class="btn btn-success" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã xác nhận');closeModal('orderDetailModal')"><i class="fa-solid fa-circle-check"></i> Xác nhận đơn</button>
-          <button class="btn btn-danger" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã huỷ');closeModal('orderDetailModal')">✕ Huỷ đơn</button>
+          <button class="btn btn-success" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã xác nhận', this);closeModal('orderDetailModal')"><i class="fa-solid fa-circle-check"></i> Xác nhận đơn</button>
+          <button class="btn btn-danger" style="flex:1;max-width:200px;justify-content:center;padding:10px 20px" onclick="updateOrderStatus('${o.id}','Đã huỷ', this);closeModal('orderDetailModal')">✕ Huỷ đơn</button>
         </div>` : ''}
       ${o.status === 'Đã xác nhận' ? `
         <div style="display:flex;gap:10px;justify-content:center;padding-top:4px">
