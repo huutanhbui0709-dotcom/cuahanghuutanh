@@ -628,6 +628,13 @@ function setDashboardFilter(type, val) {
   if (type === 'days') {
     _currentDashboardFilter.mode = 'days';
     _currentDashboardFilter.days = Number(val);
+    // Scroll to the daily KPI section after a short delay to let rendering finish
+    setTimeout(() => {
+      const kpiGrid = document.getElementById('dashboardKpiGrid');
+      if (kpiGrid) {
+        kpiGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
   } else if (type === 'Q') {
     const yearSelect = document.getElementById('dashFilterYear');
     const selectedYear = yearSelect ? parseInt(yearSelect.value, 10) : _currentDashboardFilter.year;
