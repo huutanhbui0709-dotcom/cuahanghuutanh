@@ -1007,11 +1007,11 @@ function filterDashboardByQuarter(year, quarter) {
 
   setDashboardFilter('Q', quarter);
 
-  const dashboardTab = document.getElementById('tab-dashboard');
-  if (dashboardTab) {
-    dashboardTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const target = document.getElementById('dashboardKpiGrid') || document.getElementById('tab-dashboard');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  showToast(`<i class="fa-solid fa-filter"></i> Đang hiển thị thống kê Quý ${quarter}/${year}`, 'success');
+  showToast(`<i class="fa-solid fa-filter"></i> Đang hiển thị chi tiết Quý ${quarter}/${year}`, 'success');
 }
 
 function renderQuarterSection() {
