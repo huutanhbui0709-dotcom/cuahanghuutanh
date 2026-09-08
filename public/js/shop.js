@@ -872,7 +872,8 @@ async function submitOrder(force = false) {
     ['orderName', 'orderPhone', 'orderAddress', 'orderNote'].forEach(id => document.getElementById(id).value = '');
 
     // Hiển thị Popup đặt hàng thành công
-    showOrderSuccessModal((data.order && data.order.id) || '');
+    const createdOrderId = (data.order && data.order.id) || data.orderId || '';
+    showOrderSuccessModal(createdOrderId);
 
     btn.disabled = false;
     btn.innerHTML = '<span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i></span><span> Xác nhận đặt hàng</span>';

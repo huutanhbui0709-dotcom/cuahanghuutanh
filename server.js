@@ -892,130 +892,158 @@ app.get('/api/orders/:id', async (req, res) => {
   res.json({ ok: true, order: { ...order, items: enrichedItems } });
 });
 
+// ─── XỬ LÝ TẠO ĐƠN HÀNG THỦ CÔNG CỦA ADMIN ─────────────────────────────────
+async function handleCreateManualOrder(req, res) {
+  try {
+    const { customer, phone, address, note, items, shippingFee, status } = req.body || {};
+    const cName = String(customer || '').trim();
+    const cPhone = String(phone || '').trim();
+    const cAddress = String(address || '').trim();
+    const cNote = String(note || '').trim();
+    const sFee = parseFloat(shippingFee || 0);
+    const orderStatus = String(status || 'Đã xác nhận').trim();
+
+    if (!cName) {
+      return res.status(400).json({ ok: false, message: 'Tên khách hàng không được để trống.' });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Đơn hàng phải có ít nhất 1 sản phẩm.' });
+    }
+
+    const orderItems = [];
+    for (const raw of items) {
+      const productId = String(raw.productId || raw.ma || '').trim();
+      const sku = String(raw.sku || raw.ma || '').trim();
+      const name = String(raw.name || raw.ten || '').trim();
+      const quantity = parseFloat(raw.quantity !== undefined ? raw.quantity : (raw.qty !== undefined ? raw.qty : 0));
+      const unitPrice = parseFloat(raw.unitPrice !== undefined ? raw.unitPrice : (raw.gia !== undefined ? raw.gia : 0));
+      const itemNote = String(raw.note || '').trim();
+      const donvi = String(raw.donvi || '').trim();
+
+      if (!productId || quantity <= 0) continue;
+
+      orderItems.push({
+        productId,
+        sku,
+        name,
+        quantity,
+        unitPrice,
+        note: itemNote,
+        ma: productId,
+        ten: name,
+        qty: quantity,
+        gia: unitPrice,
+        donvi
+      });
+    }
+
+    if (orderItems.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Danh sách sản phẩm không hợp lệ.' });
+    }
+
+    const itemsTotal = orderItems.reduce((sum, x) => sum + x.unitPrice * x.quantity, 0);
+    const grandTotal = itemsTotal + sFee;
+
+    const order = {
+      id: 'DH' + Date.now().toString().slice(-8),
+      createdAt: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      customer: cName,
+      phone: cPhone,
+      address: cAddress,
+      note: cNote,
+      items: orderItems,
+      shippingFee: sFee,
+      total: grandTotal,
+      status: orderStatus,
+      deviceId: 'admin',
+      visitorId: 'admin'
+    };
+
+    orders.unshift(order);
+
+    // Lưu đơn hàng
+    if (IS_VERCEL) {
+      await sql`
+        INSERT INTO orders (id, created_at, customer, phone, address, note, items, total, status, device_id, visitor_id)
+        VALUES (${order.id}, ${order.createdAt}, ${order.customer}, ${order.phone}, ${order.address}, ${order.note}, ${JSON.stringify(order.items)}, ${order.total}, ${order.status}, 'admin', 'admin')
+      `;
+    } else {
+      await saveOrders(orders);
+    }
+
+    // Chỉ giảm trừ số lượng tồn kho nếu trạng thái là "Đã xác nhận"
+    if (orderStatus === 'Đã xác nhận') {
+      let productsList = [...products];
+      if (IS_VERCEL) {
+        try {
+          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+          if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+        } catch (e) { /* bỏ qua */ }
+      }
+
+      let updatedCount = 0;
+      for (const item of orderItems) {
+        const targetNorm = normalizeProductCode(item.ma || item.sku || item.productId);
+        if (!targetNorm) continue;
+        const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
+        if (prod) {
+          prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
+          prod.updatedAt = Date.now();
+          updatedCount++;
+        }
+      }
+
+      if (updatedCount > 0) {
+        products = productsList;
+        await saveProducts(productsList);
+        await broadcastUpdate('products_updated');
+      }
+    }
+
+    await broadcastUpdate('orders_updated');
+
+    // Gửi mail thông báo trong nền cho cả đơn thủ công của Admin
+    try {
+      const mailPromise = sendOrderNotification(order);
+      if (typeof vercelWaitUntil === 'function') {
+        vercelWaitUntil(mailPromise);
+      }
+    } catch (mailErr) {
+      console.error('Lỗi gửi mail đơn hàng admin:', mailErr);
+    }
+
+    return res.json({
+      ok: true,
+      message: 'Đã tạo và lưu đơn hàng thủ công thành công!',
+      orderId: order.id,
+      order
+    });
+
+  } catch (err) {
+    console.error('Lỗi khi Admin tạo đơn hàng thủ công:', err);
+    return res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi tạo đơn: ' + err.message });
+  }
+}
+
+// Endpoint riêng cho Admin tạo đơn từ giao diện quản trị
+app.post('/api/admin/orders', requireAdmin, async (req, res) => {
+  return handleCreateManualOrder(req, res);
+});
+
+// Endpoint đặt hàng chính cho khách hàng trên website
 app.post('/api/orders', async (req, res) => {
   const cookies = parseCookies(req);
   const token = cookies.admin_token;
   const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
   const isAdmin = (token === expectedToken);
 
-  if (isAdmin) {
-    // --- ADMIN MANUAL ORDER CREATION ---
-    try {
-      const { customer, phone, address, note, items, shippingFee, status } = req.body || {};
-      const cName = String(customer || '').trim();
-      const cPhone = String(phone || '').trim();
-      const cAddress = String(address || '').trim();
-      const cNote = String(note || '').trim();
-      const sFee = parseFloat(shippingFee || 0);
-      const orderStatus = String(status || 'Đã xác nhận').trim();
-
-      if (!cName) {
-        return res.status(400).json({ ok: false, message: 'Tên khách hàng không được để trống.' });
-      }
-      if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ ok: false, message: 'Đơn hàng phải có ít nhất 1 sản phẩm.' });
-      }
-
-      const orderItems = [];
-      for (const raw of items) {
-        const productId = String(raw.productId || raw.ma || '').trim();
-        const sku = String(raw.sku || raw.ma || '').trim();
-        const name = String(raw.name || raw.ten || '').trim();
-        const quantity = parseFloat(raw.quantity !== undefined ? raw.quantity : (raw.qty !== undefined ? raw.qty : 0));
-        const unitPrice = parseFloat(raw.unitPrice !== undefined ? raw.unitPrice : (raw.gia !== undefined ? raw.gia : 0));
-        const itemNote = String(raw.note || '').trim();
-        const donvi = String(raw.donvi || '').trim();
-
-        if (!productId || quantity <= 0) continue;
-
-        orderItems.push({
-          productId,
-          sku,
-          name,
-          quantity,
-          unitPrice,
-          note: itemNote,
-          
-          // Backward compatibility fields
-          ma: productId,
-          ten: name,
-          qty: quantity,
-          gia: unitPrice,
-          donvi
-        });
-      }
-
-      if (orderItems.length === 0) {
-        return res.status(400).json({ ok: false, message: 'Danh sách sản phẩm không hợp lệ.' });
-      }
-
-      const itemsTotal = orderItems.reduce((sum, x) => sum + x.unitPrice * x.quantity, 0);
-      const grandTotal = itemsTotal + sFee;
-
-      const order = {
-        id: 'DH' + Date.now().toString().slice(-8),
-        createdAt: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-        customer: cName,
-        phone: cPhone,
-        address: cAddress,
-        note: cNote,
-        items: orderItems,
-        shippingFee: sFee,
-        total: grandTotal,
-        status: orderStatus,
-        deviceId: 'admin',
-        visitorId: 'admin'
-      };
-
-      orders.unshift(order);
-
-      // Lưu đơn hàng
-      if (IS_VERCEL) {
-        await sql`
-          INSERT INTO orders (id, created_at, customer, phone, address, note, items, total, status, device_id, visitor_id)
-          VALUES (${order.id}, ${order.createdAt}, ${order.customer}, ${order.phone}, ${order.address}, ${order.note}, ${JSON.stringify(order.items)}, ${order.total}, ${order.status}, 'admin', 'admin')
-        `;
-      } else {
-        await saveOrders(orders);
-      }
-
-      // Chỉ giảm trừ số lượng tồn kho nếu trạng thái là "Đã xác nhận"
-      if (orderStatus === 'Đã xác nhận') {
-        let productsList = [...products];
-        if (IS_VERCEL) {
-          try {
-            const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
-            if (rows.length > 0) productsList = JSON.parse(rows[0].value);
-          } catch (e) { /* bỏ qua */ }
-        }
-
-        let updatedCount = 0;
-        for (const item of orderItems) {
-          const targetNorm = normalizeProductCode(item.ma || item.sku || item.productId);
-          if (!targetNorm) continue;
-          const prod = productsList.find(p => normalizeProductCode(p.ma) === targetNorm);
-          if (prod) {
-            prod.stock = parseFloat(prod.stock || 0) - parseFloat(item.qty || 0);
-            prod.updatedAt = Date.now();
-            updatedCount++;
-          }
-        }
-
-        if (updatedCount > 0) {
-          products = productsList;
-          await saveProducts(productsList);
-          await broadcastUpdate('products_updated');
-        }
-      }
-
-      await broadcastUpdate('orders_updated');
-      return res.json({ ok: true, message: 'Đã tạo và lưu đơn hàng thủ công thành công!', orderId: order.id });
-
-    } catch (err) {
-      console.error('Lỗi khi Admin tạo đơn hàng thủ công:', err);
-      return res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi tạo đơn: ' + err.message });
-    }
+  // Chỉ coi là đơn Admin thủ công nếu yêu cầu có cờ isManualOrder rõ ràng
+  if (isAdmin && req.body && req.body.isManualOrder) {
+    return handleCreateManualOrder(req, res);
   }
+
+  // Toàn bộ các yêu cầu còn lại (kể cả Admin đang thử đặt đơn trên website bán lẻ)
+  // ĐỀU ĐƯỢC XỬ LÝ THEO LUỒNG ĐƠN KHÁCH HÀNG: Trạng thái "Chờ xác nhận", có gửi email!
 
   // ─── CHỐNG SPAM ─────────────────────────────────────────────────────────────
   // Cảnh báo khi đặt đơn trong 2 phút qua.

@@ -4919,7 +4919,7 @@ async function submitManualOrder() {
   }));
 
   try {
-    const res = await adminFetch('/api/orders', {
+    const res = await adminFetch('/api/admin/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -4931,7 +4931,8 @@ async function submitManualOrder() {
         note,
         items: payloadItems,
         shippingFee: isNaN(shippingFee) ? 0 : shippingFee,
-        status
+        status,
+        isManualOrder: true
       })
     });
 
