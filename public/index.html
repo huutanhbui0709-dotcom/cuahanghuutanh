@@ -20,6 +20,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           screens: {
@@ -31,9 +32,17 @@
           }
         }
       }
-    }
+    };
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
   </script>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2.1">
   <style>
     /* Đè CSS cũ bằng Tailwind tương thích với JS */
     #cartCount {
@@ -231,6 +240,12 @@
         </div>
       </a>
       <div class="flex-shrink-0 flex items-center gap-2">
+        <button id="themeToggleBtn" onclick="toggleTheme()"
+          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-slate-700 hover:border-amber-400/40 shadow-xs cursor-pointer"
+          title="Chuyển đổi giao diện Sáng / Tối">
+          <i id="themeToggleIcon" class="fa-solid fa-moon"></i>
+          <span class="max-md:hidden text-slate-300 font-medium text-xs" id="themeToggleText">Tối</span>
+        </button>
         <button
           class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold px-3 py-2 xs:px-4 xs:py-2 sm:px-5 sm:py-2.5 rounded-xl transition duration-150 flex items-center gap-1.5 xxs:gap-2 text-sm sm:text-base border border-amber-400/30 hover:border-amber-400/60 shadow-lg"
           onclick="toggleLookupView()" id="lookupBtn">
@@ -398,20 +413,30 @@
 
   <!-- ======= CART MODAL (Drawer) ======= -->
   <div class="modal-overlay" id="cartModal">
-    <div class="modal !bg-white shadow-2xl flex flex-col h-full w-full max-w-[480px]">
+    <div class="modal !bg-slate-50 shadow-2xl flex flex-col h-full w-full max-w-[480px] border-l border-slate-200">
       <!-- Modal Header -->
       <div
-        class="px-4 py-4 xs:px-6 xs:py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-        <h3 class="text-lg xs:text-xl font-bold text-slate-800 flex items-center gap-2"><i
-            class="fa-solid fa-cart-shopping"></i> Giỏ hàng của bạn</h3>
+        class="px-5 py-4 xs:px-6 xs:py-5 border-b border-slate-200/80 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <i class="fa-solid fa-bag-shopping"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base xs:text-lg font-extrabold text-slate-900 leading-tight">Giỏ hàng của bạn</h3>
+              <span id="cartHeaderBadge" class="hidden text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">0</span>
+            </div>
+            <p id="cartHeaderSubtitle" class="text-xs text-slate-400 font-medium mt-0.5">Sản phẩm đã chọn</p>
+          </div>
+        </div>
         <button
-          class="w-8 h-8 xs:w-9 xs:h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"
-          onclick="closeCart()">✕</button>
+          class="w-8 h-8 xs:w-9 xs:h-9 rounded-xl hover:bg-slate-100 active:scale-95 flex items-center justify-center text-slate-400 hover:text-slate-700 transition"
+          onclick="closeCart()" title="Đóng giỏ hàng">✕</button>
       </div>
       <!-- Modal Body -->
-      <div class="flex-1 overflow-y-auto px-4 py-3 xs:px-6 xs:py-4" id="cartBody"></div>
+      <div class="flex-1 overflow-y-auto px-4 py-4 xs:px-5 xs:py-4 space-y-3" id="cartBody"></div>
       <!-- Modal Footer -->
-      <div class="border-t border-slate-100 p-4 xs:p-6 bg-white" id="cartFooter"></div>
+      <div class="border-t border-slate-200/80 p-4 xs:p-5 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.04)]" id="cartFooter"></div>
     </div>
   </div>
 
@@ -492,17 +517,17 @@
 
       <!-- Modal Footer -->
       <div
-        class="border-t border-slate-100 p-4 bg-white flex flex-col xxs:flex-row xxs:items-center justify-between gap-3 xxs:gap-4">
+        class="border-t border-slate-200/80 p-4 bg-white flex flex-col xxs:flex-row xxs:items-center justify-between gap-3 xxs:gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
         <div
           class="flex flex-row xxs:flex-col justify-between xxs:justify-start items-center xxs:items-start w-full xxs:w-auto">
           <span class="text-xs font-bold text-slate-500">Tổng thanh toán:</span>
-          <span class="text-lg font-extrabold text-blue-600 leading-none mt-1" id="confirmTotal"></span>
+          <span class="text-lg xs:text-xl font-black text-slate-900 leading-none mt-1" id="confirmTotal"></span>
         </div>
         <button
-          class="w-full xxs:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2"
+          class="w-full xxs:flex-1 py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 rounded-xl font-black text-sm shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-2"
           id="submitOrderBtn" onclick="submitOrder()">
-          <span><i class="fa-solid fa-calendar-check" style="color: rgb(99, 230, 190);"></i>
-            Xác nhận đặt hàng</span>
+          <span><i class="fa-solid fa-calendar-check text-slate-950"></i></span>
+          <span>Xác nhận đặt hàng</span>
         </button>
       </div>
     </div>

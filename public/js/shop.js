@@ -51,6 +51,34 @@ function getProductImageUrl(p) {
 }
 
 // ==============================
+// THEME (DARK / LIGHT)
+// ==============================
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  updateThemeUI(isDark);
+}
+
+function updateThemeUI(isDark) {
+  if (isDark === undefined) {
+    isDark = document.documentElement.classList.contains('dark');
+  }
+  const icon = document.getElementById('themeToggleIcon');
+  const text = document.getElementById('themeToggleText');
+  if (icon) {
+    icon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-slate-300';
+  }
+  if (text) {
+    text.textContent = isDark ? 'Sáng' : 'Tối';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateThemeUI();
+});
+
+
+// ==============================
 // LOAD DATA FROM SERVER
 // ==============================
 // Build per-type product counts
@@ -202,61 +230,53 @@ function renderShop() {
   grid.innerHTML = paged.map(p => `
 
     <!-- ========== MOBILE CARD (ẩn trên sm+) ========== -->
-    <div class="sm:hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md transition duration-200 group relative w-full">
-      <!-- Clickable details area -->
-      <div class="cursor-pointer active:bg-slate-50 transition duration-150 p-2 pb-0 flex-1 flex flex-col relative" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
-        <span class="absolute top-2 right-2 text-[9px] text-indigo-700 bg-indigo-50/90 border border-indigo-150 px-1.5 py-0.5 rounded font-black truncate max-w-[90px] z-10">
+    <div class="sm:hidden group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-300 relative w-full">
+      <!-- Image area -->
+      <div class="relative aspect-square bg-slate-50 flex items-center justify-center overflow-hidden cursor-pointer active:bg-slate-100 transition duration-150" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
+        ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-4xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
+        <span class="absolute top-2 left-2 text-[9px] text-amber-900 bg-amber-400/90 px-1.5 py-0.5 rounded-md font-bold truncate max-w-[90px] z-10 shadow-sm">
           ${p.loai || 'Hàng hóa'}
         </span>
-        <div class="flex flex-row items-stretch gap-2 mb-2">
-          <div class="bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center w-20 h-20 overflow-hidden flex-shrink-0">
-            ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-cover" />` : `<span class="text-3xl select-none filter drop-shadow-sm opacity-60">${getIcon(p.ten)}</span>`}
-          </div>
-          <div class="flex flex-col items-start justify-end flex-1 min-w-0">
-            <div class="flex flex-col">
-              <span class="text-base font-black text-blue-600 leading-none">${formatPriceMobile(p.gia)}</span>
-              <span class="text-[10px] text-slate-400 font-medium mt-1">/${p.donvi || 'Cái'}</span>
-            </div>
-          </div>
-        </div>
-        <div class="border border-slate-200 rounded-xl flex items-center justify-center h-[42px] mb-2 px-2 bg-slate-50/50 w-full mt-auto">
-          <div class="text-[11px] font-bold text-slate-800 leading-tight line-clamp-2 text-center" title="${p.ten}">${p.ten}</div>
-        </div>
       </div>
-      
-      <!-- Cart button -->
-      <div class="px-2.5 pb-2">
-        <div class="pt-2 border-t border-slate-100">
-          <button class="w-full h-8 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm text-[11px]" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
-            <i class="fa-solid fa-cart-plus"></i> Thêm
+      <!-- Info -->
+      <div class="p-2.5 flex flex-col flex-1">
+        <div class="text-[11px] font-bold text-slate-800 leading-tight line-clamp-2 mb-1.5 min-h-[28px] cursor-pointer" title="${p.ten}" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">${p.ten}</div>
+        <span class="text-[9px] font-mono text-slate-400 uppercase mb-1.5">${p.ma}</span>
+        <div class="mt-auto flex items-end justify-between gap-1.5 pt-2 border-t border-slate-100">
+          <div class="flex flex-col">
+            <span class="text-sm font-black text-blue-600 leading-none">${formatPriceMobile(p.gia)}</span>
+            <span class="text-[9px] text-slate-400 font-medium mt-0.5">/${p.donvi || 'Cái'}</span>
+          </div>
+          <button class="shrink-0 w-8 h-8 bg-slate-100 text-slate-600 group-hover:bg-amber-500 group-hover:text-slate-900 rounded-lg flex items-center justify-center transition-colors duration-300 active:scale-90 text-xs shadow-sm" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
+            <i class="fa-solid fa-cart-plus"></i>
           </button>
         </div>
       </div>
     </div>
 
     <!-- ========== DESKTOP CARD (ẩn trên mobile) ========== -->
-    <div class="max-sm:hidden flex bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-col h-full hover:shadow-md transition duration-200 group">
-      <div class="bg-slate-50 border-b border-slate-100 flex items-center justify-center h-44 w-full overflow-hidden flex-shrink-0 relative transition p-3 cursor-pointer group/img overflow-hidden" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
-        ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-contain transition duration-300 group-hover/img:scale-105" />` : `<span class="text-6xl select-none filter drop-shadow-sm opacity-60 transition duration-300 group-hover/img:scale-105">${getIcon(p.ten)}</span>`}
+    <div class="max-sm:hidden group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-300">
+      <div class="relative aspect-[4/3] bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden cursor-pointer p-4" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
+        ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-6xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
+        <span class="absolute top-3 left-3 text-[11px] text-amber-900 bg-amber-400/90 px-2 py-1 rounded-md font-bold shadow-sm">
+          ${p.loai || 'Hàng hóa'}
+        </span>
         <!-- Hover Overlay -->
-        <div class="absolute inset-0 bg-slate-950/10 opacity-0 group-hover/img:opacity-100 transition duration-200 flex items-center justify-center">
-          <span class="w-10 h-10 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-md transform scale-90 group-hover/img:scale-100 transition duration-200">
-            <i class="fa-solid fa-receipt" style="color: rgb(255, 212, 59);"></i>
+        <div class="absolute inset-0 bg-slate-900/5 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center pointer-events-none">
+          <span class="w-10 h-10 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition duration-300">
+            <i class="fa-solid fa-eye text-amber-500"></i>
           </span>
         </div>
       </div>
       <div class="p-4 flex flex-col flex-1">
-        <div class="text-[15px] font-bold text-slate-800 leading-tight mb-1.5 line-clamp-2 h-[38px] cursor-pointer hover:text-blue-600 transition" title="${p.ten}" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">${p.ten}</div>
-        <div class="flex items-center gap-1.5 mb-3 flex-wrap">
-          <span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1 font-semibold"><i class="fa-solid fa-hashtag text-slate-400/80"></i>${p.ma}</span>
-          <span class="text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded font-black truncate max-w-[120px]">${p.loai || 'Hàng hóa'}</span>
-        </div>
-        <div class="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
-          <div class="flex flex-col justify-center">
-            <span class="text-lg font-black text-blue-600 leading-none">${formatPrice(p.gia)}</span>
-            ${p.donvi ? `<span class="text-xs text-slate-400 mt-1 font-medium">/${p.donvi}</span>` : ''}
+        <span class="font-mono text-[10px] text-slate-400 uppercase mb-1 tracking-wide">${p.ma}</span>
+        <div class="text-[15px] font-bold text-slate-800 leading-tight mb-2 line-clamp-2 min-h-[38px] cursor-pointer hover:text-blue-600 transition" title="${p.ten}" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">${p.ten}</div>
+        <div class="mt-auto flex items-end justify-between gap-2 border-t border-slate-100 pt-3">
+          <div class="flex items-end gap-1">
+            <span class="text-xl font-black text-slate-900 leading-none">${formatPrice(p.gia)}</span>
+            ${p.donvi ? `<span class="text-xs text-slate-400 font-medium mb-0.5">/${p.donvi}</span>` : ''}
           </div>
-          <button class="shrink-0 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.97] text-slate-900 font-extrabold rounded-xl flex items-center justify-center gap-2 transition shadow-sm text-sm" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
+          <button class="shrink-0 px-4 py-2.5 bg-slate-100 text-slate-600 group-hover:bg-amber-500 group-hover:text-slate-900 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors duration-300 shadow-sm text-sm active:scale-[0.97]" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
             <i class="fa-solid fa-cart-plus"></i>
             <span>Thêm giỏ</span>
           </button>
@@ -335,10 +355,13 @@ function loadCart() {
 }
 
 function clearCart() {
+  if (cart.length === 0) return;
+  if (!confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) return;
   cart = [];
   updateCartBadge();
   saveCart();
   renderCart();
+  showToast('<i class="fa-solid fa-trash-can"></i> Đã xóa toàn bộ giỏ hàng', 'info');
 }
 
 // ==============================
@@ -358,8 +381,10 @@ function addToCart(ma) {
 function updateCartBadge() {
   const total = cart.reduce((s, x) => s + x.qty, 0);
   const badge = document.getElementById('cartCount');
-  badge.textContent = total;
-  badge.classList.toggle('visible', total > 0);
+  if (badge) {
+    badge.textContent = total;
+    badge.classList.toggle('visible', total > 0);
+  }
 }
 
 function openCart() {
@@ -374,13 +399,37 @@ function closeCart() {
 function renderCart() {
   const body = document.getElementById('cartBody');
   const footer = document.getElementById('cartFooter');
+  const headerSubtitle = document.getElementById('cartHeaderSubtitle');
+  const headerBadge = document.getElementById('cartHeaderBadge');
+
+  const totalItemsCount = cart.reduce((s, x) => s + x.qty, 0);
+
+  if (headerBadge) {
+    if (totalItemsCount > 0) {
+      headerBadge.textContent = totalItemsCount;
+      headerBadge.classList.remove('hidden');
+    } else {
+      headerBadge.classList.add('hidden');
+    }
+  }
+
+  if (headerSubtitle) {
+    headerSubtitle.textContent = cart.length > 0 
+      ? `${cart.length} loại mặt hàng (${totalItemsCount} sản phẩm)` 
+      : 'Sản phẩm đã chọn';
+  }
 
   if (cart.length === 0) {
     body.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-16 text-slate-400">
-        <div class="text-6xl mb-4 select-none"><i class="fa-solid fa-cart-shopping"></i></div>
-        <div class="text-lg font-bold text-slate-700">Giỏ hàng đang trống</div>
-        <p class="mt-2 text-sm text-slate-500">Hãy thêm sản phẩm từ cửa hàng</p>
+      <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center text-2xl mb-4 shadow-sm">
+          <i class="fa-solid fa-cart-shopping"></i>
+        </div>
+        <div class="text-base font-bold text-slate-800">Giỏ hàng của bạn đang trống</div>
+        <p class="mt-1.5 text-xs text-slate-500 max-w-[240px] leading-relaxed">Chưa có sản phẩm nào trong giỏ. Khám phá các mặt hàng chất lượng của chúng tôi ngay!</p>
+        <button onclick="closeCart()" class="mt-6 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2">
+          <i class="fa-solid fa-bag-shopping text-amber-400"></i> Mua sắm ngay
+        </button>
       </div>
     `;
     footer.innerHTML = '';
@@ -388,30 +437,47 @@ function renderCart() {
   }
 
   body.innerHTML = cart.map(item => `
-    <div class="swipe-container relative overflow-hidden w-full touch-pan-y" data-ma="${item.ma.replace(/'/g, "\\'")}">
-      <!-- Background Delete Action -->
-      <div class="absolute right-0 top-0 bottom-0 bg-red-500 text-white flex items-center justify-center w-16 cursor-pointer rounded-xl my-1" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')">
-        <i class="fa-solid fa-trash text-lg"></i>
+    <div class="swipe-container relative overflow-hidden w-full touch-pan-y rounded-2xl border border-slate-200/80 bg-white shadow-xs hover:border-slate-300 transition-colors" data-ma="${item.ma.replace(/'/g, "\\'")}">
+      <!-- Background Delete Action (Swipe on Mobile) -->
+      <div class="absolute right-0 top-0 bottom-0 bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center w-16 cursor-pointer rounded-r-2xl transition" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')">
+        <i class="fa-solid fa-trash text-base"></i>
       </div>
       <!-- Foreground content -->
-      <div class="swipe-content relative bg-white transition-transform duration-150 ease-out flex gap-2 xxs:gap-3 items-start py-3 xxs:py-4 border-b border-slate-100 w-full">
-        <div class="w-10 h-10 xxs:w-12 xxs:h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-          ${item.image ? `<img src="${getProductImageUrl(item)}" class="w-full h-full object-cover" />` : `<span class="text-xl xxs:text-2xl">${getIcon(item.ten)}</span>`}
+      <div class="swipe-content relative bg-white transition-transform duration-150 ease-out flex gap-3 items-center p-3 w-full rounded-2xl">
+        <!-- Product Image -->
+        <div class="w-14 h-14 xxs:w-16 xxs:h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
+          ${item.image ? `<img src="${getProductImageUrl(item)}" class="w-full h-full object-cover" />` : `<span class="text-xl">${getIcon(item.ten)}</span>`}
         </div>
-        <div class="flex-1 min-w-0">
-          <div class="text-xs xxs:text-sm font-bold text-slate-800 leading-tight truncate" title="${item.ten}">${item.ten}</div>
-          <div class="text-[10px] xxs:text-xs font-mono font-bold text-slate-400 mt-0.5">${item.ma}</div>
-          <div class="flex items-center gap-1 xxs:gap-2 mt-2">
-            <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded bg-slate-100 font-bold hover:bg-slate-200 active:scale-95 text-slate-700 transition flex items-center justify-center text-xs xxs:text-sm" onclick="changeQty('${item.ma.replace(/'/g, "\\'")}',-1)">−</button>
-            <span class="w-6 xxs:w-8 text-center font-bold text-slate-800 text-xs xxs:text-sm">${item.qty}</span>
-            <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded bg-slate-100 font-bold hover:bg-slate-200 active:scale-95 text-slate-700 transition flex items-center justify-center text-xs xxs:text-sm" onclick="changeQty('${item.ma.replace(/'/g, "\\'")}',1)">+</button>
-            ${item.donvi ? `<span class="text-[10px] xxs:text-xs font-semibold text-slate-500 ml-0.5 xxs:ml-1">(${item.donvi})</span>` : ''}
+
+        <!-- Info & Controls -->
+        <div class="flex-1 min-w-0 pr-1">
+          <div class="flex items-center gap-1.5 mb-0.5">
+            <span class="text-[10px] font-mono font-bold text-amber-700 bg-amber-500/10 px-1.5 py-0.5 rounded tracking-wide uppercase">${item.ma}</span>
+            ${item.donvi ? `<span class="text-[11px] font-semibold text-slate-400">· ${item.donvi}</span>` : ''}
+          </div>
+          <div class="text-xs xxs:text-sm font-bold text-slate-800 leading-snug line-clamp-1" title="${item.ten}">${item.ten}</div>
+
+          <!-- Quantity Adjuster & Subtotal -->
+          <div class="flex items-center justify-between mt-2">
+            <!-- Pill Quantity Controls -->
+            <div class="inline-flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200/60">
+              <button class="w-6 h-6 rounded-md bg-white hover:bg-slate-200/80 active:scale-90 text-slate-700 font-bold flex items-center justify-center text-xs transition shadow-xs" onclick="changeQty('${item.ma.replace(/'/g, "\\'")}', -1)" title="Giảm">−</button>
+              <span class="w-7 text-center font-bold text-slate-800 text-xs select-none">${item.qty}</span>
+              <button class="w-6 h-6 rounded-md bg-white hover:bg-slate-200/80 active:scale-90 text-slate-700 font-bold flex items-center justify-center text-xs transition shadow-xs" onclick="changeQty('${item.ma.replace(/'/g, "\\'")}', 1)" title="Tăng">+</button>
+            </div>
+
+            <!-- Price -->
+            <div class="text-right">
+              <div class="text-xs xxs:text-sm font-black text-slate-900">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</div>
+              ${item.qty > 1 && item.gia ? `<div class="text-[10px] text-slate-400 font-medium">${formatPrice(item.gia)}/món</div>` : ''}
+            </div>
           </div>
         </div>
-        <div class="flex flex-col items-end gap-2 flex-shrink-0">
-          <div class="text-xs xxs:text-sm font-extrabold text-blue-600">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</div>
-          <button class="w-6 h-6 xxs:w-7 xxs:h-7 rounded-lg text-red-500 hover:bg-red-50 active:scale-95 flex items-center justify-center text-sm xxs:text-base transition" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
-        </div>
+
+        <!-- Direct Delete Button -->
+        <button class="w-7 h-7 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 active:scale-90 flex items-center justify-center text-xs transition flex-shrink-0 ml-1" title="Xóa sản phẩm" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
       </div>
     </div>
   `).join('');
@@ -420,17 +486,35 @@ function renderCart() {
 
   const total = cart.reduce((s, x) => s + (x.gia * x.qty), 0);
   footer.innerHTML = `
-    <div class="flex justify-between items-center mb-4">
-      <span class="text-sm font-bold text-slate-600">Tổng cộng (${cart.length} loại):</span>
-      <span class="text-xl font-extrabold text-blue-605">${formatPrice(total)}</span>
+    <div class="space-y-3">
+      <!-- Subtotal Box -->
+      <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60">
+        <div class="flex justify-between items-center text-xs text-slate-500 font-semibold mb-1">
+          <span>Tổng số lượng:</span>
+          <span class="font-bold text-slate-700">${totalItemsCount} sản phẩm (${cart.length} loại)</span>
+        </div>
+        <div class="flex justify-between items-baseline pt-2 border-t border-slate-200/60">
+          <span class="text-sm font-bold text-slate-700">Tổng thanh toán:</span>
+          <span class="text-xl xs:text-2xl font-black text-slate-900 tracking-tight">${formatPrice(total)}</span>
+        </div>
+      </div>
+
+      <!-- Main CTA Button -->
+      <button class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 rounded-xl font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/25 transition flex items-center justify-center gap-2" onclick="openOrderForm()">
+        <span><i class="fa-solid fa-arrow-right-to-bracket text-slate-950"></i></span>
+        <span>Tiến hành đặt hàng</span>
+      </button>
+
+      <!-- Secondary Links -->
+      <div class="flex items-center justify-between pt-1 px-1">
+        <button class="text-xs font-semibold text-slate-400 hover:text-rose-600 transition flex items-center gap-1.5" onclick="clearCart()">
+          <i class="fa-regular fa-trash-can"></i> Xóa giỏ hàng
+        </button>
+        <button class="text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center gap-1" onclick="closeCart()">
+          Tiếp tục xem hàng <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
     </div>
-    <button class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-xl font-bold text-base shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2" onclick="openOrderForm()">
-      <span><i class="fa-solid fa-cart-arrow-down" style="color: rgb(99, 230, 190);"></i>
-</span> Đặt hàng ngay
-    </button>
-    <button class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl font-bold text-sm transition mt-3" onclick="clearCart()">
-      Xóa giỏ hàng
-    </button>
   `;
 }
 
@@ -463,7 +547,7 @@ function openOrderForm() {
   confirmItems.innerHTML = cart.map(item => `
     <div class="px-3 py-2 xxs:px-4 xxs:py-3 flex justify-between items-start gap-2 xxs:gap-3 text-xs xxs:text-sm font-medium text-slate-700 border-b border-slate-100 last:border-b-0">
       <span class="flex-1">${item.ten} <strong class="text-slate-800 whitespace-nowrap ml-1">× ${item.qty}</strong></span>
-      <span class="font-bold text-blue-600 flex-shrink-0 text-right mt-0.5">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</span>
+      <span class="font-bold text-amber-600 flex-shrink-0 text-right mt-0.5">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</span>
     </div>
   `).join('');
   document.getElementById('confirmTotal').textContent = formatPrice(total);
@@ -751,15 +835,90 @@ async function copySuccessOrderId() {
 }
 
 // ==============================
-// TOAST
+// TOAST (Industrial Refinement)
 // ==============================
 let toastTimer;
+
+function hideToast() {
+  const t = document.getElementById('toast');
+  if (t) {
+    t.classList.remove('show');
+    clearTimeout(toastTimer);
+  }
+}
+
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.innerHTML = msg;
-  t.className = `toast show ${type ? 'toast-' + type : ''}`;
+  if (!t) return;
+
+  // Extract clean text from msg
+  const cleanText = msg.replace(/<[^>]*>?/gm, '').trim();
+  const isError = type === 'error';
+  const isInfo = type === 'info';
+  const isCartAction = !isError && (cleanText.includes('Đã thêm') || cleanText.includes('giỏ'));
+
+  let title = 'Thông báo';
+  let iconClass = 'fa-solid fa-circle-info';
+  let iconColorClass = 'text-sky-400 bg-sky-500/20';
+  let accentClass = isError ? 'toast-error' : (isInfo ? 'toast-info' : 'toast-success');
+
+  if (isError) {
+    title = 'Thông báo lỗi';
+    iconClass = 'fa-solid fa-circle-exclamation';
+    iconColorClass = 'text-rose-400 bg-rose-500/20';
+  } else if (isCartAction) {
+    title = 'Đã thêm vào giỏ hàng';
+    iconClass = 'fa-solid fa-circle-check';
+    iconColorClass = 'text-amber-400 bg-amber-500/20';
+  } else if (type === 'success') {
+    title = 'Thành công';
+    iconClass = 'fa-solid fa-circle-check';
+    iconColorClass = 'text-amber-400 bg-amber-500/20';
+  }
+
+  // Display text
+  let displayMessage = cleanText;
+  if (isCartAction && displayMessage.startsWith('Đã thêm ')) {
+    displayMessage = displayMessage.replace(/^Đã thêm\s*/, '');
+  }
+
+  t.className = `toast ${accentClass}`;
+  t.innerHTML = `
+    <div class="toast-card">
+      <div class="toast-accent-line"></div>
+      
+      <!-- Icon -->
+      <div class="w-8 h-8 rounded-xl ${iconColorClass} flex items-center justify-center flex-shrink-0 text-sm font-bold mt-0.5">
+        <i class="${iconClass}"></i>
+      </div>
+
+      <!-- Text & Action -->
+      <div class="flex-1 min-w-0 pr-1">
+        <div class="text-xs font-bold text-white leading-tight uppercase tracking-wider">${title}</div>
+        <div class="text-[12px] text-slate-300 font-medium leading-relaxed mt-0.5 break-words line-clamp-2" title="${displayMessage}">${displayMessage}</div>
+        ${isCartAction ? `
+          <button onclick="openCart(); hideToast();" class="mt-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-extrabold text-[11px] rounded-lg transition inline-flex items-center gap-1.5 shadow-xs">
+            <i class="fa-solid fa-bag-shopping"></i> Xem giỏ hàng
+          </button>
+        ` : ''}
+      </div>
+
+      <!-- Close Button -->
+      <button onclick="hideToast()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/80 transition flex-shrink-0 text-xs" title="Đóng">✕</button>
+
+      <!-- Progress bar -->
+      <div class="toast-progress"></div>
+    </div>
+  `;
+
+  // Force reflow to restart CSS progress animation
+  void t.offsetWidth;
+  t.classList.add('show');
+
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+  }, 3500);
 }
 
 // ==============================

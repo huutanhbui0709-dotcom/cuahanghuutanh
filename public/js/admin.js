@@ -65,6 +65,37 @@ function closeModal(id) {
   }
 }
 
+// ==============================
+// THEME (DARK / LIGHT)
+// ==============================
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  updateThemeUI(isDark);
+  if (typeof renderDashboard === 'function' && document.getElementById('tab-dashboard')?.classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+function updateThemeUI(isDark) {
+  if (isDark === undefined) {
+    isDark = document.documentElement.classList.contains('dark');
+  }
+  const icon = document.getElementById('themeToggleIcon');
+  const text = document.getElementById('themeToggleText');
+  if (icon) {
+    icon.className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-slate-300';
+  }
+  if (text) {
+    text.textContent = isDark ? 'Sáng' : 'Tối';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateThemeUI();
+});
+
+
 // Gọi fetch tới các API cần đăng nhập; nếu phiên đăng nhập hết hạn (401)
 // thì tự động quay về màn hình đăng nhập thay vì để lỗi mơ hồ.
 async function adminFetch(url, options) {
@@ -297,27 +328,29 @@ async function saveSettingsForm() {
 // ==============================
 async function loadAdminSlides() {
   const listEl = document.getElementById('slidesList');
-  listEl.innerHTML = '<p style="color:var(--muted);font-size:.875rem;">Đang tải...</p>';
+  listEl.innerHTML = '<p class="text-slate-400 dark:text-slate-500 text-sm py-4">Đang tải...</p>';
   try {
     const res = await fetch('/api/slides');
     const slides = await res.json();
     if (slides.length === 0) {
-      listEl.innerHTML = '<p style="color:var(--muted);font-size:.875rem;">Chưa có ảnh slide nào. Hãy tải lên ảnh mới.</p>';
+      listEl.innerHTML = '<p class="text-slate-400 dark:text-slate-500 text-sm italic col-span-full py-8 text-center">Chưa có ảnh slide nào. Hãy tải lên ảnh mới.</p>';
       return;
     }
     listEl.innerHTML = slides.map(url => `
-      <div style="border:1.5px solid var(--border); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; background:#fff;">
-        <div style="height:120px; background-image:url('${url}'); background-size:cover; background-position:center;"></div>
-        <div style="padding:10px; display:flex; flex-direction:column; gap:8px;">
-          <code style="font-size:.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${url}">${url.split('/').pop()}</code>
-          <button class="btn btn-sm btn-danger" style="width:100%; justify-content:center;" onclick="deleteSlide('${url}')">
-            <i class="fa-solid fa-trash"></i> Xóa Slide
+      <div class="slide-card-admin bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 flex flex-col group">
+        <div class="h-32 bg-slate-100 dark:bg-slate-950 bg-cover bg-center border-b border-slate-100 dark:border-slate-800" style="background-image:url('${url}');"></div>
+        <div class="p-3.5 flex flex-col gap-2.5 flex-1 justify-between bg-white dark:bg-slate-900">
+          <code class="text-[11px] text-slate-600 dark:text-slate-300 font-mono bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-200/60 dark:border-slate-800 overflow-hidden text-ellipsis whitespace-nowrap block" title="${url}">
+            <i class="fa-regular fa-image text-slate-400 mr-1 text-[10px]"></i>${url.split('/').pop()}
+          </code>
+          <button class="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white dark:bg-rose-950/40 dark:hover:bg-rose-600 dark:text-rose-400 dark:hover:text-white border border-rose-200/80 dark:border-rose-800/60 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-xs" onclick="deleteSlide('${url}')">
+            <i class="fa-solid fa-trash-can text-[11px]"></i> Xóa Slide
           </button>
         </div>
       </div>
     `).join('');
   } catch (err) {
-    listEl.innerHTML = '<p style="color:var(--danger);font-size:.875rem;"><i class="fa-solid fa-xmark"></i> Lỗi khi tải danh sách slide.</p>';
+    listEl.innerHTML = '<p class="text-rose-500 text-sm col-span-full py-4 text-center"><i class="fa-solid fa-xmark"></i> Lỗi khi tải danh sách slide.</p>';
   }
 }
 
@@ -498,17 +531,17 @@ function _renderDashboardKpis() {
   ];
 
   grid.innerHTML = kpiDefs.map(k => `
-    <div onclick="${k.onclick ? k.onclick + ';' : ''}" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;cursor:${k.onclick ? 'pointer' : 'default'};transition:box-shadow .15s,transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.04);"
-      onmouseover="${k.onclick ? "this.style.boxShadow='0 4px 16px rgba(37,99,235,.10)';this.style.transform='translateY(-1px)'" : ''}"
-      onmouseout="${k.onclick ? "this.style.boxShadow='0 1px 3px rgba(0,0,0,.04)';this.style.transform=''" : ''}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:0.75rem;font-weight:600;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:85%;">${k.label}</span>
-        <div style="width:32px;height:32px;min-width:32px;border-radius:8px;background:${k.iconBg};display:flex;align-items:center;justify-content:center;">
-          <i class="fa-solid ${k.icon}" style="color:${k.iconColor};font-size:0.85rem;"></i>
+    <div onclick="${k.onclick ? k.onclick + ';' : ''}" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4 ${k.onclick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-amber-400/40' : 'cursor-default'} transition-all duration-150 shadow-xs flex flex-col justify-between">
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate max-w-[80%]">${k.label}</span>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:${k.iconBg};">
+          <i class="fa-solid ${k.icon} text-xs" style="color:${k.iconColor};"></i>
         </div>
       </div>
-      <div style="font-size:1.4rem;font-weight:800;color:#0f172a;line-height:1;">${k.value}</div>
-      ${k.sub ? `<div style="font-size:0.72rem;color:${k.subColor};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${k.sub}">${k.sub}</div>` : ''}
+      <div>
+        <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">${k.value}</div>
+        ${k.sub ? `<div class="text-[11px] font-medium mt-1 truncate" style="color:${k.subColor};" title="${k.sub}">${k.sub}</div>` : ''}
+      </div>
     </div>
   `).join('');
 }
@@ -814,7 +847,7 @@ function renderAdminTable() {
   document.getElementById('adminProductCount').textContent = total;
   document.getElementById('adminTable').innerHTML = `
     <table>
-      <thead><tr><th>#</th><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá bán</th><th>ĐVT</th><th>Loại</th><th>Trạng thái</th><th>BÁN CHẠY</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>#</th><th>Ảnh</th><th>Mã SP</th><th>Tên sản phẩm</th><th>Giá bán</th><th>ĐVT</th><th>Loại</th><th>Trạng thái</th><th>BÁN CHẠY</th><th style="text-align:center">Thao tác</th></tr></thead>
       <tbody>${paged.map((p, i) => `
         <tr>
           <td>${(adminPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
@@ -828,10 +861,14 @@ function renderAdminTable() {
           <td style="text-align:center">
             <input type="checkbox" ${p.isBestSeller ? 'checked' : ''} onchange="toggleBestSeller('${p.ma.replace(/'/g, "\\'")}', this.checked)" style="width:18px;height:18px;cursor:pointer">
           </td>
-          <td>
+          <td style="text-align:center">
             <div class="row-actions">
-              <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border)" onclick="openProductModal('${p.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-pencil"></i></button>
-              <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.ma.replace(/'/g, "\\'")}')"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn-act btn-act-edit" onclick="openProductModal('${p.ma.replace(/'/g, "\\'")}')" title="Sửa sản phẩm">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="btn-act btn-act-delete" onclick="deleteProduct('${p.ma.replace(/'/g, "\\'")}')" title="Xóa sản phẩm">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
             </div>
           </td>
         </tr>`).join('')}
@@ -1099,6 +1136,7 @@ async function saveProductForm() {
     populateProductTypeFilter();
     renderAdminTable();
     renderDashboard();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
     showToast(isEdit ? '<i class="fa-solid fa-circle-check"></i> Đã cập nhật sản phẩm' : '<i class="fa-solid fa-circle-check"></i> Đã thêm sản phẩm', 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
@@ -1119,6 +1157,7 @@ async function deleteProduct(ma) {
     populateProductTypeFilter();
     renderAdminTable();
     renderDashboard();
+    if (typeof sk_filterAndRender === 'function') sk_filterAndRender();
     showToast('<i class="fa-solid fa-trash"></i> Đã xoá sản phẩm', 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
@@ -1316,7 +1355,7 @@ function renderOrdersTable() {
 
   document.getElementById('ordersTable').innerHTML = `
     <table>
-      <thead><tr><th>#</th><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Địa chỉ</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày đặt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>#</th><th>Mã đơn</th><th>Khách hàng</th><th>SĐT</th><th>Địa chỉ</th><th>Sản phẩm</th><th>Tổng tiền</th><th>Ngày đặt</th><th>Trạng thái</th><th style="text-align:center">Thao tác</th></tr></thead>
       <tbody>${pagedOrders.map((o, i) => `
         <tr class="order-row">
           <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">${(orderPage - 1) * ORDERS_PER_PAGE + i + 1}</td>
@@ -1328,21 +1367,23 @@ function renderOrdersTable() {
           <td style="font-weight:700;color:var(--primary)">${formatPrice(o.total)}</td>
           <td style="white-space:nowrap;font-size:.82rem">${formatOrderDate(o.createdAt)}</td>
           <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
-          <td style="white-space:nowrap">
-            <div style="display:flex;gap:8px;justify-content:flex-start;align-items:center">
-              <button class="btn btn-sm btn-primary" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')"><i class="fa-solid fa-eye"></i></button>
+          <td style="white-space:nowrap" class="text-center">
+            <div class="row-actions">
+              <button class="btn-act btn-act-view" title="Xem chi tiết" onclick="viewOrderDetail('${o.id}')">
+                <i class="fa-solid fa-eye"></i>
+              </button>
               ${o.status === 'Chờ xác nhận' || o.status === 'Đã xác nhận'
-      ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
+      ? `<button class="btn-act btn-act-print" title="In hóa đơn" onclick="printOrderInvoice('${o.id}')"><i class="fa-solid fa-print"></i></button>`
       : ''
     }
               ${o.status === 'Chờ xác nhận'
-      ? `<button class="btn btn-sm btn-success" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
+      ? `<button class="btn-act btn-act-confirm" title="Xác nhận đơn" onclick="updateOrderStatus('${o.id}','Đã xác nhận')"><i class="fa-solid fa-circle-check"></i></button>`
       : ''
     }
               ${o.status === 'Chờ xác nhận'
-      ? `<button class="btn btn-sm btn-danger" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
+      ? `<button class="btn-act btn-act-delete" title="Huỷ đơn" onclick="updateOrderStatus('${o.id}','Đã huỷ')"><i class="fa-solid fa-xmark"></i></button>`
       : o.status === 'Đã huỷ'
-        ? `<button class="btn btn-sm btn-danger" title="Xóa đơn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash"></i></button>`
+        ? `<button class="btn-act btn-act-delete" title="Xóa vĩnh viễn" onclick="deleteOrder('${o.id}')"><i class="fa-solid fa-trash-can"></i></button>`
         : ''
     }
             </div>
@@ -2112,12 +2153,61 @@ function showFolderUploadResult(type, msg) {
 // TOAST
 // ==============================
 let toastTimer;
+
+function hideToast() {
+  const t = document.getElementById('toast');
+  if (t) {
+    t.classList.remove('show');
+    clearTimeout(toastTimer);
+  }
+}
+
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.innerHTML = msg;
-  t.className = `toast show ${type ? 'toast-' + type : ''}`;
+  if (!t) return;
+
+  const cleanText = msg.replace(/<[^>]*>?/gm, '').trim();
+  const isError = type === 'error';
+  const isInfo = type === 'info';
+
+  let title = 'Thông báo';
+  let iconClass = 'fa-solid fa-circle-info';
+  let iconColorClass = 'text-sky-400 bg-sky-500/20';
+  let accentClass = isError ? 'toast-error' : (isInfo ? 'toast-info' : 'toast-success');
+
+  if (isError) {
+    title = 'Thông báo lỗi';
+    iconClass = 'fa-solid fa-circle-exclamation';
+    iconColorClass = 'text-rose-400 bg-rose-500/20';
+  } else if (type === 'success') {
+    title = 'Thành công';
+    iconClass = 'fa-solid fa-circle-check';
+    iconColorClass = 'text-amber-400 bg-amber-500/20';
+  }
+
+  t.className = `toast ${accentClass}`;
+  t.innerHTML = `
+    <div class="toast-card">
+      <div class="toast-accent-line"></div>
+      <div class="w-8 h-8 rounded-xl ${iconColorClass} flex items-center justify-center flex-shrink-0 text-sm font-bold mt-0.5">
+        <i class="${iconClass}"></i>
+      </div>
+      <div class="flex-1 min-w-0 pr-1">
+        <div class="text-xs font-bold text-white leading-tight uppercase tracking-wider">${title}</div>
+        <div class="text-[12px] text-slate-300 font-medium leading-relaxed mt-0.5 break-words line-clamp-2">${cleanText}</div>
+      </div>
+      <button onclick="hideToast()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/80 transition flex-shrink-0 text-xs" title="Đóng">✕</button>
+      <div class="toast-progress"></div>
+    </div>
+  `;
+
+  void t.offsetWidth;
+  t.classList.add('show');
+
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('show');
+  }, 3500);
 }
 
 // ==============================
@@ -2769,9 +2859,11 @@ async function loadSuppliersList() {
         <td>${s.phone || '-'}</td>
         <td><span class="badge ${s.status === 'Ngỳnh theo dõi' || s.status === 'Ngừng theo dõi' ? 'badge-red' : 'badge-green'}">${s.status || 'Đang theo dõi'}</span></td>
         <td style="text-align:center;">
-          <button class="p-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors bg-white cursor-pointer" onclick="openEditSupplierModal('${(s.code||'').replace(/'/g,"\\'")}')" title="Sửa thông tin">
-            <i class="fa-solid fa-pen"></i>
-          </button>
+          <div class="row-actions">
+            <button class="btn-act btn-act-edit" onclick="openEditSupplierModal('${(s.code||'').replace(/'/g,"\\'")}')" title="Sửa thông tin">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -3265,14 +3357,10 @@ let currentParsedReceipt = null;
 
 function switchInventoryTab(tabName, btn) {
   document.querySelectorAll('.inventory-tab-btn').forEach(b => {
-    b.classList.remove('btn-primary');
-    b.classList.add('btn-outline');
-    b.style.color = 'black';
+    b.className = 'inventory-tab-btn px-4 py-2 rounded-full font-semibold text-xs transition flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200';
   });
   if (btn) {
-    btn.classList.remove('btn-outline');
-    btn.classList.add('btn-primary');
-    btn.style.color = '';
+    btn.className = 'inventory-tab-btn px-4 py-2 rounded-full font-bold text-xs transition flex items-center gap-2 bg-slate-900 text-white shadow-xs';
   }
 
   document.querySelectorAll('.inventory-tab-content').forEach(content => {
@@ -3458,10 +3546,13 @@ function sk_renderTable(list, startOffset) {
         </td>
         <td class="py-3 px-4"><span class="text-red-600 font-semibold">${formatPrice(totalVal)}</span></td>
         <td class="py-3 px-4">${badgeHtml}</td>
-        <td class="py-3 px-4">
-          <div class="flex items-center gap-1.5">
-            <button class="p-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors bg-white cursor-pointer" onclick="adminTab('products',null); setTimeout(()=>{ const s=document.getElementById('adminSearch'); if(s){s.value='${(p.ma||'').replace(/'/g,"\\'")}'; ['adminTypeFilter','adminStatusFilter','adminBestSellerFilter','adminImageFilter'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); adminPage=1; renderAdminTable();} },200);" title="Xem chi tiết">
-              <i class="fa-solid fa-eye text-xs"></i>
+        <td class="py-3 px-4 text-center">
+          <div class="row-actions">
+            <button class="btn-act btn-act-edit" onclick="openProductModal('${(p.ma||'').replace(/'/g, "\\'")}')" title="Sửa sản phẩm">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button class="btn-act btn-act-delete" onclick="deleteProduct('${(p.ma||'').replace(/'/g, "\\'")}')" title="Xóa sản phẩm">
+              <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
         </td>
@@ -3837,26 +3928,28 @@ function filterInventoryHistory() {
   tbody.innerHTML = paged.map(r => {
     const formattedDate = r.import_date || (r.created_at ? new Date(r.created_at).toLocaleDateString('vi-VN') : 'N/A');
     return `
-      <tr class="hover:bg-gray-50 border-b border-gray-100">
-        <td class="w-12 px-4 py-3 text-center">
-          <input type="checkbox" class="inventory-row-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" value="${r.id}" onchange="updateSelectedInventoryCount()" />
+      <tr class="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
+        <td class="w-12 px-4 py-3.5 text-center">
+          <input type="checkbox" class="inventory-row-checkbox w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer" value="${r.id}" onchange="updateSelectedInventoryCount()" />
         </td>
-        <td class="py-3 px-4 font-medium text-gray-900">${r.receipt_code}</td>
-        <td class="py-3 px-4 text-gray-600">${formattedDate}</td>
-        <td class="py-3 px-4 text-sm font-normal text-gray-800 uppercase">${r.supplier_name || 'N/A'}</td>
-        <td class="py-3 px-4 text-gray-600">${r.warehouse_name || 'N/A'}</td>
-        <td class="py-3 px-4"><span class="text-red-600 font-semibold">${formatPrice(r.total_amount)}</span></td>
-        <td class="py-3 px-4"><span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">${r.item_count} mặt hàng</span></td>
-        <td class="py-3 px-4">
-          <div class="flex items-center gap-1.5">
-            <button class="p-1.5 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors bg-white cursor-pointer" onclick="openInventoryReceiptDetail(${r.id})" title="Xem chi tiết">
-              <i class="fa-solid fa-eye text-xs"></i>
+        <td class="py-3.5 px-4">
+          <span class="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-1 rounded-md text-xs border border-slate-200/60">${r.receipt_code}</span>
+        </td>
+        <td class="py-3.5 px-4 text-xs font-medium text-slate-500">${formattedDate}</td>
+        <td class="py-3.5 px-4 text-xs font-bold text-slate-800 uppercase tracking-tight">${r.supplier_name || 'N/A'}</td>
+        <td class="py-3.5 px-4 text-xs font-medium text-slate-600">${r.warehouse_name || 'Kho chính'}</td>
+        <td class="py-3.5 px-4"><span class="text-xs font-black text-slate-900 tracking-tight">${formatPrice(r.total_amount)}</span></td>
+        <td class="py-3.5 px-4"><span class="bg-slate-100 text-slate-700 border border-slate-200/60 px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block">${r.item_count} mặt hàng</span></td>
+        <td class="py-3.5 px-4 text-center">
+          <div class="row-actions">
+            <button class="btn-act btn-act-view" onclick="openInventoryReceiptDetail(${r.id})" title="Xem chi tiết">
+              <i class="fa-solid fa-eye"></i>
             </button>
-            <button class="p-1.5 border border-amber-200 text-amber-600 rounded-lg hover:bg-amber-50 transition-colors bg-white cursor-pointer" onclick="editStockReceipt(${r.id})" title="Sửa chứng từ">
-              <i class="fa-solid fa-pen text-xs"></i>
+            <button class="btn-act btn-act-edit" onclick="editStockReceipt(${r.id})" title="Sửa chứng từ">
+              <i class="fa-solid fa-pen"></i>
             </button>
-            <button class="p-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors bg-white cursor-pointer" onclick="deleteInventoryReceipt(${r.id})" title="Xóa chứng từ">
-              <i class="fa-solid fa-trash text-xs"></i>
+            <button class="btn-act btn-act-delete" onclick="deleteInventoryReceipt(${r.id})" title="Xóa chứng từ">
+              <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
         </td>
@@ -3868,11 +3961,11 @@ function filterInventoryHistory() {
   const tfoot = document.getElementById('inventoryHistoryTableFoot');
   if (tfoot) {
     tfoot.innerHTML = `
-      <tr style="background: var(--bg); border-top: 2px solid var(--border);">
-        <td colspan="5" style="padding: 12px; font-weight: 600; font-size: .875rem; text-align: left; color: var(--text);">
-          <i class="fa-solid fa-sigma"></i> Tổng cộng (${total} phiếu)
+      <tr class="bg-slate-50/90 border-t-2 border-slate-200 font-bold text-xs text-slate-700">
+        <td colspan="5" class="py-3.5 px-4 text-left">
+          <i class="fa-solid fa-calculator text-amber-500 mr-1.5"></i> Tổng cộng (${total} phiếu)
         </td>
-        <td colspan="3" style="padding: 12px; font-weight: 700; color: var(--danger); font-size: 1.05rem; text-align: left;">
+        <td colspan="3" class="py-3.5 px-4 text-left font-black text-slate-900 text-sm tracking-tight">
           ${formatPrice(grandTotal)}
         </td>
       </tr>
@@ -4348,11 +4441,11 @@ function oc_setViewMode(mode) {
   
   if (gridBtn && listBtn) {
     if (mode === 'grid') {
-      gridBtn.className = 'btn btn-sm bg-blue-600 text-white shadow-sm';
-      listBtn.className = 'btn btn-sm bg-white text-gray-500 hover:bg-gray-100';
+      gridBtn.className = 'px-2 py-1 rounded-lg text-xs bg-slate-900 text-white font-bold cursor-pointer';
+      listBtn.className = 'px-2 py-1 rounded-lg text-xs text-slate-500 hover:bg-slate-100 font-bold cursor-pointer';
     } else {
-      listBtn.className = 'btn btn-sm bg-blue-600 text-white shadow-sm';
-      gridBtn.className = 'btn btn-sm bg-white text-gray-500 hover:bg-gray-100';
+      listBtn.className = 'px-2 py-1 rounded-lg text-xs bg-slate-900 text-white font-bold cursor-pointer';
+      gridBtn.className = 'px-2 py-1 rounded-lg text-xs text-slate-500 hover:bg-slate-100 font-bold cursor-pointer';
     }
   }
   
@@ -4687,12 +4780,11 @@ function renderManualOrderItems() {
       
       <!-- THAO TÁC -->
       <td style="padding: 8px 4px; text-align: center;">
-        <button onclick="removeManualOrderItem('${item.ma}')" 
-                style="background: none; border: none; color: #9ca3af; cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center;"
-                onmouseover="this.style.color='#ef4444'; this.style.background='#fee2e2';"
-                onmouseout="this.style.color='#9ca3af'; this.style.background='transparent';">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
+        <div class="row-actions">
+          <button class="btn-act btn-act-delete" onclick="removeManualOrderItem('${item.ma}')" title="Xóa khỏi đơn">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -4993,12 +5085,11 @@ function srfm_addRow(data) {
       <input type="hidden" id="srfm_rowTotalVal_${idx}" value="0" />
     </td>
     <td style="padding:6px 6px;text-align:center;vertical-align:middle;">
-      <button onclick="srfm_removeRow(${idx})"
-        style="background:none;border:none;color:#d1d5db;cursor:pointer;padding:3px 6px;border-radius:5px;font-size:.9rem;transition:color .12s;"
-        onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#d1d5db'"
-        title="Xóa dòng">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
+      <div class="row-actions">
+        <button class="btn-act btn-act-delete" onclick="srfm_removeRow(${idx})" title="Xóa dòng">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
     </td>`;
 
   tbody.appendChild(tr);
@@ -5537,7 +5628,7 @@ function openAddSupplierModal() {
 
   const saveBtn = document.getElementById('sup_saveBtn');
   saveBtn.disabled = false;
-  saveBtn.style.background = '#2563eb';
+  saveBtn.style.background = '';
 
   // Open modal
   document.getElementById('supplierFormModal').classList.add('open');
@@ -5590,7 +5681,7 @@ function openEditSupplierModal(code) {
 
   const saveBtn = document.getElementById('sup_saveBtn');
   saveBtn.disabled = false;
-  saveBtn.style.background = '#2563eb';
+  saveBtn.style.background = '';
 
   // Open modal
   document.getElementById('supplierFormModal').classList.add('open');
