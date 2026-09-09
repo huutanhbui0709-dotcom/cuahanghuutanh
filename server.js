@@ -58,6 +58,7 @@ const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const SPAM_DEVICES_FILE = path.join(DATA_DIR, 'spam_devices.json');
 const SUPPLIERS_FILE = path.join(DATA_DIR, 'suppliers.json');
 const STOCK_RECEIPTS_FILE = path.join(DATA_DIR, 'stock_receipts.json');
+const ORDER_RETURNS_FILE = path.join(DATA_DIR, 'order_returns.json');
 const BUNDLED_PRODUCTS_SEED = path.join(BUNDLED_DATA_DIR, 'products.json');
 
 const IMG_DIR = path.join(DATA_DIR, 'public_img');
@@ -243,6 +244,7 @@ let settings = {
 let spamDevices = [];
 let suppliers = [];
 let stockReceipts = [];
+let orderReturns = [];
 
 const deviceOrderAttempts = new Map();
 const blockedDevices = new Map();
@@ -255,6 +257,7 @@ const saveSettings = makeQueuedWriter(SETTINGS_FILE, 'settings');
 const saveSpamDevices = makeQueuedWriter(SPAM_DEVICES_FILE, null); // visitor_activity ghi trực tiếp
 const saveSuppliers = makeQueuedWriter(SUPPLIERS_FILE, 'suppliers');
 const saveStockReceipts = makeQueuedWriter(STOCK_RECEIPTS_FILE, null);
+const saveOrderReturns = makeQueuedWriter(ORDER_RETURNS_FILE, 'order_returns');
 
 // seedImagesFromPublic() removed — images are now stored in Vercel Blob, not local FS.
 
@@ -360,7 +363,7 @@ async function initializeData() {
       
       // Truy vấn song song app_settings và visitor_activity (chỉ 2 truy vấn tối ưu)
       let results = await Promise.allSettled([
-        sql`SELECT key, value FROM app_settings WHERE key IN ('products', 'settings', 'suppliers')`,
+        sql`SELECT key, value FROM app_settings WHERE key IN ('products', 'settings', 'suppliers', 'order_returns')`,
         sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
       ]);
 
@@ -368,7 +371,7 @@ async function initializeData() {
       if (results[0].status === 'rejected' && String(results[0].reason).includes('does not exist')) {
         await initDbSchema();
         results = await Promise.allSettled([
-          sql`SELECT key, value FROM app_settings WHERE key IN ('products', 'settings', 'suppliers')`,
+          sql`SELECT key, value FROM app_settings WHERE key IN ('products', 'settings', 'suppliers', 'order_returns')`,
           sql`SELECT * FROM visitor_activity WHERE lock_until > ${Date.now()}`
         ]);
       }
@@ -423,6 +426,14 @@ async function initializeData() {
             ON CONFLICT (key) DO NOTHING
           `.catch(e => console.error('Lỗi seed suppliers:', e));
           console.log('📦 Seeded/Loaded default suppliers.');
+        }
+
+        // 4. Parse order_returns
+        if (rowMap.order_returns) {
+          try { orderReturns = JSON.parse(rowMap.order_returns); } catch { orderReturns = []; }
+          console.log(`✅ Loaded ${orderReturns.length} order returns from Vercel DB.`);
+        } else {
+          orderReturns = [];
         }
       } else {
         console.error('❌ Lỗi load app_settings từ Vercel DB:', setRes.reason);
@@ -502,6 +513,10 @@ async function initializeData() {
         await fsp.writeFile(STOCK_RECEIPTS_FILE, '[]', 'utf8');
       }
 
+      if (!(await existsAsync(ORDER_RETURNS_FILE))) {
+        await fsp.writeFile(ORDER_RETURNS_FILE, '[]', 'utf8');
+      }
+
       // Load vào RAM
       products = await readJSONAsync(PRODUCTS_FILE, []);
       settings = await readJSONAsync(SETTINGS_FILE, settings);
@@ -509,6 +524,7 @@ async function initializeData() {
       orders = await readJSONAsync(ORDERS_FILE, []);
       spamDevices = await readJSONAsync(SPAM_DEVICES_FILE, []);
       stockReceipts = await readJSONAsync(STOCK_RECEIPTS_FILE, []);
+      orderReturns = await readJSONAsync(ORDER_RETURNS_FILE, []);
 
       blockedDevices.clear();
       spamDevices.forEach(entry => {
@@ -1556,6 +1572,242 @@ app.delete('/api/admin/orders-cancelled/all', requireAdmin, async (req, res) => 
   }
   res.json({ ok: true, deleted });
 });
+
+// =====================================================================
+// MODULE TRẢ HÀNG (RETURNS MANAGEMENT)
+// Chỉ cho phép trả theo các hoá đơn "Đã xác nhận"
+// =====================================================================
+
+app.get('/api/admin/returns', requireAdmin, async (req, res) => {
+  try {
+    if (IS_VERCEL) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'order_returns'`;
+        if (rows.length > 0 && rows[0].value) {
+          orderReturns = JSON.parse(rows[0].value);
+        }
+      } catch (e) {
+        console.warn('Lỗi đọc order_returns từ DB:', e.message);
+      }
+    }
+    const sorted = (orderReturns || []).slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    res.json({ ok: true, returns: sorted });
+  } catch (err) {
+    console.error('Lỗi lấy danh sách phiếu trả:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi lấy danh sách phiếu trả.' });
+  }
+});
+
+app.post('/api/admin/returns', requireAdmin, async (req, res) => {
+  try {
+    const { orderId, items, reason, note, restock = true } = req.body || {};
+    if (!orderId) {
+      return res.status(400).json({ ok: false, message: 'Vui lòng chọn mã đơn hàng cần trả.' });
+    }
+
+    // 1. Tìm đơn hàng
+    let order = orders.find(o => o.id === orderId);
+    if (!order && IS_VERCEL) {
+      try {
+        const { rows } = await sql`SELECT * FROM orders WHERE id = ${orderId}`;
+        if (rows.length > 0) {
+          const r = rows[0];
+          order = {
+            id: r.id,
+            createdAt: r.created_at,
+            customer: r.customer,
+            phone: r.phone,
+            address: r.address,
+            items: typeof r.items === 'string' ? JSON.parse(r.items) : r.items,
+            total: Number(r.total),
+            status: r.status
+          };
+        }
+      } catch (e) {}
+    }
+
+    if (!order) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy đơn hàng gốc.' });
+    }
+
+    // 2. RÀNG BUỘC NGHIỆP VỤ BẮT BUỘC: Chỉ cho phép trả theo hoá đơn "Đã xác nhận"
+    if (order.status !== 'Đã xác nhận') {
+      return res.status(400).json({
+        ok: false,
+        message: `Chỉ cho phép trả hàng theo các hoá đơn "Đã xác nhận". Đơn hàng này đang ở trạng thái "${order.status}".`
+      });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Vui lòng chọn ít nhất một sản phẩm cần trả.' });
+    }
+
+    // 3. Tính toán số lượng đã trả trước đây của từng sản phẩm trong đơn này
+    const currentReturns = orderReturns || [];
+    const prevReturnedQtyByCode = {};
+    currentReturns.filter(r => r.orderId === orderId).forEach(ret => {
+      (ret.items || []).forEach(it => {
+        const c = normalizeProductCode(it.ma || it.sku || it.productId);
+        if (c) prevReturnedQtyByCode[c] = (prevReturnedQtyByCode[c] || 0) + (Number(it.returnQty) || 0);
+      });
+    });
+
+    // 4. Kiểm tra từng mặt hàng cần trả
+    const validReturnItems = [];
+    let totalRefund = 0;
+
+    for (const it of items) {
+      const returnQty = parseFloat(it.returnQty || 0);
+      if (returnQty <= 0) continue;
+
+      const codeNorm = normalizeProductCode(it.ma || it.sku || it.productId);
+      const originalItem = (order.items || []).find(oi => normalizeProductCode(oi.ma || oi.sku || oi.productId) === codeNorm);
+      if (!originalItem) {
+        return res.status(400).json({ ok: false, message: `Sản phẩm ${it.ma || it.ten} không thuộc đơn hàng này.` });
+      }
+
+      const origQty = parseFloat(originalItem.quantity !== undefined ? originalItem.quantity : (originalItem.qty || 0)) || 0;
+      const alreadyReturned = prevReturnedQtyByCode[codeNorm] || 0;
+      const maxCanReturn = Math.max(0, origQty - alreadyReturned);
+
+      if (returnQty > maxCanReturn) {
+        return res.status(400).json({
+          ok: false,
+          message: `Sản phẩm "${originalItem.ten || originalItem.name || it.ma}" chỉ còn có thể trả tối đa ${maxCanReturn} (Đã mua: ${origQty}, đã trả: ${alreadyReturned}).`
+        });
+      }
+
+      const unitPrice = parseFloat(originalItem.unitPrice !== undefined ? originalItem.unitPrice : (originalItem.gia || 0)) || 0;
+      const subtotalRefund = Math.round(returnQty * unitPrice);
+      totalRefund += subtotalRefund;
+
+      validReturnItems.push({
+        ma: originalItem.ma || originalItem.productId || originalItem.sku || it.ma,
+        ten: originalItem.ten || originalItem.name || it.ten || '',
+        donvi: originalItem.donvi || originalItem.unit || it.donvi || '',
+        unitPrice: unitPrice,
+        purchasedQty: origQty,
+        previouslyReturnedQty: alreadyReturned,
+        returnQty: returnQty,
+        returnTotal: subtotalRefund
+      });
+    }
+
+    if (validReturnItems.length === 0) {
+      return res.status(400).json({ ok: false, message: 'Số lượng sản phẩm trả phải lớn hơn 0.' });
+    }
+
+    // 5. Cập nhật tồn kho nếu chọn hoàn kho
+    if (restock) {
+      let productsList = [...products];
+      if (IS_VERCEL) {
+        try {
+          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+          if (rows.length > 0 && rows[0].value) productsList = JSON.parse(rows[0].value);
+        } catch (e) {}
+      }
+
+      let updatedCount = 0;
+      for (const retItem of validReturnItems) {
+        const norm = normalizeProductCode(retItem.ma);
+        const prod = productsList.find(p => normalizeProductCode(p.ma) === norm);
+        if (prod) {
+          prod.stock = parseFloat(prod.stock || 0) + retItem.returnQty;
+          prod.updatedAt = Date.now();
+          updatedCount++;
+        }
+      }
+
+      if (updatedCount > 0) {
+        products = productsList;
+        await Promise.all([
+          saveProducts(productsList),
+          broadcastUpdate('products_updated')
+        ]);
+      }
+    }
+
+    // 6. Tạo mã phiếu và lưu trữ
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+    const returnId = 'TH' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + Math.floor(1000 + Math.random() * 9000);
+
+    const newReturnSlip = {
+      id: returnId,
+      orderId: order.id,
+      customer: order.customer || '',
+      phone: order.phone || '',
+      address: order.address || '',
+      createdAt: dateStr,
+      timestamp: Date.now(),
+      items: validReturnItems,
+      totalRefund,
+      reason: String(reason || 'Khách đổi ý').trim(),
+      restock: Boolean(restock),
+      note: String(note || '').trim()
+    };
+
+    orderReturns.unshift(newReturnSlip);
+    await saveOrderReturns(orderReturns);
+
+    res.json({ ok: true, returnSlip: newReturnSlip });
+  } catch (err) {
+    console.error('Lỗi xử lý tạo phiếu trả hàng:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi tạo phiếu trả hàng: ' + err.message });
+  }
+});
+
+app.delete('/api/admin/returns/:id', requireAdmin, async (req, res) => {
+  try {
+    const returnId = req.params.id;
+    const idx = orderReturns.findIndex(r => r.id === returnId);
+    if (idx === -1) {
+      return res.status(404).json({ ok: false, message: 'Không tìm thấy phiếu trả hàng.' });
+    }
+
+    const retSlip = orderReturns[idx];
+
+    // Nếu phiếu từng được hoàn kho, hoàn tác trừ lại số lượng tồn
+    if (retSlip.restock && Array.isArray(retSlip.items)) {
+      let productsList = [...products];
+      if (IS_VERCEL) {
+        try {
+          const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+          if (rows.length > 0 && rows[0].value) productsList = JSON.parse(rows[0].value);
+        } catch (e) {}
+      }
+
+      let updatedCount = 0;
+      for (const it of retSlip.items) {
+        const norm = normalizeProductCode(it.ma);
+        const prod = productsList.find(p => normalizeProductCode(p.ma) === norm);
+        if (prod) {
+          prod.stock = Math.max(0, parseFloat(prod.stock || 0) - (Number(it.returnQty) || 0));
+          prod.updatedAt = Date.now();
+          updatedCount++;
+        }
+      }
+
+      if (updatedCount > 0) {
+        products = productsList;
+        await Promise.all([
+          saveProducts(productsList),
+          broadcastUpdate('products_updated')
+        ]);
+      }
+    }
+
+    orderReturns.splice(idx, 1);
+    await saveOrderReturns(orderReturns);
+
+    res.json({ ok: true, message: 'Đã xóa phiếu trả hàng thành công.' });
+  } catch (err) {
+    console.error('Lỗi xóa phiếu trả hàng:', err);
+    res.status(500).json({ ok: false, message: 'Lỗi máy chủ khi xóa phiếu trả hàng.' });
+  }
+});
+
 
 app.patch('/api/products/bestseller', requireAdmin, async (req, res) => {
   try {
