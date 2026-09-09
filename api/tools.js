@@ -306,10 +306,25 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
     // Lazy-load heavy lib
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
-      generationConfig: { responseMimeType: 'application/json' }
-    });
+    const candidateModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+
+    async function generateWithFallback(parts) {
+      let lastError = null;
+      for (const modelName of candidateModels) {
+        try {
+          const m = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: { responseMimeType: 'application/json' }
+          });
+          const res = await m.generateContent(parts);
+          return res;
+        } catch (err) {
+          lastError = err;
+          console.warn(`[Gemini AI] Model ${modelName} failed, trying next candidate if available:`, err.message);
+        }
+      }
+      throw lastError;
+    }
 
     const results = [];
 
@@ -353,7 +368,7 @@ YÊU CẦU BẮT BUỘC:
 ]
 Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riêng cho sản phẩm (ví dụ: 0, 5, 8, 10). Nếu không ghi hoặc thuế suất 0% thì trả về 0.`;
 
-        const response = await model.generateContent([
+        const response = await generateWithFallback([
           prompt,
           {
             inlineData: {

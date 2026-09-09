@@ -1079,6 +1079,12 @@
     color: #fde68a !important;
   }
 
+  html.dark .selected-invoice-file-item {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+  }
+
   /* Status messages and preview cards in Import */
   html.dark #inventoryUploadStatus,
   html.dark #uploadResult,

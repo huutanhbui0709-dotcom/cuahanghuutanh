@@ -1127,13 +1127,13 @@
                   id="btnProcessInvoices" onclick="processInvoices()">
                   <i class="fa-solid fa-play text-slate-950"></i> Bắt đầu xử lý hóa đơn
                 </button>
-                <button class="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs transition cursor-pointer"
+                <button class="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs transition cursor-pointer active:scale-95"
                   id="btnClearInvoices" onclick="clearInvoiceSelection()" style="display: none;">
                   Xoá lựa chọn
                 </button>
               </div>
 
-              <div id="invoiceProcessingStatus" class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700" style="display: none;">
+              <div id="invoiceProcessingStatus" class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200" style="display: none;">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-circle-notch fa-spin text-amber-500"></i>
                   <span id="invoiceStatusText">Đang gửi dữ liệu hóa đơn và xử lý bằng AI...</span>

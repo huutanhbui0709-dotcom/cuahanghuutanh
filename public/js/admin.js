@@ -3258,11 +3258,11 @@ function renderSelectedInvoiceFiles() {
             : '<i class="fa-solid fa-file-image" style="color: #3b82f6; font-size: 1rem;"></i>';
           const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
           return `
-            <div style="display: inline-flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px 6px 4px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+            <div class="selected-invoice-file-item inline-flex items-center gap-2 max-w-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 shadow-2xs transition-all">
               ${icon}
-              <span style="font-weight: 500; color: var(--text); font-size: 0.85rem; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${f.name}">${f.name}</span>
-              <span style="color: var(--muted); font-size: 0.78rem; white-space: nowrap;">(${sizeMB} MB)</span>
-              <button type="button" onclick="removeSelectedInvoiceFile(${idx})" title="Xoá file này" style="background: #fee2e2; border: 1px solid #fecaca; color: #dc2626; border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; margin-left: 2px; transition: all 0.15s ease;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
+              <span class="font-semibold text-slate-800 dark:text-slate-200 text-xs sm:text-sm max-w-[280px] truncate" title="${f.name}">${f.name}</span>
+              <span class="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap font-medium">(${sizeMB} MB)</span>
+              <button type="button" onclick="removeSelectedInvoiceFile(${idx})" title="Xoá file này" class="bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 rounded-lg px-2 py-0.5 text-xs font-bold cursor-pointer inline-flex items-center gap-1 transition-all active:scale-95 ml-1">
                 <i class="fa-solid fa-xmark"></i> Xoá
               </button>
             </div>
@@ -3450,7 +3450,6 @@ function renderInvoiceResults(results) {
     const tabBtn = document.createElement('button');
     tabBtn.className = `btn btn-sm invoice-tab-btn ${index === 0 ? 'btn-primary' : 'btn-outline'}`;
     tabBtn.id = `invoice-tab-btn-${index}`;
-    if (index !== 0) tabBtn.style.color = 'black';
     
     let tabTitle = `Hóa đơn ${index + 1}`;
     if (res.data && res.data.invoiceNumber) {
@@ -3496,10 +3495,10 @@ function renderInvoiceResults(results) {
 
     if (!res.ok) {
       card.innerHTML = `
-        <div style="color: var(--danger); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+        <div style="color: var(--danger); font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
           <i class="fa-solid fa-triangle-exclamation"></i> Lỗi file: ${res.fileName}
         </div>
-        <p style="margin-top: 8px; font-size: 0.85rem; color: var(--muted);">${res.message || 'Lỗi không xác định.'}</p>
+        <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px; line-height: 1.5;">${res.message || 'Lỗi không xác định.'}</div>
       `;
       contentDiv.appendChild(card);
       container.appendChild(contentDiv);
@@ -3610,7 +3609,7 @@ function renderInvoiceResults(results) {
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 0.9rem; font-weight: 600; color: black; display: inline-flex; align-items: center; gap: 8px;">
+        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text); display: inline-flex; align-items: center; gap: 8px;">
           Danh sách sản phẩm
           <span style="background: #e0f2fe; color: #0369a1; font-size: 0.8rem; font-weight: 600; padding: 2px 8px; border-radius: 9999px; border: 1px solid #bae6fd;">${products.length} sản phẩm</span>
         </span>
@@ -3621,7 +3620,7 @@ function renderInvoiceResults(results) {
           <button class="btn btn-success btn-sm btn-export-invoice-excel" onclick="exportSingleInvoiceExcel(${index})">
             <i class="fa-solid fa-file-excel"></i> Xuất Excel Nhập Kho
           </button>
-          <button class="btn btn-outline btn-sm btn-copy-table" style="color: black; border-color: #ccc;" onclick="copyInvoiceTableToClipboard(this, ${index})">
+          <button class="btn btn-outline btn-sm btn-copy-table" onclick="copyInvoiceTableToClipboard(this, ${index})">
             <i class="fa-solid fa-copy"></i> Copy Bảng sang Excel
           </button>
         </div>
@@ -3668,7 +3667,7 @@ function showInvoiceResultTab(index) {
   document.querySelectorAll('.invoice-tab-btn').forEach(btn => {
     btn.classList.remove('btn-primary');
     btn.classList.add('btn-outline');
-    btn.style.color = 'black';
+    btn.style.color = '';
   });
   const activeBtn = document.getElementById(`invoice-tab-btn-${index}`);
   if (activeBtn) {
@@ -3718,7 +3717,7 @@ function copyInvoiceTableToClipboard(btn, index) {
       btn.innerHTML = originalHTML;
       btn.classList.remove('btn-success');
       btn.classList.add('btn-outline');
-      btn.style.color = 'black';
+      btn.style.color = '';
     }, 2000);
   }).catch(err => {
     console.error('Không thể copy:', err);
@@ -4232,7 +4231,7 @@ function switchToolsTab(tabName, btn) {
   document.querySelectorAll('.tools-tab-btn').forEach(b => {
     b.classList.remove('btn-primary');
     b.classList.add('btn-outline');
-    b.style.color = 'black';
+    b.style.color = '';
   });
   if (btn) {
     btn.classList.remove('btn-outline');
