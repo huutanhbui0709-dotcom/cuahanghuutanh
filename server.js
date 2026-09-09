@@ -389,8 +389,13 @@ async function initializeData() {
 
           // Tự động đồng bộ giá bán từ file seed nếu sản phẩm trong DB đang có giá = 0
           try {
-            const rawSeed = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
-            const seedProducts = JSON.parse(rawSeed);
+            let seedProducts = null;
+            try {
+              seedProducts = require('./data/products.json');
+            } catch (rErr) {
+              const rawSeed = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
+              seedProducts = JSON.parse(rawSeed);
+            }
             if (Array.isArray(seedProducts) && seedProducts.length > 0) {
               let updatedCount = 0;
               const seedMap = new Map(seedProducts.map(sp => [sp.ma, sp]));
@@ -405,7 +410,7 @@ async function initializeData() {
               });
               if (updatedCount > 0) {
                 console.log(`⚡ Tự động cập nhật giá cho ${updatedCount} sản phẩm từ file seed.`);
-                saveProducts(products);
+                await saveProducts(products);
               }
             }
           } catch (seedErr) {
