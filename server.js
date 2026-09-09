@@ -386,6 +386,31 @@ async function initializeData() {
         if (rowMap.products) {
           try { products = JSON.parse(rowMap.products); } catch { products = []; }
           console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
+
+          // Tự động đồng bộ giá bán từ file seed nếu sản phẩm trong DB đang có giá = 0
+          try {
+            const rawSeed = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
+            const seedProducts = JSON.parse(rawSeed);
+            if (Array.isArray(seedProducts) && seedProducts.length > 0) {
+              let updatedCount = 0;
+              const seedMap = new Map(seedProducts.map(sp => [sp.ma, sp]));
+              products.forEach(p => {
+                const sp = seedMap.get(p.ma);
+                if (sp && (!p.gia || p.gia === 0) && sp.gia > 0) {
+                  p.gia = sp.gia;
+                  if (sp.donvi && !p.donvi) p.donvi = sp.donvi;
+                  if (sp.loai && (!p.loai || p.loai === 'Hàng hóa thường')) p.loai = sp.loai;
+                  updatedCount++;
+                }
+              });
+              if (updatedCount > 0) {
+                console.log(`⚡ Tự động cập nhật giá cho ${updatedCount} sản phẩm từ file seed.`);
+                saveProducts(products);
+              }
+            }
+          } catch (seedErr) {
+            console.warn('Không thể đọc file seed để đồng bộ giá:', seedErr.message);
+          }
         } else {
           try {
             const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');

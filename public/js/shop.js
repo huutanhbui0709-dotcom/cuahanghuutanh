@@ -1439,7 +1439,7 @@ function getSmartRecommendations(targetProduct, limit = 2) {
   if (Array.isArray(targetProduct.upsellProducts) && targetProduct.upsellProducts.length > 0) {
     const customItems = targetProduct.upsellProducts
       .map(code => products.find(p => p.ma === code))
-      .filter(p => p && !excludeCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
+      .filter(p => p && !excludeCodes.has(p.ma) && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
     
     customItems.forEach(p => {
       p._isCustomUpsell = true;
@@ -1451,7 +1451,7 @@ function getSmartRecommendations(targetProduct, limit = 2) {
   // 2. If fewer than limit, supplement with smart heuristic recommendations
   if (finalRecs.length < limit) {
     const activeRule = UPSELL_RULES.find(r => r.match(targetProduct));
-    const candidates = products.filter(p => !excludeCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
+    const candidates = products.filter(p => !excludeCodes.has(p.ma) && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
 
     const scored = candidates.map(cand => {
       let score = 0;
@@ -1461,7 +1461,7 @@ function getSmartRecommendations(targetProduct, limit = 2) {
       }
       if (cand.loai === targetProduct.loai) score += 5;
       // Upgrade in same category
-      if (cand.loai === targetProduct.loai && cand.gia > targetProduct.gia && cand.gia <= targetProduct.gia * 3) {
+      if (cand.loai === targetProduct.loai && cand.gia > targetProduct.gia && cand.gia <= (targetProduct.gia ? targetProduct.gia * 3 : 500000)) {
         score += 6;
       }
       if (cand.isBestSeller) score += 3;
@@ -1481,23 +1481,40 @@ function getSmartRecommendations(targetProduct, limit = 2) {
 function getCartRecommendations(currentCart, limit = 3) {
   if (!Array.isArray(products) || products.length === 0) return [];
   const cartCodes = new Set((currentCart || []).map(x => x.ma));
-  const candidates = products.filter(p => !cartCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh');
+  const candidates = products.filter(p => !cartCodes.has(p.ma) && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
+
+  if (!candidates || candidates.length === 0) return [];
 
   if (!currentCart || currentCart.length === 0) {
-    return candidates.filter(p => p.isBestSeller || p.gia < 50000).slice(0, limit);
+    return candidates.filter(p => p.isBestSeller || (p.gia > 0 && p.gia < 50000) || p.image).slice(0, limit);
   }
+
+  // Thu thập các mã sản phẩm được Admin cấu hình Upsell cho các món đang có trong giỏ
+  const cartUpsellCodes = new Set();
+  (currentCart || []).forEach(item => {
+    if (Array.isArray(item.upsellProducts)) {
+      item.upsellProducts.forEach(code => cartUpsellCodes.add(code));
+    }
+  });
 
   const matchedRules = UPSELL_RULES.filter(rule => (currentCart || []).some(item => rule.match(item)));
 
   const scored = candidates.map(cand => {
     let score = 0;
+
+    // Điểm cộng lớn nếu sản phẩm được Admin chỉ định Upsell cho món trong giỏ
+    if (cartUpsellCodes.has(cand.ma)) {
+      score += 25;
+    }
+
     matchedRules.forEach(rule => {
       score += rule.boost(cand);
       score += rule.penalize(cand);
     });
 
-    if (cand.gia <= 50000) score += 4;
-    else if (cand.gia <= 120000) score += 2;
+    if (cand.gia > 0 && cand.gia <= 50000) score += 4;
+    else if (cand.gia > 50000 && cand.gia <= 120000) score += 2;
+    else if (cand.gia === 0) score += 1;
 
     if (cand.isBestSeller) score += 4;
     if (cand.image) score += 2;
