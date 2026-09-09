@@ -455,31 +455,76 @@ function extractEmbeddedXmlFromPdf(pdfBuffer) {
   return null;
 }
 
-function parsePdfInvoiceText(fullText) {
-  if (!fullText || typeof fullText !== 'string') return null;
-  fullText = fullText.normalize('NFC').replace(/\u00A0/g, ' ').replace(/[\u2010-\u2015]/g, '-');
+function parseSinglePageInvoice(pageText) {
+  if (!pageText || typeof pageText !== 'string') return null;
+  pageText = pageText.normalize('NFC').replace(/\u00A0/g, ' ').replace(/[\u2010-\u2015]/g, '-');
+  const lines = pageText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-  const lines = fullText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-
-  // 1. Ký hiệu (Serial)
-  let serial = '';
-  const mSerial = fullText.match(/(?:Ký\s*hiệu|Serial|Mẫu\s*số\s*[-–]\s*Ký\s*hiệu)[^:\n]*[:\s]*([12]?[C|K][0-9]{2}[A-Z]{2,3}|[A-Z0-9]{6,8})/i)
-    || fullText.match(/\b([12][C|K][0-9]{2}[A-Z]{2,3})\b/);
-  if (mSerial) serial = mSerial[1].toUpperCase();
-
-  // 2. Số hóa đơn
-  let invoiceNumber = '';
-  const mInvNo = fullText.match(/(?:Số|Số\s*\(No\.\)|Số\s*hóa\s*đơn|No\.)[^:\n0-9]*[:\s]*0*([0-9]{1,8})\b/i)
-    || fullText.match(/\b(?:No\.|Số)\s*[:.\s]*0*([0-9]{1,8})\b/i);
-  if (mInvNo) {
-    invoiceNumber = mInvNo[1].padStart(7, '0');
+  // 1. Tên người bán
+  let sellerName = '';
+  const mLabel = pageText.match(/(?:Đơn\s*vị\s*bán(?:\s*hàng)?|Tên\s*người\s*bán)\s*[:.\s]*([^\n]+)/i);
+  if (mLabel && !/chữ\s*ký/i.test(mLabel[1])) {
+    sellerName = mLabel[1].trim();
+  }
+  if (!sellerName) {
+    const hdIdx = lines.findIndex(l => /HÓA\s*ĐƠN/i.test(l));
+    const headerLines = hdIdx !== -1 ? lines.slice(0, hdIdx) : lines.slice(0, 15);
+    const compLine = headerLines.find(l => /^(?:CÔNG TY|DNTN|DOANH NGHIỆP|HỘ KINH DOANH|CỬA HÀNG|CHI NHÁNH|HTX)/i.test(l));
+    if (compLine) {
+      sellerName = compLine.trim();
+    } else {
+      const mstIdx = headerLines.findIndex(l => /^Mã\s*số\s*thuế/i.test(l));
+      if (mstIdx > 0 && headerLines[mstIdx - 1].length > 3) {
+        sellerName = headerLines[mstIdx - 1].trim();
+      }
+    }
+  }
+  if (!sellerName) {
+    const sigLine = lines.find(l => /^Ký\s*bởi\s*:\s*/i.test(l));
+    if (sigLine) sellerName = sigLine.replace(/^Ký\s*bởi\s*:\s*/i, '').trim();
   }
 
-  // 3. Ngày hóa đơn
+  // 2. Ký hiệu (Serial)
+  let serial = '';
+  const mSerial = pageText.match(/(?:Ký\s*hiệu|Serial|Mẫu\s*số\s*[-–]\s*Ký\s*hiệu)[^:\n]*[:\s]*([12]?[C|K][0-9]{2}[A-Z]{2,3}|[A-Z0-9]{6,8})/i)
+    || pageText.match(/\b([12][C|K][0-9]{2}[A-Z]{2,3})\b/);
+  if (mSerial) serial = mSerial[1].toUpperCase();
+
+  // 3. Số hóa đơn (Chỉ quét SAU tiêu đề 'HÓA ĐƠN' để không bị nhầm với địa chỉ 'đường số...' hay 'Số tài khoản')
+  let invoiceNumber = '';
+  const hdIdx = lines.findIndex(l => /HÓA\s*ĐƠN/i.test(l));
+  const searchLines = hdIdx !== -1 ? lines.slice(hdIdx) : lines;
+  for (let i = 0; i < searchLines.length; i++) {
+    const line = searchLines[i];
+    if (/^(?:Số|No\.)\s*[:.\s]*$/i.test(line)) {
+      if (i + 1 < searchLines.length && /^\d+$/.test(searchLines[i + 1])) {
+        invoiceNumber = searchLines[i + 1];
+        break;
+      }
+    } else if (/^(?:Số|No\.)\s*[:.\s]*0*(\d{1,8})$/i.test(line)) {
+      const m = line.match(/^(?:Số|No\.)\s*[:.\s]*0*(\d{1,8})$/i);
+      if (m) {
+        invoiceNumber = m[1];
+        break;
+      }
+    }
+  }
+  if (invoiceNumber) invoiceNumber = invoiceNumber.padStart(8, '0');
+
+  // 4. Mã CQT hoặc Mã số thuế
+  let taxCode = '';
+  const mCqt = pageText.match(/Mã\s*CQT\s*:\s*([A-Z0-9]+)/i);
+  if (mCqt) {
+    taxCode = mCqt[1];
+  } else {
+    const mMst = pageText.match(/(?:Mã\s*số\s*thuế|MST)[^:\n]*:\s*([0-9\s-]{10,20})/i);
+    if (mMst) taxCode = mMst[1].replace(/\s+/g, '');
+  }
+
+  // 5. Ngày hóa đơn
   let invoiceDate = { date: '', month: '', year: '' };
-  const mDate = fullText.match(/Ngày\s*([0-9]{1,2})\s*tháng\s*([0-9]{1,2})\s*năm\s*([0-9]{4})/i)
-    || fullText.match(/(?:Ngày|Date)[^:\n0-9]*[:\s]*([0-9]{1,2})[/-]([0-9]{1,2})[/-]([0-9]{4})/i)
-    || fullText.match(/\b([0-9]{1,2})[/-]([0-9]{1,2})[/-](202[0-9]|203[0-9])\b/);
+  const mDate = pageText.match(/Ngày\s*([0-9]{1,2})\s*tháng\s*([0-9]{1,2})\s*năm\s*([0-9]{4})/i)
+    || pageText.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
   if (mDate) {
     invoiceDate = {
       date: mDate[1].padStart(2, '0'),
@@ -488,23 +533,16 @@ function parsePdfInvoiceText(fullText) {
     };
   }
 
-  // 4. Mã số thuế người bán
-  let taxCode = '';
-  const mMst = fullText.match(/(?:Mã\s*số\s*thuế|MST|M\.S\.T)[^:\n0-9]*[:\s]*([0-9]{10}(?:-[0-9]{3})?)/i);
-  if (mMst) taxCode = mMst[1];
-
-  // 5. Tên người bán
-  let sellerName = '';
-  const mSeller = fullText.match(/(?:Đơn\s*vị\s*bán(?:\s*hàng)?|Tên\s*người\s*bán|Người\s*bán)[^:\n]*[:\s]*([^\n]+)/i);
-  if (mSeller) {
-    sellerName = mSeller[1].trim();
-  } else {
-    const compLine = lines.slice(0, 15).find(l => /^(?:CÔNG TY|DOANH NGHIỆP|HỘ KINH DOANH|CỬA HÀNG|CHI NHÁNH)/i.test(l));
-    if (compLine) sellerName = compLine;
-  }
-
   // 6. Bảng chi tiết sản phẩm
-  const products = [];
+  let tableHeaderIdx = lines.findIndex(l => /1\s+2\s+3\s+4/i.test(l));
+  if (tableHeaderIdx === -1) {
+    tableHeaderIdx = lines.findIndex(l => /STT\s+Tên\s+hàng/i.test(l));
+  }
+  const tableFooterIdx = lines.findIndex(l => /Tổng\s+hợp|Tổng\s+cộng|Cộng\s+tiền|Thuế\s+suất/i.test(l));
+  const tableLines = (tableHeaderIdx !== -1 && tableFooterIdx !== -1 && tableFooterIdx > tableHeaderIdx)
+    ? lines.slice(tableHeaderIdx + 1, tableFooterIdx)
+    : (tableHeaderIdx !== -1 ? lines.slice(tableHeaderIdx + 1) : lines);
+
   const unitList = [
     'Cuộn', 'cuộn', 'Cuon', 'cuon',
     'Cái', 'cái', 'Cai', 'cai',
@@ -531,74 +569,71 @@ function parsePdfInvoiceText(fullText) {
     'M', 'L'
   ];
   unitList.sort((a, b) => b.length - a.length);
-  const unitPattern = new RegExp(`(?:^|[\\s,;])(${unitList.join('|')})(?=[\\s,;]|$)`, 'i');
+  const unitRegex = new RegExp('(?:^|\\s)(' + unitList.join('|') + ')\\s+([0-9]+(?:[.,][0-9]+)*)', 'i');
 
-  let inTable = false;
-  let tableLines = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (/Tên\s*hàng\s*hóa|Đơn\s*vị\s*tính|Số\s*lượng|Thành\s*tiền/i.test(line)) {
-      inTable = true;
-      continue;
-    }
-    if (inTable) {
-      if (/Cộng\s*tiền\s*hàng|Tổng\s*tiền|Thuế\s*suất\s*GTGT|Tiền\s*thuế\s*GTGT|Tổng\s*cộng\s*tiền\s*thanh\s*toán/i.test(line)) {
-        inTable = false;
-        break;
+  const headerTokensRegex = /^(?:STT|Tên hàng|Đơn vị|tính|Số lượng|Đơn giá|Thành tiền|Thuế|suất|GTGT|Tiền thuế|Cộng tiền|Tổng cộng|1\s+2\s+3)/i;
+  const products = [];
+  let pendingNameLines = [];
+
+  for (let i = 0; i < tableLines.length; i++) {
+    const line = tableLines[i];
+    if (headerTokensRegex.test(line)) continue;
+    const match = line.match(unitRegex);
+
+    if (match) {
+      const unit = match[1];
+      const uIdx = line.search(new RegExp('(?:^|\\s)' + unit + '\\s+', 'i'));
+      let namePrefix = line.substring(0, uIdx).trim();
+      namePrefix = namePrefix.replace(/^\d+[\s.)-]+/, '').trim();
+
+      let fullItemName = pendingNameLines.filter(nl => !/^\d+$/.test(nl)).join(' ').trim();
+      if (namePrefix) {
+        fullItemName = fullItemName ? (fullItemName + ' ' + namePrefix) : namePrefix;
       }
-      tableLines.push(line);
-    }
-  }
 
-  const candidateLines = tableLines.length > 0 ? tableLines : lines;
+      const afterUnit = line.substring(uIdx).replace(new RegExp('^\\s*' + unit + '\\s*', 'i'), '').trim();
+      const tokens = afterUnit.split(/\s+/);
+      const qty = parseVnNumber(tokens[0]) || 1;
 
-  for (let i = 0; i < candidateLines.length; i++) {
-    const line = candidateLines[i];
-    const mUnit = line.match(unitPattern);
-    if (!mUnit) continue;
+      let taxPercent = 0;
+      const mTax = afterUnit.match(/\b(0|5|8|10)%/);
+      if (mTax) taxPercent = parseInt(mTax[1], 10);
 
-    const unit = mUnit[1];
-    const unitPos = line.search(unitPattern);
-    let namePart = line.substring(0, unitPos).trim();
-    namePart = namePart.replace(/^\d+[\s.)-]+/, '').trim();
-    if (namePart.length < 2) {
-      if (i > 0 && candidateLines[i - 1].length > 2 && !candidateLines[i - 1].match(unitPattern)) {
-        namePart = candidateLines[i - 1].replace(/^\d+[\s.)-]+/, '').trim();
+      const numTokens = tokens.filter(t => !/%/.test(t));
+      let price = 0;
+      let amount = 0;
+
+      if (numTokens.length >= 3) {
+        price = Math.round(parseVnNumber(numTokens[1]));
+        amount = Math.round(parseVnNumber(numTokens[2]));
+      } else if (numTokens.length === 2) {
+        amount = Math.round(parseVnNumber(numTokens[1]));
+        price = Math.round(amount / qty);
+      } else if (numTokens.length === 1) {
+        if (/khuyến\s*mãi/i.test(fullItemName)) {
+          price = 0;
+          amount = 0;
+        } else {
+          amount = Math.round(parseVnNumber(numTokens[0]));
+          price = Math.round(amount / qty);
+        }
+      }
+
+      products.push({
+        name: fullItemName,
+        unit: unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase(),
+        quantity: qty,
+        price: price,
+        amount: amount,
+        taxPercent: taxPercent
+      });
+
+      pendingNameLines = [];
+    } else {
+      if (line.length > 0 && !/^1\s+2\s+3/.test(line)) {
+        pendingNameLines.push(line);
       }
     }
-    if (!namePart || namePart.length < 2) continue;
-
-    const afterUnit = line.substring(unitPos + mUnit[0].length).trim();
-    const numberTokens = afterUnit.match(/\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?\b/g) || [];
-    if (numberTokens.length === 0) continue;
-
-    const quantity = parseVnNumber(numberTokens[0]) || 1;
-    let price = 0;
-    let amount = 0;
-
-    if (numberTokens.length >= 3) {
-      price = Math.round(parseVnNumber(numberTokens[1]));
-      amount = Math.round(parseVnNumber(numberTokens[2]));
-    } else if (numberTokens.length === 2) {
-      amount = Math.round(parseVnNumber(numberTokens[1]));
-      price = Math.round(amount / (quantity || 1));
-    } else if (numberTokens.length === 1) {
-      price = Math.round(parseVnNumber(numberTokens[0]));
-      amount = Math.round(price * quantity);
-    }
-
-    let taxPercent = 0;
-    const mTax = afterUnit.match(/\b(0|5|8|10)%\b/);
-    if (mTax) taxPercent = parseInt(mTax[1], 10);
-
-    products.push({
-      name: namePart,
-      unit: unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase(),
-      quantity,
-      price,
-      amount,
-      taxPercent
-    });
   }
 
   return {
@@ -609,6 +644,51 @@ function parsePdfInvoiceText(fullText) {
     invoiceDate,
     products
   };
+}
+
+async function parsePdfInvoices(pdfBuffer) {
+  const pdfParse = require('pdf-parse');
+  const pages = [];
+
+  function render_page(pageData) {
+    const render_options = { normalizeWhitespace: true, disableCombineTextItems: false };
+    return pageData.getTextContent(render_options).then(function (textContent) {
+      let lastY, text = '';
+      for (let item of textContent.items) {
+        if (lastY == item.transform[5] || !lastY) text += ' ' + item.str;
+        else text += '\n' + item.str;
+        lastY = item.transform[5];
+      }
+      pages.push(text);
+      return text;
+    });
+  }
+
+  const pdfData = await pdfParse(pdfBuffer, { pagerender: render_page });
+  const parsedInvoices = [];
+
+  for (const pageText of pages) {
+    const inv = parseSinglePageInvoice(pageText);
+    if (inv && (inv.invoiceNumber || (inv.products && inv.products.length > 0))) {
+      // Nếu hóa đơn trải dài qua nhiều trang (cùng số HĐ và ký hiệu), gộp danh sách sản phẩm
+      const existing = parsedInvoices.find(ex =>
+        ex.invoiceNumber && inv.invoiceNumber && ex.invoiceNumber === inv.invoiceNumber &&
+        ex.serial === inv.serial
+      );
+      if (existing) {
+        existing.products.push(...inv.products);
+      } else {
+        parsedInvoices.push(inv);
+      }
+    }
+  }
+
+  if (parsedInvoices.length === 0 && pdfData.text) {
+    const single = parseSinglePageInvoice(pdfData.text);
+    if (single) parsedInvoices.push(single);
+  }
+
+  return parsedInvoices;
 }
 
 async function parseInvoiceDirectly(fileBuffer, originalName, mimeType) {
@@ -639,15 +719,13 @@ async function parseInvoiceDirectly(fileBuffer, originalName, mimeType) {
       }
     }
 
-    // 2. Dùng pdf-parse để đọc text layer
-    const pdfParse = require('pdf-parse');
-    const pdfData = await pdfParse(fileBuffer);
-    const parsed = parsePdfInvoiceText(pdfData.text);
+    // 2. Dùng bộ bốc tách đa trang thông minh (phân tách theo từng trang và số hóa đơn)
+    const invoiceList = await parsePdfInvoices(fileBuffer);
 
-    if (!parsed || (!parsed.sellerName && (!parsed.products || parsed.products.length === 0))) {
+    if (!invoiceList || invoiceList.length === 0 || (!invoiceList[0].sellerName && (!invoiceList[0].products || invoiceList[0].products.length === 0))) {
       throw new Error('Không tìm thấy nội dung văn bản hóa đơn trong file PDF (file có thể là bản scan dạng ảnh thuần hoặc không có lớp text). Vui lòng dùng nút "Bắt đầu xử lý hóa đơn (AI)".');
     }
-    return [parsed];
+    return invoiceList;
   }
 
   // File hình ảnh
