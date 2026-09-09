@@ -4469,6 +4469,7 @@ function sk_renderTable(list, startOffset) {
         </td>
         <td class="py-3 px-4 text-gray-600 font-mono text-xs">${p.ma || '—'}</td>
         <td class="py-3 px-4 text-gray-600">${p.donvi || 'Cái'}</td>
+        <td class="py-3 px-4 font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
         <td class="py-3 px-4 font-medium">
           <button type="button"
             onclick="openPendingOrdersModal('${(p.ma||'').replace(/'/g, "\\'")}')"
