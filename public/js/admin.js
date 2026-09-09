@@ -3137,10 +3137,13 @@ function showToast(msg, type = '') {
 // ==============================
 checkAuth();
 
-['productModal', 'orderDetailModal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function (e) {
-    if (e.target === this) this.classList.remove('open');
-  });
+['productModal', 'orderDetailModal', 'stockPendingOrdersModal'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('click', function (e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  }
 });
 
 // ==============================
@@ -4466,9 +4469,15 @@ function sk_renderTable(list, startOffset) {
         </td>
         <td class="py-3 px-4 text-gray-600 font-mono text-xs">${p.ma || '—'}</td>
         <td class="py-3 px-4 text-gray-600">${p.donvi || 'Cái'}</td>
-        <td class="py-3 px-4 font-bold text-gray-900">${stock.toLocaleString('vi-VN')}</td>
-        <td class="py-3 px-4 font-medium ${pending > 0 ? 'text-amber-600' : 'text-blue-600'}">
-          ${available.toLocaleString('vi-VN')}${pending > 0 ? ` <span class="text-xs text-gray-400 font-normal">(−${pending.toLocaleString('vi-VN')})</span>` : ''}
+        <td class="py-3 px-4 font-medium">
+          <button type="button"
+            onclick="openPendingOrdersModal('${(p.ma||'').replace(/'/g, "\\'")}')"
+            class="inline-flex items-center gap-1 font-semibold text-xs transition cursor-pointer text-blue-600 hover:text-blue-800 hover:underline group text-left"
+            title="${pending > 0 ? `Bấm xem ${pending} sản phẩm đang giữ trong đơn chờ xác nhận` : 'Bấm xem đơn hàng chờ xác nhận'}">
+            <span>${available.toLocaleString('vi-VN')}</span>
+            ${pending > 0 ? `<span class="text-amber-600 font-bold group-hover:underline">(−${pending.toLocaleString('vi-VN')})</span>` : ''}
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-blue-500 opacity-60 group-hover:opacity-100 transition-opacity ml-0.5"></i>
+          </button>
         </td>
         <td class="py-3 px-4"><span class="text-red-600 font-semibold">${formatPrice(totalVal)}</span></td>
         <td class="py-3 px-4">${badgeHtml}</td>
@@ -4537,9 +4546,164 @@ function sk_exportExcel() {
   showToast('<i class="fa-solid fa-circle-check"></i> Đã xuất danh sách tồn kho thành công!', 'success');
 }
 
+// =====================================================================
+// PENDING ORDERS MODAL FOR INVENTORY TAB (Xem đơn chờ xác nhận giữ hàng)
+// =====================================================================
+async function openPendingOrdersModal(productSku) {
+  const modal = document.getElementById('stockPendingOrdersModal');
+  if (!modal) return;
+  modal.classList.add('open');
 
+  const p = (products || []).find(x => (x.ma || '').trim().toUpperCase() === (productSku || '').trim().toUpperCase()) || {};
+  const skuUpper = (productSku || '').trim().toUpperCase();
+  const prodName = p.ten || productSku || 'Sản phẩm';
 
-let allInventoryReceipts = [];
+  document.getElementById('stockPendingOrdersTitle').textContent = `Danh sách đơn hàng chờ xác nhận - ${prodName}`;
+  document.getElementById('stockPendingOrdersSubtitle').innerHTML = `Mã SP: <strong class="font-mono">${skuUpper || '—'}</strong> &bull; Đang đồng bộ danh sách đơn hàng...`;
+  
+  const bodyEl = document.getElementById('stockPendingOrdersBody');
+  bodyEl.innerHTML = `
+    <div class="text-center py-12 text-slate-400">
+      <i class="fa-solid fa-circle-notch fa-spin text-2xl text-amber-500 mb-3 block"></i>
+      <p class="text-xs font-semibold">Đang tải danh sách đơn hàng giữ sản phẩm...</p>
+    </div>
+  `;
+
+  // Luôn đảm bảo danh sách orders mới nhất
+  if (!orders || orders.length === 0) {
+    try {
+      await loadOrders();
+    } catch (e) {
+      console.error('Lỗi tải orders:', e);
+    }
+  }
+
+  const isPendingOrder = (o) => {
+    if (!o) return false;
+    const st = String(o.status || '').toLowerCase().trim();
+    return st === 'chờ xác nhận' || st === 'pending' || st.includes('chờ');
+  };
+
+  const pendingOrders = (orders || []).filter(o => {
+    if (!isPendingOrder(o)) return false;
+    return (o.items || []).some(item => {
+      const itemSku = (item.sku || item.productId || item.ma || '').trim().toUpperCase();
+      return (itemSku && itemSku === skuUpper) ||
+        (p.id && (item.productId === p.id || item.id === p.id)) ||
+        (p.ten && item.ten && item.ten.trim().toLowerCase() === p.ten.trim().toLowerCase());
+    });
+  });
+
+  let totalPendingQty = 0;
+  const orderRows = pendingOrders.map(o => {
+    const matchingItems = (o.items || []).filter(item => {
+      const itemSku = (item.sku || item.productId || item.ma || '').trim().toUpperCase();
+      return (itemSku && itemSku === skuUpper) ||
+        (p.id && (item.productId === p.id || item.id === p.id)) ||
+        (p.ten && item.ten && item.ten.trim().toLowerCase() === p.ten.trim().toLowerCase());
+    });
+
+    const orderPendingQty = matchingItems.reduce((sum, item) => {
+      return sum + (parseFloat(item.quantity !== undefined ? item.quantity : (item.qty || 0)) || 0);
+    }, 0);
+    totalPendingQty += orderPendingQty;
+
+    const dateFormatted = typeof formatOrderDate === 'function' ? formatOrderDate(o.createdAt) : (o.createdAt || '—');
+
+    return `
+      <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 transition">
+        <td class="py-3 px-4 font-mono font-bold text-xs text-amber-600 dark:text-amber-400 whitespace-nowrap">#${o.id}</td>
+        <td class="py-3 px-4 text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <div>${o.customer || 'Khách vãng lai'}</div>
+          ${o.phone ? `<div class="text-slate-400 font-normal text-[11px]"><i class="fa-solid fa-phone text-[10px] mr-1"></i>${o.phone}</div>` : ''}
+        </td>
+        <td class="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap text-center">${dateFormatted}</td>
+        <td class="py-3 px-4 text-xs text-center font-bold whitespace-nowrap">
+          <span class="bg-amber-50 dark:bg-amber-950/50 border border-amber-200/80 dark:border-amber-800/80 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-lg">
+            ${orderPendingQty.toLocaleString('vi-VN')} ${p.donvi || 'Cái'}
+          </span>
+        </td>
+        <td class="py-3 px-4 text-xs text-center whitespace-nowrap">
+          <span class="bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Chờ xác nhận
+          </span>
+        </td>
+        <td class="py-3 px-4 text-xs text-center whitespace-nowrap">
+          <button type="button" class="btn btn-sm btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-bold cursor-pointer active:scale-95 shadow-2xs transition"
+            onclick="goToOrderDetailFromStock('${o.id}')" title="Chuyển đến trang Đơn hàng và xem chi tiết đơn này">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem chi tiết đơn hàng
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  const stock = parseFloat(p.stock) || 0;
+  const available = Math.max(0, stock - totalPendingQty);
+
+  document.getElementById('stockPendingOrdersTitle').textContent = `Danh sách đơn hàng chờ xác nhận - ${prodName}`;
+  document.getElementById('stockPendingOrdersSubtitle').innerHTML = `Mã SP: <span class="font-mono font-bold text-slate-700 dark:text-slate-300">${skuUpper || '—'}</span> &bull; Tồn kho thực tế: <strong>${stock.toLocaleString('vi-VN')}</strong> &bull; Đang giữ: <strong class="text-amber-600 dark:text-amber-400">${totalPendingQty.toLocaleString('vi-VN')}</strong> &bull; Khả dụng: <strong class="text-blue-600 dark:text-blue-400">${available.toLocaleString('vi-VN')}</strong>`;
+
+  if (pendingOrders.length === 0) {
+    bodyEl.innerHTML = `
+      <div class="text-center py-12 px-4">
+        <div class="w-14 h-14 mx-auto mb-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+          <i class="fa-solid fa-clipboard-check text-2xl text-slate-400"></i>
+        </div>
+        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">Không có đơn hàng nào đang chờ xác nhận</h4>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">Sản phẩm này hiện không có đơn nào ở trạng thái "Chờ xác nhận" giữ hàng. Toàn bộ số lượng tồn kho đều khả dụng để xuất bán.</p>
+      </div>
+    `;
+  } else {
+    bodyEl.innerHTML = `
+      <div class="mb-4 p-3 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-semibold">
+          <i class="fa-solid fa-circle-info text-amber-500 text-sm"></i>
+          <span>Có <strong>${pendingOrders.length}</strong> đơn hàng đang tạm giữ tổng cộng <strong>${totalPendingQty.toLocaleString('vi-VN')} ${p.donvi || 'Cái'}</strong></span>
+        </div>
+        <span class="text-slate-500 dark:text-slate-400 text-[11px]">Tồn kho: <strong>${stock.toLocaleString('vi-VN')}</strong> &bull; Khả dụng: <strong class="text-blue-600 dark:text-blue-400">${available.toLocaleString('vi-VN')}</strong></span>
+      </div>
+      <div class="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase border-b border-slate-200/80 dark:border-slate-700/80">
+              <th class="py-2.5 px-4">Mã đơn hàng</th>
+              <th class="py-2.5 px-4">Tên khách hàng</th>
+              <th class="py-2.5 px-4 text-center">Ngày đặt</th>
+              <th class="py-2.5 px-4 text-center">Số lượng giữ</th>
+              <th class="py-2.5 px-4 text-center">Trạng thái</th>
+              <th class="py-2.5 px-4 text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orderRows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+}
+
+function goToOrderDetailFromStock(orderId) {
+  closeModal('stockPendingOrdersModal');
+  adminTab('orders');
+
+  const searchInput = document.getElementById('orderSearch');
+  if (searchInput) {
+    searchInput.value = orderId;
+  }
+  const statusFilter = document.getElementById('orderStatusFilter');
+  if (statusFilter) {
+    statusFilter.value = ''; // Reset filter để đảm bảo hiển thị đơn được tìm
+  }
+  renderOrdersTable();
+
+  setTimeout(() => {
+    if (typeof viewOrderDetail === 'function') {
+      viewOrderDetail(orderId);
+    }
+  }, 120);
+}
 
 async function loadInventoryHistory() {
   const tbody = document.getElementById('inventoryHistoryTableBody');

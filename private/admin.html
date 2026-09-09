@@ -1554,6 +1554,25 @@
     </div>
   </div>
 
+  <!-- ======= STOCK PENDING ORDERS MODAL (DANH SÁCH ĐƠN HÀNG CHỜ XÁC NHẬN GIỮ TỒN KHO) ======= -->
+  <div class="modal-overlay center" id="stockPendingOrdersModal" onclick="if(event.target===this) closeModal('stockPendingOrdersModal')">
+    <div class="modal modal-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] w-full max-w-[920px] mx-4 border border-slate-200/80">
+      <div class="modal-header px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10 flex-shrink-0">
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-base font-bold shadow-xs flex-shrink-0">
+            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 leading-tight" id="stockPendingOrdersTitle">Danh sách đơn hàng chờ xác nhận</h3>
+            <p class="text-xs text-slate-400 font-medium" id="stockPendingOrdersSubtitle">Các đơn hàng đang tạm giữ số lượng tồn kho của sản phẩm</p>
+          </div>
+        </div>
+        <button onclick="closeModal('stockPendingOrdersModal')" class="w-9 h-9 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer font-bold text-sm">✕</button>
+      </div>
+      <div class="modal-body p-6 overflow-y-auto" id="stockPendingOrdersBody"></div>
+    </div>
+  </div>
+
   <!-- ======= INVENTORY RECEIPT DETAIL MODAL ======= -->
   <div class="modal-overlay center" id="inventoryReceiptModal">
     <div class="modal modal-xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] w-full max-w-[1100px] mx-4 border border-slate-200/80">
