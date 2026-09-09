@@ -3499,6 +3499,11 @@ function renderInvoiceResults(results) {
           <i class="fa-solid fa-triangle-exclamation"></i> Lỗi file: ${res.fileName}
         </div>
         <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px; line-height: 1.5;">${res.message || 'Lỗi không xác định.'}</div>
+        <div style="margin-top: 12px;">
+          <button type="button" class="btn btn-sm btn-primary" onclick="processInvoices()">
+            <i class="fa-solid fa-rotate-right"></i> Thử lại xử lý hóa đơn
+          </button>
+        </div>
       `;
       contentDiv.appendChild(card);
       container.appendChild(contentDiv);

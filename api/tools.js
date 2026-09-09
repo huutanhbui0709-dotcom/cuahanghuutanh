@@ -306,24 +306,56 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
     // Lazy-load heavy lib
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const candidateModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+    const candidateModels = [
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-3.8-flash',
+      'gemini-3.7-flash',
+      'gemini-3.5-flash-lite'
+    ];
+
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     async function generateWithFallback(parts) {
       let lastError = null;
       for (const modelName of candidateModels) {
-        try {
-          const m = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: { responseMimeType: 'application/json' }
-          });
-          const res = await m.generateContent(parts);
-          return res;
-        } catch (err) {
-          lastError = err;
-          console.warn(`[Gemini AI] Model ${modelName} failed, trying next candidate if available:`, err.message);
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const m = genAI.getGenerativeModel({
+              model: modelName,
+              generationConfig: { responseMimeType: 'application/json' }
+            });
+            const res = await m.generateContent(parts);
+            console.log(`[Gemini AI] Xử lý hóa đơn thành công với model: ${modelName}`);
+            return res;
+          } catch (err) {
+            lastError = err;
+            const msg = err.message || '';
+            const isTransient = /503|high demand|429|resource exhausted|timeout|temporar/i.test(msg);
+            console.warn(`[Gemini AI] Model ${modelName} (lần ${attempt}) gặp lỗi:`, msg);
+            if (isTransient && attempt < 2) {
+              await delay(1200);
+              continue;
+            }
+            break; // Thử sang candidate model tiếp theo
+          }
         }
       }
-      throw lastError;
+
+      // Thông báo lỗi rõ ràng nếu tất cả models đều gặp sự cố
+      let friendlyMsg = lastError ? lastError.message : 'Không thể xử lý hóa đơn qua AI.';
+      if (/503|high demand/i.test(friendlyMsg)) {
+        friendlyMsg = 'Hệ thống Google Gemini AI hiện đang quá tải tạm thời (503 High Demand). Vui lòng bấm "Thử lại xử lý hóa đơn" sau vài giây.';
+      } else if (/429|resource exhausted|quota/i.test(friendlyMsg)) {
+        friendlyMsg = 'Gemini API Key đã vượt quá hạn ngạch gọi (429 Rate Limit). Vui lòng thử lại sau giây lát hoặc cấu hình API Key khác trong tab Cấu hình Gemini Key.';
+      } else if (/API_KEY_INVALID|API key not valid/i.test(friendlyMsg)) {
+        friendlyMsg = 'Gemini API Key không hợp lệ hoặc chưa được kích hoạt. Vui lòng kiểm tra lại cấu hình Key trong tab Cấu hình Gemini Key hoặc file .env.';
+      }
+
+      const customErr = new Error(friendlyMsg);
+      customErr.originalMessage = lastError ? lastError.message : '';
+      throw customErr;
     }
 
     const results = [];
