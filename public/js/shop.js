@@ -429,9 +429,101 @@ function loadCart() {
   updateCartBadge();
 }
 
-function clearCart() {
+// ============================================================
+// STITCH-DESIGNED DELETE CONFIRMATION MODAL LOGIC
+// ============================================================
+let _deleteConfirmResolver = null;
+
+function showDeleteConfirmModal({
+  title = 'Xác nhận xoá',
+  target = '',
+  desc = 'Bạn có chắc chắn muốn thực hiện thao tác này?',
+  confirmText = 'Xác nhận xoá',
+  cancelText = 'Hủy bỏ',
+  icon = 'fa-trash-can'
+} = {}) {
+  return new Promise((resolve) => {
+    if (_deleteConfirmResolver) {
+      _deleteConfirmResolver(false);
+    }
+    _deleteConfirmResolver = resolve;
+
+    const modal = document.getElementById('deleteConfirmModal');
+    const card = document.getElementById('deleteConfirmCard');
+    const titleEl = document.getElementById('delConfirmTitle');
+    const targetBox = document.getElementById('delConfirmTargetBox');
+    const targetEl = document.getElementById('delConfirmTargetName');
+    const descEl = document.getElementById('delConfirmDesc');
+    const confirmBtnText = document.getElementById('delConfirmBtnText');
+    const cancelBtn = document.getElementById('delConfirmCancelBtn');
+    const iconEl = document.getElementById('delConfirmIcon');
+
+    if (!modal) {
+      const promptText = `${title}${target ? `\n[ ${target} ]` : ''}\n${desc}`;
+      resolve(window.confirm(promptText));
+      _deleteConfirmResolver = null;
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (targetEl && target) {
+      targetEl.textContent = target;
+      targetBox?.classList.remove('hidden');
+    } else {
+      targetBox?.classList.add('hidden');
+    }
+    if (descEl) descEl.textContent = desc;
+    if (confirmBtnText) confirmBtnText.textContent = confirmText;
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+    if (iconEl) {
+      iconEl.className = `fa-solid ${icon}`;
+    }
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
+    if (card) {
+      card.classList.remove('scale-95');
+      card.classList.add('scale-100');
+    }
+
+    setTimeout(() => {
+      document.getElementById('delConfirmCancelBtn')?.focus();
+    }, 50);
+  });
+}
+
+function closeDeleteConfirmModal(isConfirmed = false) {
+  const modal = document.getElementById('deleteConfirmModal');
+  const card = document.getElementById('deleteConfirmCard');
+
+  if (modal) {
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    if (card) {
+      card.classList.remove('scale-100');
+      card.classList.add('scale-95');
+    }
+  }
+
+  if (typeof _deleteConfirmResolver === 'function') {
+    const resolve = _deleteConfirmResolver;
+    _deleteConfirmResolver = null;
+    resolve(!!isConfirmed);
+  }
+}
+
+async function clearCart() {
   if (cart.length === 0) return;
-  if (!confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) return;
+  const totalItems = cart.reduce((s, x) => s + x.qty, 0);
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa toàn bộ giỏ hàng',
+    target: `${cart.length} loại mặt hàng (${totalItems} sản phẩm)`,
+    desc: 'Bạn có chắc chắn muốn xóa tất cả sản phẩm đang có trong giỏ hàng? Thao tác này sẽ làm trống giỏ hàng của bạn.',
+    confirmText: 'Xóa giỏ hàng',
+    cancelText: 'Giữ lại',
+    icon: 'fa-trash-can'
+  });
+  if (!confirmed) return;
   cart = [];
   updateCartBadge();
   saveCart();
@@ -511,7 +603,9 @@ function renderCart() {
     return;
   }
 
-  body.innerHTML = cart.map(item => `
+  const total = cart.reduce((s, x) => s + (x.gia * x.qty), 0);
+
+  const itemsHtml = cart.map(item => `
     <div class="swipe-container relative overflow-hidden w-full touch-pan-y rounded-2xl border border-slate-200/80 bg-white shadow-xs hover:border-slate-300 transition-colors" data-ma="${item.ma.replace(/'/g, "\\'")}">
       <!-- Background Delete Action (Swipe on Mobile) -->
       <div class="absolute right-0 top-0 bottom-0 bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center w-16 cursor-pointer rounded-r-2xl transition" onclick="removeFromCart('${item.ma.replace(/'/g, "\\'")}')">
@@ -557,9 +651,15 @@ function renderCart() {
     </div>
   `).join('');
 
-  initSwipeToDelete();
+  body.innerHTML = `
+    ${renderIncentiveProgressBar(total)}
+    <div class="space-y-3">
+      ${itemsHtml}
+    </div>
+    ${renderCartUpsellSection()}
+  `;
 
-  const total = cart.reduce((s, x) => s + (x.gia * x.qty), 0);
+  initSwipeToDelete();
   footer.innerHTML = `
     <div class="space-y-3">
       <!-- Subtotal Box -->
@@ -596,6 +696,10 @@ function renderCart() {
 function changeQty(ma, delta) {
   const item = cart.find(x => x.ma === ma);
   if (!item) return;
+  if (item.qty === 1 && delta === -1) {
+    removeFromCart(ma);
+    return;
+  }
   item.qty += delta;
   if (item.qty <= 0) cart = cart.filter(x => x.ma !== ma);
   updateCartBadge();
@@ -603,11 +707,25 @@ function changeQty(ma, delta) {
   renderCart();
 }
 
-function removeFromCart(ma) {
+async function removeFromCart(ma) {
+  const item = cart.find(x => x.ma === ma);
+  if (!item) return;
+
+  const confirmed = await showDeleteConfirmModal({
+    title: 'Xóa sản phẩm khỏi giỏ',
+    target: `${item.ten} (Số lượng: ${item.qty})`,
+    desc: 'Bạn có chắc chắn muốn xóa sản phẩm này ra khỏi giỏ hàng?',
+    confirmText: 'Xóa món này',
+    cancelText: 'Giữ lại',
+    icon: 'fa-trash-can'
+  });
+  if (!confirmed) return;
+
   cart = cart.filter(x => x.ma !== ma);
   updateCartBadge();
   saveCart();
   renderCart();
+  showToast(`<i class="fa-solid fa-trash-can"></i> Đã xóa "${item.ten.substring(0, 25)}..." khỏi giỏ`, 'info');
 }
 
 // ==============================
@@ -619,14 +737,52 @@ function openOrderForm() {
   if (warningEl) warningEl.classList.add('hidden');
   const confirmItems = document.getElementById('confirmItems');
   const total = cart.reduce((s, x) => s + (x.gia * x.qty), 0);
-  confirmItems.innerHTML = cart.map(item => `
-    <div class="px-3 py-2 xxs:px-4 xxs:py-3 flex justify-between items-start gap-2 xxs:gap-3 text-xs xxs:text-sm font-medium text-slate-700 border-b border-slate-100 last:border-b-0">
-      <span class="flex-1">${item.ten} <strong class="text-slate-800 whitespace-nowrap ml-1">× ${item.qty}</strong></span>
-      <span class="font-bold text-amber-600 flex-shrink-0 text-right mt-0.5">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</span>
+
+  const recs = getCartRecommendations(cart, 2);
+  const upsellHtml = (recs && recs.length > 0) ? `
+    <div class="p-3 bg-amber-50/70 dark:bg-amber-950/20 border-t border-amber-200/60 dark:border-amber-900/40">
+      <div class="text-[11px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <i class="fa-solid fa-bolt text-amber-500"></i> Ưu đãi phút chót (Mua thêm phụ kiện):
+      </div>
+      <div class="space-y-1.5">
+        ${recs.map(item => `
+          <div class="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded-lg border border-amber-200/70 dark:border-slate-700 text-xs">
+            <div class="min-w-0 flex-1 pr-2 truncate">
+              <span class="font-bold text-slate-800 dark:text-slate-200">${item.ten}</span>
+              <span class="text-amber-600 dark:text-amber-400 font-black font-mono ml-1">${formatPrice(item.gia)}</span>
+            </div>
+            <button type="button" onclick="quickAddUpsellInOrder('${item.ma.replace(/'/g, "\\'")}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] rounded-md shadow-xs transition active:scale-95 cursor-pointer">
+              + Thêm
+            </button>
+          </div>
+        `).join('')}
+      </div>
     </div>
-  `).join('');
+  ` : '';
+
+  confirmItems.innerHTML = `
+    ${cart.map(item => `
+      <div class="px-3 py-2 xxs:px-4 xxs:py-3 flex justify-between items-start gap-2 xxs:gap-3 text-xs xxs:text-sm font-medium text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 last:border-b-0">
+        <span class="flex-1">${item.ten} <strong class="text-slate-800 dark:text-white whitespace-nowrap ml-1">× ${item.qty}</strong></span>
+        <span class="font-bold text-amber-600 dark:text-amber-400 flex-shrink-0 text-right mt-0.5 font-mono">${item.gia ? formatPrice(item.gia * item.qty) : 'Liên hệ'}</span>
+      </div>
+    `).join('')}
+    ${upsellHtml}
+  `;
   document.getElementById('confirmTotal').textContent = formatPrice(total);
   document.getElementById('orderModal').classList.add('open');
+}
+
+function quickAddUpsellInOrder(ma) {
+  const p = products.find(x => x.ma === ma);
+  if (!p) return;
+  const existing = cart.find(x => x.ma === ma);
+  if (existing) existing.qty += 1;
+  else cart.push({ ...p, qty: 1 });
+  updateCartBadge();
+  saveCart();
+  showToast(`<i class="fa-solid fa-cart-plus text-amber-500"></i> Đã thêm "${p.ten.substring(0, 25)}..." vào đơn hàng`, 'success');
+  openOrderForm();
 }
 
 function closeOrderModal() {
@@ -1237,6 +1393,289 @@ function enableGradualSwipeToClose(modalId, closeFn) {
 enableGradualSwipeToClose('cartModal', closeCart);
 enableGradualSwipeToClose('orderModal', closeOrderModal);
 
+// ============================================================
+// UP-SELLING & CROSS-SELLING ENGINE (INDUSTRIAL REFINEMENT)
+// ============================================================
+const UPSELL_RULES = [
+  {
+    id: 'plumbing',
+    match: (p) => p.loai === 'Ống nước' || /(^|\s)(ống|co|lơi|tê|van|luppe|ren|bít|măng)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (cand.loai === 'Ống nước' ? 6 : 0) + (/(^|\s)(keo dán|băng keo non|co|tê|van|lưỡi cưa)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    penalize: (cand) => ['Đồ điện', 'Dây điện', 'Đèn Led'].includes(cand.loai) ? -20 : 0
+  },
+  {
+    id: 'electrical',
+    match: (p) => ['Đồ điện', 'Dây điện', 'Đèn Led', 'Bóng đèn'].includes(p.loai) || /(^|\s)(điện|cầu dao|mcb|dây|ổ cắm|công tắc|đèn|led|bóng)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (['Đồ điện', 'Dây điện', 'Đèn Led', 'Bóng đèn'].includes(cand.loai) ? 6 : 0) + (/(^|\s)(băng keo|bút thử|phích|ổ cắm|công tắc|kìm)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    penalize: (cand) => (cand.loai === 'Ống nước' ? -20 : 0)
+  },
+  {
+    id: 'tools',
+    match: (p) => p.loai === 'Dụng cụ' || /(^|\s)(khoan|mũi|vít|ốc|kìm|búa|tô vít|thước|đá cắt)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (cand.loai === 'Dụng cụ' ? 6 : 0) + (/(^|\s)(mũi khoan|vít|tắc kê|thước|đá cắt|đá mài)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    penalize: (cand) => 0
+  },
+  {
+    id: 'paint',
+    match: (p) => p.loai === 'Nước sơn' || /(^|\s)(sơn|chống thấm)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => /(^|\s)(cọ|lăn|rulo|keo giấy|nhám|xăng)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0,
+    penalize: (cand) => 0
+  }
+];
+
+function getSmartRecommendations(targetProduct, limit = 2) {
+  if (!targetProduct || !Array.isArray(products) || products.length === 0) return [];
+
+  const activeRule = UPSELL_RULES.find(r => r.match(targetProduct));
+  const excludeCodes = new Set([targetProduct.ma, ...(cart || []).map(x => x.ma)]);
+  const candidates = products.filter(p => !excludeCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh');
+
+  const scored = candidates.map(cand => {
+    let score = 0;
+    if (activeRule) {
+      score += activeRule.boost(cand);
+      score += activeRule.penalize(cand);
+    }
+    if (cand.loai === targetProduct.loai) score += 5;
+    // Upgrade in same category
+    if (cand.loai === targetProduct.loai && cand.gia > targetProduct.gia && cand.gia <= targetProduct.gia * 3) {
+      score += 6;
+    }
+    if (cand.isBestSeller) score += 3;
+    if (cand.image) score += 2;
+    return { cand, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(x => x.cand);
+}
+
+function getCartRecommendations(currentCart, limit = 3) {
+  if (!Array.isArray(products) || products.length === 0) return [];
+  const cartCodes = new Set((currentCart || []).map(x => x.ma));
+  const candidates = products.filter(p => !cartCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh');
+
+  if (!currentCart || currentCart.length === 0) {
+    return candidates.filter(p => p.isBestSeller || p.gia < 50000).slice(0, limit);
+  }
+
+  const matchedRules = UPSELL_RULES.filter(rule => (currentCart || []).some(item => rule.match(item)));
+
+  const scored = candidates.map(cand => {
+    let score = 0;
+    matchedRules.forEach(rule => {
+      score += rule.boost(cand);
+      score += rule.penalize(cand);
+    });
+
+    if (cand.gia <= 50000) score += 4;
+    else if (cand.gia <= 120000) score += 2;
+
+    if (cand.isBestSeller) score += 4;
+    if (cand.image) score += 2;
+
+    return { cand, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(x => x.cand);
+}
+
+// In-Cart Incentive Progress Bar
+function renderIncentiveProgressBar(total) {
+  const THRESHOLD = 300000;
+  const isUnlocked = total >= THRESHOLD;
+  const percent = Math.min(100, Math.round((total / THRESHOLD) * 100));
+
+  if (isUnlocked) {
+    return `
+      <div class="cart-progress-wrap unlocked mb-3 select-none">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> Đủ điều kiện Miễn phí giao hàng!
+          </span>
+          <span class="text-[10px] font-black text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full uppercase">Đạt chuẩn</span>
+        </div>
+        <div class="cart-progress-track">
+          <div class="cart-progress-fill" style="width: 100%"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  const remaining = THRESHOLD - total;
+  return `
+    <div class="cart-progress-wrap mb-3 select-none">
+      <div class="flex justify-between items-center text-xs">
+        <span class="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <i class="fa-solid fa-truck-fast text-amber-600 dark:text-amber-400"></i> Miễn phí giao hàng KV Thốt Nốt
+        </span>
+        <span class="font-bold text-amber-700 dark:text-amber-400">Mua thêm ${formatPrice(remaining)}</span>
+      </div>
+      <div class="cart-progress-track">
+        <div class="cart-progress-fill" style="width: ${percent}%"></div>
+      </div>
+    </div>
+  `;
+}
+
+// In-Cart Recommended Add-ons Section
+function renderCartUpsellSection() {
+  const recs = getCartRecommendations(cart, 3);
+  if (!recs || recs.length === 0) return '';
+
+  return `
+    <div class="cart-upsell-container mt-4">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">Gợi ý mua kèm tiện ích</span>
+        </div>
+        <span class="text-[11px] text-slate-400 font-medium">Thường dùng cùng</span>
+      </div>
+      <div class="space-y-2">
+        ${recs.map(item => `
+          <div class="cart-upsell-item">
+            <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+              ${item.image ? `<img src="${getProductImageUrl(item)}" class="w-full h-full object-contain" />` : `<span class="text-base">${getIcon(item.ten)}</span>`}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" title="${item.ten}">${item.ten}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${item.ma} · <span class="font-bold text-slate-900 dark:text-white font-mono text-xs">${formatPrice(item.gia)}</span></div>
+            </div>
+            <button class="btn-quick-add" onclick="quickAddUpsellToCart('${item.ma.replace(/'/g, "\\'")}', this)" title="Thêm ngay vào giỏ">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function quickAddUpsellToCart(ma, btnEl) {
+  const p = products.find(x => x.ma === ma);
+  if (!p) return;
+
+  const existing = cart.find(x => x.ma === ma);
+  if (existing) existing.qty += 1;
+  else cart.push({ ...p, qty: 1 });
+
+  updateCartBadge();
+  saveCart();
+
+  if (btnEl) {
+    btnEl.classList.add('added');
+    btnEl.innerHTML = '<i class="fa-solid fa-check"></i> Đã thêm';
+    setTimeout(() => {
+      renderCart();
+    }, 400);
+  } else {
+    renderCart();
+  }
+
+  showToast(`<i class="fa-solid fa-cart-plus text-amber-500"></i> Đã thêm "${p.ten.substring(0, 25)}..." vào giỏ`, 'success');
+}
+
+// Combo (Frequently Bought Together) in Product Details Modal
+let currentComboItems = [];
+
+function renderComboSection(mainProduct) {
+  const recs = getSmartRecommendations(mainProduct, 2);
+  if (!recs || recs.length === 0) return '';
+
+  currentComboItems = [
+    { product: mainProduct, isMain: true, checked: true },
+    ...recs.map(p => ({ product: p, isMain: false, checked: true }))
+  ];
+
+  const totalComboPrice = currentComboItems.reduce((s, it) => it.checked ? s + it.product.gia : s, 0);
+
+  return `
+    <div class="combo-section-wrap" id="detailComboSection">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="combo-badge">
+            <i class="fa-solid fa-layer-group"></i> Combo Thường Mua Cùng
+          </span>
+          <span class="text-xs text-slate-500 font-semibold hidden xs:inline">Tiết kiệm thời gian & thi công đồng bộ</span>
+        </div>
+        <span class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/60">
+          Gợi ý thi công
+        </span>
+      </div>
+
+      <!-- Combo Items List -->
+      <div class="space-y-2 mb-3">
+        ${currentComboItems.map((item) => `
+          <div class="combo-item-card ${item.checked ? 'selected' : ''}" id="combo_row_${item.product.ma.replace(/'/g, "\\'")}">
+            <label class="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
+              <input type="checkbox" ${item.checked ? 'checked' : ''} ${item.isMain ? 'disabled' : ''} 
+                onchange="toggleComboCheckbox('${item.product.ma.replace(/'/g, "\\'")}', this.checked)"
+                class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-slate-300 accent-amber-500 cursor-pointer" />
+              <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200/60 dark:border-slate-700">
+                ${item.product.image ? `<img src="${getProductImageUrl(item.product)}" class="w-full h-full object-contain" />` : `<span class="text-base">${getIcon(item.product.ten)}</span>`}
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">${item.product.ten}</div>
+                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 font-medium">
+                  <span class="font-mono text-amber-600 dark:text-amber-400 font-bold">${item.product.ma}</span>
+                  ${item.isMain ? '<span class="text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">Sản phẩm chính</span>' : '<span class="text-slate-500">Phụ kiện mua kèm</span>'}
+                </div>
+              </div>
+            </label>
+            <div class="text-right flex-shrink-0">
+              <div class="text-xs font-black text-slate-900 dark:text-white font-mono">${formatPrice(item.product.gia)}</div>
+              ${item.product.donvi ? `<div class="text-[10px] text-slate-400 font-semibold">${item.product.donvi}</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Combo Action Bar -->
+      <div class="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800 flex-wrap gap-2">
+        <div>
+          <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tổng combo:</span>
+          <span class="text-base font-black text-slate-900 dark:text-amber-400 font-mono" id="comboTotalPrice">${formatPrice(totalComboPrice)}</span>
+        </div>
+        <button type="button" onclick="addComboToCart()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-amber-400 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-cart-arrow-down"></i>
+          <span>Thêm cả bộ vào giỏ</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleComboCheckbox(ma, isChecked) {
+  const item = currentComboItems.find(x => x.product.ma === ma);
+  if (!item) return;
+  item.checked = isChecked;
+
+  const row = document.getElementById(`combo_row_${ma}`);
+  if (row) row.classList.toggle('selected', isChecked);
+
+  const total = currentComboItems.reduce((s, it) => it.checked ? s + it.product.gia : s, 0);
+  const totalEl = document.getElementById('comboTotalPrice');
+  if (totalEl) totalEl.textContent = formatPrice(total);
+}
+
+function addComboToCart() {
+  const selectedItems = currentComboItems.filter(it => it.checked);
+  if (selectedItems.length === 0) return;
+
+  selectedItems.forEach(it => {
+    const existing = cart.find(x => x.ma === it.product.ma);
+    if (existing) existing.qty += 1;
+    else cart.push({ ...it.product, qty: 1 });
+  });
+
+  updateCartBadge();
+  saveCart();
+  showToast(`<i class="fa-solid fa-layer-group text-amber-500"></i> Đã thêm trọn bộ combo (${selectedItems.length} sản phẩm) vào giỏ!`, 'success');
+  closeProductDetailModal();
+}
+
 // ==============================
 // PRODUCT DETAILS MODAL LOGIC
 // ==============================
@@ -1257,17 +1696,17 @@ function showProductDetails(ma) {
   contentEl.innerHTML = `
     <div class="flex flex-col md:flex-row md:items-stretch">
       <!-- Cột trái: Hình ảnh -->
-      <div class="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 flex items-center justify-center p-6 min-h-[260px] md:min-h-[360px] relative">
+      <div class="w-full md:w-1/2 bg-slate-50 dark:bg-slate-850 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex items-center justify-center p-6 min-h-[260px] md:min-h-[360px] relative">
         ${p.image ? `
-          <div class="relative w-full h-[220px] md:h-[310px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white p-3 border border-slate-200/50 shadow-inner">
+          <div class="relative w-full h-[220px] md:h-[310px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-3 border border-slate-200/50 dark:border-slate-700 shadow-inner">
             <img src="${getProductImageUrl(p)}" alt="${p.ten}" class="max-w-full max-h-full object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${getProductImageUrl(p)}')" />
-            <button onclick="openFullScreenImage('${getProductImageUrl(p)}')" class="absolute bottom-3 right-3 bg-white/95 hover:bg-white text-slate-800 w-8 h-8 rounded-lg shadow-sm border border-slate-150 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
+            <button onclick="openFullScreenImage('${getProductImageUrl(p)}')" class="absolute bottom-3 right-3 bg-white/95 dark:bg-slate-700 text-slate-800 dark:text-white w-8 h-8 rounded-lg shadow-sm border border-slate-150 dark:border-slate-600 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
               <i class="fa-solid fa-up-right-and-down-left-from-center text-[11px]"></i>
             </button>
           </div>
         ` : `
           <div class="flex flex-col items-center justify-center text-center p-8">
-            <div class="w-24 h-24 rounded-full bg-slate-200/50 flex items-center justify-center text-slate-400 mb-4 shadow-inner">
+            <div class="w-24 h-24 rounded-full bg-slate-200/50 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 shadow-inner">
               <span class="text-5xl select-none opacity-80">${getIcon(p.ten)}</span>
             </div>
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Không có hình ảnh</span>
@@ -1280,52 +1719,52 @@ function showProductDetails(ma) {
         <div>
           <!-- Loại sản phẩm -->
           <div class="mb-2">
-            <span class="text-[10px] font-extrabold tracking-wide uppercase px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100/70 inline-block">
+            <span class="text-[10px] font-extrabold tracking-wide uppercase px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-100/70 dark:border-indigo-800 inline-block">
               ${p.loai || 'Hàng hóa'}
             </span>
           </div>
           
           <!-- Tên sản phẩm -->
-          <h2 class="text-base xs:text-lg md:text-xl font-extrabold text-slate-900 leading-tight mb-2 select-text" title="${p.ten}">
+          <h2 class="text-base xs:text-lg md:text-xl font-extrabold text-slate-900 dark:text-white leading-tight mb-2 select-text" title="${p.ten}">
             ${p.ten}
           </h2>
           
           <!-- Mã sản phẩm & Trạng thái -->
           <div class="flex items-center gap-2 mb-4 flex-wrap">
-            <span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded flex items-center gap-1 font-semibold select-all">
+            <span class="text-[11px] font-mono text-slate-500 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 px-2 py-0.5 rounded flex items-center gap-1 font-semibold select-all">
               <i class="fa-solid fa-hashtag text-slate-400"></i> ${p.ma}
             </span>
             <button onclick="copyToClipboard('${p.ma.replace(/'/g, "\\'")}', this)" class="text-slate-400 hover:text-amber-500 transition text-[11px] p-1" title="Sao chép mã">
               <i class="fa-regular fa-copy"></i>
             </button>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.trangthai === 'Đang theo dõi' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'}">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.trangthai === 'Đang theo dõi' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-100 dark:border-amber-800'}">
               ${p.trangthai || 'Có sẵn'}
             </span>
           </div>
           
           <!-- Khung Giá & Đơn vị -->
-          <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 flex items-center justify-between mb-5">
+          <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700 flex items-center justify-between mb-5">
             <div>
               <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Đơn giá</span>
-              <span class="text-lg md:text-xl font-black text-blue-600">${formatPrice(p.gia)}</span>
+              <span class="text-lg md:text-xl font-black text-blue-600 dark:text-amber-400">${formatPrice(p.gia)}</span>
             </div>
             <div class="text-right">
               <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Đơn vị tính</span>
-              <span class="inline-block px-2.5 py-0.5 bg-slate-200/60 text-slate-700 text-xs font-extrabold rounded-lg">${p.donvi || 'Cái'}</span>
+              <span class="inline-block px-2.5 py-0.5 bg-slate-200/60 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-extrabold rounded-lg">${p.donvi || 'Cái'}</span>
             </div>
           </div>
         </div>
         
         <!-- Chọn số lượng & Thêm vào giỏ -->
-        <div class="mt-auto pt-4 border-t border-slate-100 space-y-4">
+        <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Số lượng mua</span>
-            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
-              <button onclick="changeDetailQty(-1)" class="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition">
+            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Số lượng mua</span>
+            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700">
+              <button onclick="changeDetailQty(-1)" class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-200 hover:bg-slate-50 active:scale-95 transition">
                 <i class="fa-solid fa-minus text-[10px]"></i>
               </button>
-              <input type="number" id="detailQtyInput" value="1" min="1" class="w-10 text-center font-extrabold text-slate-800 bg-transparent focus:outline-none text-xs" onchange="validateDetailQty(this)" />
-              <button onclick="changeDetailQty(1)" class="w-7 h-7 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition">
+              <input type="number" id="detailQtyInput" value="1" min="1" class="w-10 text-center font-extrabold text-slate-800 dark:text-white bg-transparent focus:outline-none text-xs" onchange="validateDetailQty(this)" />
+              <button onclick="changeDetailQty(1)" class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-200 hover:bg-slate-50 active:scale-95 transition">
                 <i class="fa-solid fa-plus text-[10px]"></i>
               </button>
             </div>
@@ -1338,6 +1777,8 @@ function showProductDetails(ma) {
         </div>
       </div>
     </div>
+    <!-- Frequently Bought Together / Combo Section -->
+    ${renderComboSection(p)}
   `;
 
   document.getElementById('productDetailModal').classList.add('open');
@@ -1358,6 +1799,7 @@ function closeProductDetailOnOutsideClick(e) {
 // Lắng nghe phím ESC để đóng các modal
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
+    closeDeleteConfirmModal(false);
     closeProductDetailModal();
     closeCart();
     closeOrderModal();

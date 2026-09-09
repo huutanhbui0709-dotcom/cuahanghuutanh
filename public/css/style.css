@@ -1552,4 +1552,233 @@ html.dark .admin-icon-btn:hover {
   border-color: #334155;
 }
 
+/* ============================================================
+   UP-SELLING & CROSS-SELLING STYLES (INDUSTRIAL REFINEMENT)
+   ============================================================ */
+
+/* 1. In-Cart Incentive Progress Bar */
+.cart-progress-wrap {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  border-radius: 0.875rem;
+  padding: 0.75rem 0.875rem;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.08);
+}
+
+.cart-progress-track {
+  height: 6px;
+  width: 100%;
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.cart-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 9999px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cart-progress-wrap.unlocked {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #bbf7d0;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.08);
+}
+
+.cart-progress-wrap.unlocked .cart-progress-fill {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+/* 2. In-Cart Recommended Add-ons */
+.cart-upsell-container {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 0.875rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.cart-upsell-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.75rem;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cart-upsell-item:hover {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.btn-quick-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-quick-add:hover {
+  background-color: #f59e0b;
+  color: #0f172a;
+  border-color: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(245, 158, 11, 0.25);
+}
+
+.btn-quick-add:active {
+  transform: scale(0.95);
+}
+
+.btn-quick-add.added {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+/* 3. Product Detail Modal: Frequently Bought Together / Combo */
+.combo-section-wrap {
+  border-top: 1px solid #e2e8f0;
+  background-color: #fafbfd;
+  padding: 1.25rem;
+}
+
+.combo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  background-color: #fef3c7;
+  color: #b45309;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  border: 1px solid #fde68a;
+}
+
+.combo-item-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.875rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.combo-item-card.selected {
+  border-color: #f59e0b;
+  background-color: #fffdf5;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.08);
+}
+
+.combo-plus-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background-color: #e2e8f0;
+  color: #64748b;
+  font-size: 0.625rem;
+  font-weight: 900;
+  margin: 0 auto;
+}
+
+/* Dark Mode Support for Upselling */
+html.dark .cart-progress-wrap {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+html.dark .cart-progress-track {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+html.dark .cart-progress-wrap.unlocked {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+html.dark .cart-upsell-container {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+html.dark .cart-upsell-item {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+html.dark .cart-upsell-item:hover {
+  background-color: #243047;
+  border-color: #475569;
+}
+
+html.dark .btn-quick-add {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+html.dark .btn-quick-add:hover {
+  background-color: #f59e0b;
+  color: #0f172a;
+}
+
+html.dark .btn-quick-add.added {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+html.dark .combo-section-wrap {
+  border-color: #1e293b;
+  background-color: #0b1120;
+}
+
+html.dark .combo-badge {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+html.dark .combo-item-card {
+  background-color: #131d33;
+  border-color: #1e293b;
+}
+
+html.dark .combo-item-card.selected {
+  border-color: #f59e0b;
+  background-color: #18243e;
+}
+
+html.dark .combo-plus-connector {
+  background-color: #1e293b;
+  color: #94a3b8;
+}
+
 

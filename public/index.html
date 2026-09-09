@@ -48,7 +48,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=2.1">
+  <link rel="stylesheet" href="css/style.css?v=2.4">
   <style>
     /* Đè CSS cũ bằng Tailwind tương thích với JS */
     #cartCount {
@@ -402,7 +402,7 @@
   <!-- ======= PRODUCT DETAIL MODAL ======= -->
   <div class="modal-overlay center" id="productDetailModal" onclick="closeProductDetailOnOutsideClick(event)">
     <div
-      class="modal modal-lg !bg-white shadow-2xl flex flex-col w-full max-w-[640px] rounded-2xl overflow-hidden mx-4 my-auto relative"
+      class="modal modal-lg !bg-white dark:!bg-slate-900 shadow-2xl flex flex-col w-full max-w-[720px] rounded-2xl overflow-hidden mx-4 my-auto relative border border-slate-200/80 dark:border-slate-800"
       onclick="event.stopPropagation()">
       <!-- Close button on top right of the modal card -->
       <button onclick="closeProductDetailModal()"
@@ -411,7 +411,7 @@
       </button>
 
       <!-- Modal Content Body -->
-      <div id="productDetailContent" class="overflow-y-auto max-h-[85vh] p-0 flex flex-col bg-white">
+      <div id="productDetailContent" class="overflow-y-auto max-h-[85vh] p-0 flex flex-col bg-white dark:bg-slate-900">
         <!-- Filled dynamically by shop.js -->
       </div>
     </div>
@@ -833,8 +833,63 @@
     })();
   </script>
 
+  <!-- ======= STITCH-DESIGNED DELETE CONFIRMATION MODAL ======= -->
+  <div id="deleteConfirmModal"
+    class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm transition-all duration-200 opacity-0 pointer-events-none"
+    onclick="if (event.target === this) closeDeleteConfirmModal(false)">
+    <div id="deleteConfirmCard"
+      class="relative w-full max-w-[440px] bg-white dark:bg-slate-900 rounded-[24px] shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden transform transition-all duration-200 scale-95 flex flex-col items-center text-center p-6 sm:p-8"
+      role="dialog" aria-modal="true" aria-labelledby="delConfirmTitle" aria-describedby="delConfirmDesc">
+      <!-- Close Button -->
+      <button type="button" aria-label="Đóng" onclick="closeDeleteConfirmModal(false)"
+        class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+
+      <!-- Danger/Warning Badge with Pulsing Halo -->
+      <div
+        class="relative w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center mb-4 flex-shrink-0">
+        <div class="absolute inset-0 rounded-full bg-rose-500/20 animate-ping"></div>
+        <div
+          class="relative w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400 text-xl font-bold">
+          <i id="delConfirmIcon" class="fa-solid fa-trash-can"></i>
+        </div>
+      </div>
+
+      <!-- Modal Title -->
+      <h3 id="delConfirmTitle" class="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">
+        Xác nhận xoá
+      </h3>
+
+      <!-- Target Object Highlight Box -->
+      <div id="delConfirmTargetBox"
+        class="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 rounded-xl px-4 py-2.5 mb-3 text-center hidden">
+        <span id="delConfirmTargetName" class="font-bold text-slate-800 dark:text-slate-100 text-sm break-words"></span>
+      </div>
+
+      <!-- Description / Warning Message -->
+      <p id="delConfirmDesc"
+        class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed max-w-[360px]">
+        Bạn có chắc chắn muốn thực hiện thao tác này?
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="w-full flex items-center gap-3">
+        <button type="button" id="delConfirmCancelBtn" onclick="closeDeleteConfirmModal(false)"
+          class="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition active:scale-95 cursor-pointer">
+          Hủy bỏ
+        </button>
+        <button type="button" id="delConfirmActionBtn" onclick="closeDeleteConfirmModal(true)"
+          class="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-600/25 transition flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-trash-can text-xs"></i>
+          <span id="delConfirmBtnText">Xác nhận xoá</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/location.js"></script>
-  <script src="js/shop.js?v=1.1"></script>
+  <script src="js/shop.js?v=2.1"></script>
 </body>
 
 </html>
