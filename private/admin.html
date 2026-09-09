@@ -1113,19 +1113,24 @@
                 onclick="document.getElementById('invoiceFileInput').click()" ondragover="handleInvoiceDragOver(event)"
                 ondragleave="handleInvoiceDragLeave(event)" ondrop="handleInvoiceDrop(event)">
                 <div class="upload-zone-icon flex justify-center gap-3 text-2xl">
-                  <i class="fa-solid fa-file-image text-blue-500"></i>
+                  <i class="fa-solid fa-file-code text-emerald-500"></i>
                   <i class="fa-solid fa-file-pdf text-rose-500"></i>
+                  <i class="fa-solid fa-file-image text-blue-500"></i>
                 </div>
-                <div class="upload-zone-text" id="invoiceUploadText">Kéo thả file PDF, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)</div>
-                <div class="upload-zone-hint">Hỗ trợ .pdf, .png, .jpg, .jpeg, .webp (Dung lượng &lt; 5MB/file)</div>
+                <div class="upload-zone-text" id="invoiceUploadText">Kéo thả file PDF, XML, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)</div>
+                <div class="upload-zone-hint">Hỗ trợ .pdf, .xml, .png, .jpg, .jpeg, .webp (Dung lượng &lt; 5MB/file)</div>
               </div>
-              <input type="file" id="invoiceFileInput" multiple accept=".pdf,image/*" style="display: none" onchange="handleInvoiceFilesSelect(event)" />
+              <input type="file" id="invoiceFileInput" multiple accept=".pdf,.xml,image/*" style="display: none" onchange="handleInvoiceFilesSelect(event)" />
               <div id="invoiceFilesList" class="mt-3" style="display: none;"></div>
 
-              <div class="mt-4 flex gap-2.5">
-                <button class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer"
-                  id="btnProcessInvoices" onclick="processInvoices()">
-                  <i class="fa-solid fa-play text-slate-950"></i> Bắt đầu xử lý hóa đơn
+              <div class="mt-4 flex flex-wrap gap-2.5">
+                <button class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 rounded-xl font-black text-xs shadow-md shadow-amber-500/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  id="btnProcessInvoices" onclick="processInvoices('ai')" disabled>
+                  <i class="fa-solid fa-robot text-slate-950"></i> Bắt đầu xử lý hóa đơn (AI)
+                </button>
+                <button class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-black text-xs shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  id="btnProcessInvoicesNoAi" onclick="processInvoices('direct')" disabled>
+                  <i class="fa-solid fa-bolt text-white"></i> Phân tích không dùng AI (Nhanh)
                 </button>
                 <button class="px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs transition cursor-pointer active:scale-95"
                   id="btnClearInvoices" onclick="clearInvoiceSelection()" style="display: none;">

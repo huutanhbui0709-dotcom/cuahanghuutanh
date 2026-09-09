@@ -3244,6 +3244,7 @@ function handleInvoiceFilesSelect(e) {
 function renderSelectedInvoiceFiles() {
   const listEl = document.getElementById('invoiceFilesList');
   const btnProcess = document.getElementById('btnProcessInvoices');
+  const btnProcessNoAi = document.getElementById('btnProcessInvoicesNoAi');
   const btnClear = document.getElementById('btnClearInvoices');
   const uploadText = document.getElementById('invoiceUploadText');
 
@@ -3256,9 +3257,13 @@ function renderSelectedInvoiceFiles() {
       <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
         ${selectedInvoiceFiles.map((f, idx) => {
           const isPDF = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
-          const icon = isPDF 
-            ? '<i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 1rem;"></i>' 
-            : '<i class="fa-solid fa-file-image" style="color: #3b82f6; font-size: 1rem;"></i>';
+          const isXML = f.type === 'text/xml' || f.type === 'application/xml' || f.name.toLowerCase().endsWith('.xml');
+          let icon = '<i class="fa-solid fa-file-image" style="color: #3b82f6; font-size: 1rem;"></i>';
+          if (isPDF) {
+            icon = '<i class="fa-solid fa-file-pdf" style="color: #ef4444; font-size: 1rem;"></i>';
+          } else if (isXML) {
+            icon = '<i class="fa-solid fa-file-code" style="color: #10b981; font-size: 1rem;"></i>';
+          }
           const sizeMB = (f.size / (1024 * 1024)).toFixed(2);
           return `
             <div class="selected-invoice-file-item inline-flex items-center gap-2 max-w-full bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 shadow-2xs transition-all">
@@ -3274,6 +3279,7 @@ function renderSelectedInvoiceFiles() {
       </div>
     `;
     if (btnProcess) btnProcess.removeAttribute('disabled');
+    if (btnProcessNoAi) btnProcessNoAi.removeAttribute('disabled');
     if (btnClear) btnClear.style.display = 'inline-block';
   } else {
     clearInvoiceSelection();
@@ -3294,9 +3300,10 @@ function filterAndSetInvoiceFiles(filesList) {
   for (let i = 0; i < filesList.length; i++) {
     const file = filesList[i];
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isXML = file.type === 'text/xml' || file.type === 'application/xml' || file.name.toLowerCase().endsWith('.xml');
     const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|jfif)$/i.test(file.name);
 
-    if (isPDF || isImage) {
+    if (isPDF || isXML || isImage) {
       if (file.size <= 5 * 1024 * 1024) {
         // Prevent duplicate files based on name and size
         if (!selectedInvoiceFiles.some(f => f.name === file.name && f.size === file.size)) {
@@ -3306,7 +3313,7 @@ function filterAndSetInvoiceFiles(filesList) {
         showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} vượt quá 5MB.`, 'error');
       }
     } else {
-      showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} không phải định dạng PDF hoặc hình ảnh.`, 'error');
+      showToast(`<i class="fa-solid fa-triangle-exclamation"></i> File ${file.name} không phải định dạng PDF, XML hoặc hình ảnh.`, 'error');
     }
   }
 
@@ -3346,29 +3353,47 @@ document.addEventListener('paste', function (e) {
 function clearInvoiceSelection() {
   selectedInvoiceFiles = [];
   parsedInvoicesList = [];
-  document.getElementById('invoiceFileInput').value = '';
-  document.getElementById('invoiceUploadText').innerHTML = 'Kéo thả file PDF, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)';
-  document.getElementById('invoiceFilesList').style.display = 'none';
-  document.getElementById('invoiceFilesList').innerHTML = '';
-  document.getElementById('btnProcessInvoices').setAttribute('disabled', 'true');
-  document.getElementById('btnClearInvoices').style.display = 'none';
+  const fileInput = document.getElementById('invoiceFileInput');
+  if (fileInput) fileInput.value = '';
+  const uploadText = document.getElementById('invoiceUploadText');
+  if (uploadText) uploadText.innerHTML = 'Kéo thả file PDF, XML, hình ảnh vào đây, hoặc nhấn để chọn file (Hỗ trợ Ctrl+V)';
+  const filesList = document.getElementById('invoiceFilesList');
+  if (filesList) {
+    filesList.style.display = 'none';
+    filesList.innerHTML = '';
+  }
+  const btnProcess = document.getElementById('btnProcessInvoices');
+  if (btnProcess) btnProcess.setAttribute('disabled', 'true');
+  const btnProcessNoAi = document.getElementById('btnProcessInvoicesNoAi');
+  if (btnProcessNoAi) btnProcessNoAi.setAttribute('disabled', 'true');
+  const btnClear = document.getElementById('btnClearInvoices');
+  if (btnClear) btnClear.style.display = 'none';
 }
 
-async function processInvoices() {
+async function processInvoices(mode = 'ai') {
   if (selectedInvoiceFiles.length === 0) return;
 
   const btnProcess = document.getElementById('btnProcessInvoices');
+  const btnProcessNoAi = document.getElementById('btnProcessInvoicesNoAi');
   const btnClear = document.getElementById('btnClearInvoices');
   const statusEl = document.getElementById('invoiceProcessingStatus');
+  const statusText = document.getElementById('invoiceStatusText');
   const resultsContainer = document.getElementById('invoiceResultsContainer');
 
   // Trạng thái đang tải
-  btnProcess.setAttribute('disabled', 'true');
-  btnClear.style.display = 'none';
-  statusEl.style.display = 'block';
-  resultsContainer.innerHTML = '';
+  if (btnProcess) btnProcess.setAttribute('disabled', 'true');
+  if (btnProcessNoAi) btnProcessNoAi.setAttribute('disabled', 'true');
+  if (btnClear) btnClear.style.display = 'none';
+  if (statusText) {
+    statusText.textContent = mode === 'direct'
+      ? 'Đang đọc và phân tích dữ liệu hóa đơn trực tiếp (không dùng AI)...'
+      : 'Đang gửi dữ liệu hóa đơn và xử lý bằng AI...';
+  }
+  if (statusEl) statusEl.style.display = 'block';
+  if (resultsContainer) resultsContainer.innerHTML = '';
 
   const formData = new FormData();
+  formData.append('mode', mode);
   selectedInvoiceFiles.forEach(file => {
     formData.append('files', file);
   });
@@ -3380,29 +3405,34 @@ async function processInvoices() {
     });
 
     if (res.status === 401) {
-      statusEl.style.display = 'none';
+      if (statusEl) statusEl.style.display = 'none';
       return;
     }
 
     const data = await res.json();
-    statusEl.style.display = 'none';
+    if (statusEl) statusEl.style.display = 'none';
 
     if (!res.ok || !data.ok) {
       showToast(`<i class="fa-solid fa-xmark"></i> ${data.message || 'Lỗi xử lý hóa đơn'}`, 'error');
-      btnProcess.removeAttribute('disabled');
-      btnClear.style.display = 'inline-block';
+      if (btnProcess) btnProcess.removeAttribute('disabled');
+      if (btnProcessNoAi) btnProcessNoAi.removeAttribute('disabled');
+      if (btnClear) btnClear.style.display = 'inline-block';
       return;
     }
 
     renderInvoiceResults(data.results);
     parsedInvoicesList = data.results.map(r => r.ok ? r.data : null);
-    showToast('<i class="fa-solid fa-check"></i> Đã xử lý xong toàn bộ hóa đơn PDF!', 'success');
+    const msg = mode === 'direct'
+      ? '<i class="fa-solid fa-bolt"></i> Đã phân tích xong hóa đơn trực tiếp (không dùng AI)!'
+      : '<i class="fa-solid fa-check"></i> Đã xử lý xong toàn bộ hóa đơn bằng AI!';
+    showToast(msg, 'success');
   } catch (err) {
     console.error(err);
-    statusEl.style.display = 'none';
+    if (statusEl) statusEl.style.display = 'none';
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối máy chủ.', 'error');
-    btnProcess.removeAttribute('disabled');
-    btnClear.style.display = 'inline-block';
+    if (btnProcess) btnProcess.removeAttribute('disabled');
+    if (btnProcessNoAi) btnProcessNoAi.removeAttribute('disabled');
+    if (btnClear) btnClear.style.display = 'inline-block';
   }
 }
 
@@ -3666,8 +3696,12 @@ function renderInvoiceResults(results) {
   });
 
   // Khôi phục các nút
-  document.getElementById('btnProcessInvoices').removeAttribute('disabled');
-  document.getElementById('btnClearInvoices').style.display = 'inline-block';
+  const btnProcess = document.getElementById('btnProcessInvoices');
+  if (btnProcess) btnProcess.removeAttribute('disabled');
+  const btnProcessNoAi = document.getElementById('btnProcessInvoicesNoAi');
+  if (btnProcessNoAi) btnProcessNoAi.removeAttribute('disabled');
+  const btnClear = document.getElementById('btnClearInvoices');
+  if (btnClear) btnClear.style.display = 'inline-block';
 }
 
 function showInvoiceResultTab(index) {

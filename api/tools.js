@@ -14,6 +14,7 @@ const crypto = require('crypto');
 const cookieParser = require('cookie');
 const express = require('express');
 const multer = require('multer');
+const zlib = require('zlib');
 
 const { neon } = require('@neondatabase/serverless');
 const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
@@ -191,8 +192,8 @@ async function ensureInitialized() {
 const uploadInvoice = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
-    if (/\.(pdf|png|jpe?g|webp|bmp|jfif)$/i.test(file.originalname)) cb(null, true);
-    else cb(new Error('Chỉ chấp nhận file PDF hoặc hình ảnh (PNG, JPG, WEBP, BMP, JFIF).'));
+    if (/\.(pdf|xml|png|jpe?g|webp|bmp|jfif)$/i.test(file.originalname)) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận file PDF, XML hoặc hình ảnh (PNG, JPG, WEBP, BMP, JFIF).'));
   },
   limits: { fileSize: 5 * 1024 * 1024 },
 });
@@ -284,24 +285,489 @@ app.use(async (req, res, next) => {
   }
 });
 
+// ── Hàm bốc tách hóa đơn trực tiếp (không dùng AI) ──────────────────────
+function parseVnNumber(str) {
+  if (!str) return 0;
+  let clean = String(str).trim();
+  const lastDot = clean.lastIndexOf('.');
+  const lastComma = clean.lastIndexOf(',');
+  if (lastDot > lastComma) {
+    clean = clean.replace(/,/g, '');
+    const parts = clean.split('.');
+    if (parts.length > 2) clean = parts.join('');
+    else if (parts.length === 2 && parts[1].length === 3) clean = parts.join('');
+  } else if (lastComma > lastDot) {
+    clean = clean.replace(/\./g, '');
+    const parts = clean.split(',');
+    if (parts.length > 2) clean = parts.join('');
+    else if (parts.length === 2 && parts[1].length === 3) clean = parts.join('');
+    else clean = clean.replace(/,/g, '.');
+  } else {
+    clean = clean.replace(/[.,]/g, '');
+  }
+  return parseFloat(clean) || 0;
+}
+
+function parseSingleXmlInvoice(xmlStr) {
+  if (!xmlStr || typeof xmlStr !== 'string') return null;
+
+  const getTag = (tag, str) => {
+    const m = str.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+    return m ? m[1].trim() : '';
+  };
+
+  const getTagAny = (tags, str) => {
+    for (const t of tags) {
+      const v = getTag(t, str);
+      if (v) return v;
+    }
+    return '';
+  };
+
+  // Thông tin chung
+  const ttChung = getTagAny(['TTChung', 'InvoiceHeader'], xmlStr) || xmlStr;
+  let khmshd = getTagAny(['KHMSHDon', 'MauSo'], ttChung);
+  let khhd = getTagAny(['KHHDon', 'KyHieu'], ttChung);
+  let serial = khmshd && khhd ? (khhd.startsWith(khmshd) ? khhd : khmshd + khhd) : (khhd || khmshd || '');
+  let invoiceNumber = getTagAny(['SHDon', 'SoHoaDon', 'InvoiceNumber', 'SoHD'], ttChung);
+  if (invoiceNumber) invoiceNumber = invoiceNumber.padStart(7, '0');
+
+  // Ngày lập
+  const nlap = getTagAny(['NLap', 'NgayLap', 'InvoiceDate', 'NgayHD'], ttChung);
+  let invoiceDate = { date: '', month: '', year: '' };
+  if (nlap) {
+    const mDate = nlap.match(/(\d{4})-(\d{1,2})-(\d{1,2})/) || nlap.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+    if (mDate) {
+      if (mDate[1].length === 4) {
+        invoiceDate = { year: mDate[1], month: mDate[2].padStart(2, '0'), date: mDate[3].padStart(2, '0') };
+      } else {
+        invoiceDate = { date: mDate[1].padStart(2, '0'), month: mDate[2].padStart(2, '0'), year: mDate[3] };
+      }
+    }
+  }
+
+  // Người bán
+  const nBan = getTagAny(['NBan', 'Seller', 'NguoiBan'], xmlStr) || xmlStr;
+  const sellerName = getTagAny(['Ten', 'TenNBan', 'SellerName', 'Name'], nBan);
+  const taxCode = getTagAny(['MST', 'MSTNBan', 'SellerTaxCode', 'TaxCode'], nBan);
+
+  // Danh sách sản phẩm
+  const products = [];
+  const hhdRegex = /<(?:HHDVu|ChiTietHHDVu|InvoiceItem|Item)[^>]*>([\s\S]*?)<\/(?:HHDVu|ChiTietHHDVu|InvoiceItem|Item)>/gi;
+  let itemMatch;
+  while ((itemMatch = hhdRegex.exec(xmlStr)) !== null) {
+    const itemBlock = itemMatch[1];
+    const name = getTagAny(['THHVu', 'TenHHDVu', 'ItemName', 'Ten'], itemBlock);
+    if (!name) continue;
+    const code = getTagAny(['MHHDVu', 'MaHHDVu', 'ItemCode', 'Ma'], itemBlock);
+    const unit = getTagAny(['DVTinh', 'DonViTinh', 'Unit'], itemBlock) || 'Cái';
+    const quantity = parseFloat(getTagAny(['SLuong', 'SoLuong', 'Quantity'], itemBlock).replace(/,/g, '.')) || 0;
+    const price = Math.round(parseFloat(getTagAny(['DGia', 'DonGia', 'Price'], itemBlock).replace(/,/g, '.')) || 0);
+    const amount = Math.round(parseFloat(getTagAny(['ThTien', 'ThanhTien', 'Amount'], itemBlock).replace(/,/g, '.')) || (quantity * price));
+
+    let tsuatStr = getTagAny(['TSuat', 'ThueSuat', 'VATRate', 'TaxRate'], itemBlock);
+    let taxPercent = 0;
+    const mTax = tsuatStr.match(/(\d+)/);
+    if (mTax) taxPercent = parseInt(mTax[1], 10);
+
+    products.push({
+      code,
+      name,
+      unit,
+      quantity,
+      price,
+      amount,
+      taxPercent
+    });
+  }
+
+  if (!sellerName && products.length === 0) return null;
+
+  return {
+    sellerName,
+    serial,
+    invoiceNumber,
+    taxCode,
+    invoiceDate,
+    products
+  };
+}
+
+function parseXmlInvoice(xmlStr) {
+  if (!xmlStr || typeof xmlStr !== 'string') return [];
+
+  const hdonMatches = xmlStr.match(/<HDon[\s\S]*?<\/HDon>/gi) || xmlStr.match(/<DLHDon[\s\S]*?<\/DLHDon>/gi);
+  if (hdonMatches && hdonMatches.length > 1) {
+    const list = [];
+    for (const hdonStr of hdonMatches) {
+      const inv = parseSingleXmlInvoice(hdonStr);
+      if (inv) list.push(inv);
+    }
+    if (list.length > 0) return list;
+  }
+
+  const single = parseSingleXmlInvoice(xmlStr);
+  return single ? [single] : [];
+}
+
+function extractEmbeddedXmlFromPdf(pdfBuffer) {
+  try {
+    const bufStr = pdfBuffer.toString('utf8');
+    const xmlMatch = bufStr.match(/<(?:\?xml|HDon|DLHDon)[\s\S]*?<\/(?:HDon|DLHDon)>/i);
+    if (xmlMatch) {
+      return xmlMatch[0];
+    }
+
+    let pos = 0;
+    const streamStartMarker = Buffer.from('stream');
+    const streamEndMarker = Buffer.from('endstream');
+
+    while (pos < pdfBuffer.length) {
+      const start = pdfBuffer.indexOf(streamStartMarker, pos);
+      if (start === -1) break;
+      const end = pdfBuffer.indexOf(streamEndMarker, start);
+      if (end === -1) break;
+
+      let streamDataStart = start + 6;
+      if (pdfBuffer[streamDataStart] === 0x0d && pdfBuffer[streamDataStart + 1] === 0x0a) {
+        streamDataStart += 2;
+      } else if (pdfBuffer[streamDataStart] === 0x0a) {
+        streamDataStart += 1;
+      }
+
+      const streamBuffer = pdfBuffer.slice(streamDataStart, end);
+      try {
+        const decompressed = zlib.inflateSync(streamBuffer);
+        const decStr = decompressed.toString('utf8');
+        if (/<(?:HDon|DLHDon)[\s\S]*?<\/(?:HDon|DLHDon)>/i.test(decStr)) {
+          const m = decStr.match(/<(?:\?xml|HDon|DLHDon)[\s\S]*?<\/(?:HDon|DLHDon)>/i);
+          if (m) return m[0];
+        }
+      } catch (e) {
+        // Bỏ qua stream không phải FlateDecode hoặc dữ liệu khác
+      }
+
+      pos = end + 9;
+    }
+  } catch (err) {
+    console.warn('[extractEmbeddedXmlFromPdf] Lỗi quét XML nhúng:', err.message);
+  }
+  return null;
+}
+
+function parsePdfInvoiceText(fullText) {
+  if (!fullText || typeof fullText !== 'string') return null;
+  fullText = fullText.normalize('NFC').replace(/\u00A0/g, ' ').replace(/[\u2010-\u2015]/g, '-');
+
+  const lines = fullText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // 1. Ký hiệu (Serial)
+  let serial = '';
+  const mSerial = fullText.match(/(?:Ký\s*hiệu|Serial|Mẫu\s*số\s*[-–]\s*Ký\s*hiệu)[^:\n]*[:\s]*([12]?[C|K][0-9]{2}[A-Z]{2,3}|[A-Z0-9]{6,8})/i)
+    || fullText.match(/\b([12][C|K][0-9]{2}[A-Z]{2,3})\b/);
+  if (mSerial) serial = mSerial[1].toUpperCase();
+
+  // 2. Số hóa đơn
+  let invoiceNumber = '';
+  const mInvNo = fullText.match(/(?:Số|Số\s*\(No\.\)|Số\s*hóa\s*đơn|No\.)[^:\n0-9]*[:\s]*0*([0-9]{1,8})\b/i)
+    || fullText.match(/\b(?:No\.|Số)\s*[:.\s]*0*([0-9]{1,8})\b/i);
+  if (mInvNo) {
+    invoiceNumber = mInvNo[1].padStart(7, '0');
+  }
+
+  // 3. Ngày hóa đơn
+  let invoiceDate = { date: '', month: '', year: '' };
+  const mDate = fullText.match(/Ngày\s*([0-9]{1,2})\s*tháng\s*([0-9]{1,2})\s*năm\s*([0-9]{4})/i)
+    || fullText.match(/(?:Ngày|Date)[^:\n0-9]*[:\s]*([0-9]{1,2})[/-]([0-9]{1,2})[/-]([0-9]{4})/i)
+    || fullText.match(/\b([0-9]{1,2})[/-]([0-9]{1,2})[/-](202[0-9]|203[0-9])\b/);
+  if (mDate) {
+    invoiceDate = {
+      date: mDate[1].padStart(2, '0'),
+      month: mDate[2].padStart(2, '0'),
+      year: mDate[3]
+    };
+  }
+
+  // 4. Mã số thuế người bán
+  let taxCode = '';
+  const mMst = fullText.match(/(?:Mã\s*số\s*thuế|MST|M\.S\.T)[^:\n0-9]*[:\s]*([0-9]{10}(?:-[0-9]{3})?)/i);
+  if (mMst) taxCode = mMst[1];
+
+  // 5. Tên người bán
+  let sellerName = '';
+  const mSeller = fullText.match(/(?:Đơn\s*vị\s*bán(?:\s*hàng)?|Tên\s*người\s*bán|Người\s*bán)[^:\n]*[:\s]*([^\n]+)/i);
+  if (mSeller) {
+    sellerName = mSeller[1].trim();
+  } else {
+    const compLine = lines.slice(0, 15).find(l => /^(?:CÔNG TY|DOANH NGHIỆP|HỘ KINH DOANH|CỬA HÀNG|CHI NHÁNH)/i.test(l));
+    if (compLine) sellerName = compLine;
+  }
+
+  // 6. Bảng chi tiết sản phẩm
+  const products = [];
+  const unitList = [
+    'Cuộn', 'cuộn', 'Cuon', 'cuon',
+    'Cái', 'cái', 'Cai', 'cai',
+    'Mét', 'mét', 'Met', 'met',
+    'Bộ', 'bộ', 'Bo', 'bo',
+    'Cây', 'cây', 'Cay', 'cay',
+    'Kg', 'kg', 'KG',
+    'Ống', 'ống', 'Ong', 'ong',
+    'Thùng', 'thùng', 'Thung', 'thung',
+    'Hộp', 'hộp', 'Hop', 'hop',
+    'Bao', 'bao',
+    'Lít', 'lít', 'Lit', 'lit',
+    'Gói', 'gói', 'Goi', 'goi',
+    'Tấm', 'tấm', 'Tam', 'tam',
+    'Túi', 'túi', 'Tui', 'tui',
+    'Lon', 'lon',
+    'Chiếc', 'chiếc', 'Chiec', 'chiec',
+    'Chai', 'chai',
+    'Can', 'can',
+    'Bình', 'bình', 'Binh', 'binh',
+    'Thanh', 'thanh',
+    'Viên', 'viên', 'Vien', 'vien',
+    'Đôi', 'đôi', 'Doi', 'doi',
+    'M', 'L'
+  ];
+  unitList.sort((a, b) => b.length - a.length);
+  const unitPattern = new RegExp(`(?:^|[\\s,;])(${unitList.join('|')})(?=[\\s,;]|$)`, 'i');
+
+  let inTable = false;
+  let tableLines = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/Tên\s*hàng\s*hóa|Đơn\s*vị\s*tính|Số\s*lượng|Thành\s*tiền/i.test(line)) {
+      inTable = true;
+      continue;
+    }
+    if (inTable) {
+      if (/Cộng\s*tiền\s*hàng|Tổng\s*tiền|Thuế\s*suất\s*GTGT|Tiền\s*thuế\s*GTGT|Tổng\s*cộng\s*tiền\s*thanh\s*toán/i.test(line)) {
+        inTable = false;
+        break;
+      }
+      tableLines.push(line);
+    }
+  }
+
+  const candidateLines = tableLines.length > 0 ? tableLines : lines;
+
+  for (let i = 0; i < candidateLines.length; i++) {
+    const line = candidateLines[i];
+    const mUnit = line.match(unitPattern);
+    if (!mUnit) continue;
+
+    const unit = mUnit[1];
+    const unitPos = line.search(unitPattern);
+    let namePart = line.substring(0, unitPos).trim();
+    namePart = namePart.replace(/^\d+[\s.)-]+/, '').trim();
+    if (namePart.length < 2) {
+      if (i > 0 && candidateLines[i - 1].length > 2 && !candidateLines[i - 1].match(unitPattern)) {
+        namePart = candidateLines[i - 1].replace(/^\d+[\s.)-]+/, '').trim();
+      }
+    }
+    if (!namePart || namePart.length < 2) continue;
+
+    const afterUnit = line.substring(unitPos + mUnit[0].length).trim();
+    const numberTokens = afterUnit.match(/\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?\b/g) || [];
+    if (numberTokens.length === 0) continue;
+
+    const quantity = parseVnNumber(numberTokens[0]) || 1;
+    let price = 0;
+    let amount = 0;
+
+    if (numberTokens.length >= 3) {
+      price = Math.round(parseVnNumber(numberTokens[1]));
+      amount = Math.round(parseVnNumber(numberTokens[2]));
+    } else if (numberTokens.length === 2) {
+      amount = Math.round(parseVnNumber(numberTokens[1]));
+      price = Math.round(amount / (quantity || 1));
+    } else if (numberTokens.length === 1) {
+      price = Math.round(parseVnNumber(numberTokens[0]));
+      amount = Math.round(price * quantity);
+    }
+
+    let taxPercent = 0;
+    const mTax = afterUnit.match(/\b(0|5|8|10)%\b/);
+    if (mTax) taxPercent = parseInt(mTax[1], 10);
+
+    products.push({
+      name: namePart,
+      unit: unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase(),
+      quantity,
+      price,
+      amount,
+      taxPercent
+    });
+  }
+
+  return {
+    sellerName,
+    serial,
+    invoiceNumber,
+    taxCode,
+    invoiceDate,
+    products
+  };
+}
+
+async function parseInvoiceDirectly(fileBuffer, originalName, mimeType) {
+  const isXml = /\.xml$/i.test(originalName) || mimeType === 'application/xml' || mimeType === 'text/xml';
+  const isPdf = /\.pdf$/i.test(originalName) || mimeType === 'application/pdf';
+
+  if (isXml) {
+    const xmlStr = fileBuffer.toString('utf8');
+    const invoiceList = parseXmlInvoice(xmlStr);
+    if (!invoiceList || invoiceList.length === 0 || (!invoiceList[0].sellerName && (!invoiceList[0].products || invoiceList[0].products.length === 0))) {
+      throw new Error('Không thể phân tích dữ liệu từ file XML. File có thể không đúng cấu trúc hóa đơn điện tử chuẩn.');
+    }
+    return invoiceList;
+  }
+
+  if (isPdf) {
+    // 1. Thử trích xuất XML nhúng bên trong PDF (MISA, VNPT, Viettel e-invoices)
+    const embeddedXml = extractEmbeddedXmlFromPdf(fileBuffer);
+    if (embeddedXml) {
+      try {
+        const invoiceList = parseXmlInvoice(embeddedXml);
+        if (invoiceList && invoiceList.length > 0 && invoiceList[0].products && invoiceList[0].products.length > 0) {
+          console.log(`[Direct Parse] Đọc thành công XML nhúng bên trong file PDF: ${originalName}`);
+          return invoiceList;
+        }
+      } catch (e) {
+        console.warn(`[Direct Parse] Lỗi parse XML nhúng từ PDF ${originalName}:`, e.message);
+      }
+    }
+
+    // 2. Dùng pdf-parse để đọc text layer
+    const pdfParse = require('pdf-parse');
+    const pdfData = await pdfParse(fileBuffer);
+    const parsed = parsePdfInvoiceText(pdfData.text);
+
+    if (!parsed || (!parsed.sellerName && (!parsed.products || parsed.products.length === 0))) {
+      throw new Error('Không tìm thấy nội dung văn bản hóa đơn trong file PDF (file có thể là bản scan dạng ảnh thuần hoặc không có lớp text). Vui lòng dùng nút "Bắt đầu xử lý hóa đơn (AI)".');
+    }
+    return [parsed];
+  }
+
+  // File hình ảnh
+  throw new Error('File hình ảnh không có lớp dữ liệu text/xml để phân tích trực tiếp. Vui lòng sử dụng nút "Bắt đầu xử lý hóa đơn (AI)" đối với file hình ảnh.');
+}
+
+function matchInvoiceProductsAndSuppliers(inv, systemProducts, systemSuppliers) {
+  if (!inv) return;
+
+  if (inv.products && Array.isArray(inv.products) && systemProducts && systemProducts.length > 0) {
+    for (const prod of inv.products) {
+      const prodNameLower = (prod.name || '').toLowerCase().trim();
+      const prodCodeLower = (prod.code || '').toLowerCase().trim();
+      const hasMatch = systemProducts.some(sysP => {
+        const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
+        const sysNameLower = (sysP.ten || '').toLowerCase().trim();
+
+        // 1. Khớp chính xác theo mã SP
+        if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
+        // 2. Mã SP có trong tên sản phẩm hóa đơn (vd: "...model COV-22-RS")
+        if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
+        if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
+
+        // 3. So sánh tên rút gọn: bỏ khoảng trắng/dấu phân cách
+        // VD: "màn phủ 1mx100m" ↔ "màn phủ 1m x 100m" → compact khớp
+        const prodCompact = compactName(prodNameLower);
+        const sysCompact = compactName(sysNameLower);
+        if (prodCompact && sysCompact) {
+          if (prodCompact === sysCompact) return true;
+          const minLen = Math.min(prodCompact.length, sysCompact.length);
+          if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
+        }
+
+        // 4. Số chứa trong tên (soft guard — chỉ loại nếu cả hai có số VÀ khác nhau rõ ràng)
+        const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
+        const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
+        if (prodNums && sysNums && prodNums !== sysNums) return false;
+
+        // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
+        const sim = calculateSimilarity(prodNameLower, sysNameLower);
+        if (sim >= 0.80) return true;
+
+        // 6. Tên nằm trong nhau (tên dài bao tên ngắn)
+        if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
+          if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
+        }
+        return false;
+      });
+      if (!hasMatch) prod.isNewSystemProduct = true;
+    }
+  }
+
+  if (inv.sellerName && systemSuppliers && systemSuppliers.length > 0) {
+    const sellerLower = inv.sellerName.toLowerCase().trim();
+    const supplierMatch = systemSuppliers.some(sup => {
+      const supName = (sup.name || '').toLowerCase().trim();
+      if (!supName) return false;
+      const sim = calculateSimilarity(sellerLower, supName);
+      return sim >= 0.8 || sellerLower.includes(supName) || supName.includes(sellerLower);
+    });
+    if (!supplierMatch) inv.isNewSupplier = true;
+  }
+}
+
 // =====================================================================
-// ROUTE: POST /api/tools/parse-invoice (Gemini AI — đọc hóa đơn GTGT)
+// ROUTE: POST /api/tools/parse-invoice (Đọc hóa đơn GTGT: Trực tiếp hoặc AI)
 // =====================================================================
 app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 15), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ ok: false, message: 'Không có file PDF hoặc hình ảnh nào được tải lên.' });
+      return res.status(400).json({ ok: false, message: 'Không có file PDF, XML hoặc hình ảnh nào được tải lên.' });
     }
 
+    const mode = (req.body && req.body.mode) || req.query.mode || 'ai';
+    const systemProducts = products;
+    const systemSuppliers = suppliers;
+    const results = [];
+
+    // ── CHẾ ĐỘ 1: PHÂN TÍCH TRỰC TIẾP KHÔNG DÙNG AI (NHANH, MIỄN PHÍ) ───
+    if (mode === 'direct') {
+      for (const file of req.files) {
+        const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        try {
+          const invoiceList = await parseInvoiceDirectly(file.buffer, originalName, file.mimetype);
+
+          for (let invIdx = 0; invIdx < invoiceList.length; invIdx++) {
+            const inv = invoiceList[invIdx];
+            matchInvoiceProductsAndSuppliers(inv, systemProducts, systemSuppliers);
+
+            const displayFileName = invoiceList.length > 1
+              ? `${originalName} (HĐ ${invIdx + 1}${inv.invoiceNumber ? ` - Số ${inv.invoiceNumber}` : ''})`
+              : originalName;
+
+            results.push({
+              ok: true,
+              fileName: displayFileName,
+              originalFileName: originalName,
+              invoiceIndex: invIdx + 1,
+              totalInFile: invoiceList.length,
+              data: inv
+            });
+          }
+        } catch (err) {
+          console.error(`[Direct Parse] Lỗi xử lý file ${originalName}:`, err.message);
+          results.push({ ok: false, fileName: originalName, message: err.message });
+        } finally {
+          file.buffer = null;
+        }
+      }
+
+      return res.json({ ok: true, results });
+    }
+
+    // ── CHẾ ĐỘ 2: PHÂN TÍCH BẰNG GOOGLE GEMINI AI ─────────────────────
     const apiKey = (settings.geminiKeySource === 'custom' && settings.geminiApiKey)
       ? settings.geminiApiKey
       : process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ ok: false, message: 'Chưa cấu hình Gemini API Key trong hệ thống. Vui lòng nhập ở phần Công cụ hoặc kiểm tra cấu hình file .env.' });
     }
-
-    const systemProducts = products;
-    const systemSuppliers = suppliers;
 
     // Lazy-load heavy lib
     const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -357,8 +823,6 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
       customErr.originalMessage = lastError ? lastError.message : '';
       throw customErr;
     }
-
-    const results = [];
 
     for (const file of req.files) {
       const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
@@ -446,59 +910,7 @@ Lưu ý: "taxPercent" là phần trăm thuế suất GTGT (VAT) áp dụng riên
         for (let invIdx = 0; invIdx < invoiceList.length; invIdx++) {
           const inv = invoiceList[invIdx];
 
-          if (inv.products && Array.isArray(inv.products)) {
-            for (const prod of inv.products) {
-              const prodNameLower = (prod.name || '').toLowerCase().trim();
-              const prodCodeLower = (prod.code || '').toLowerCase().trim();
-              const hasMatch = systemProducts.some(sysP => {
-                const sysCodeRaw = (sysP.ma || '').toLowerCase().trim();
-                const sysNameLower = (sysP.ten || '').toLowerCase().trim();
-
-                // 1. Khớp chính xác theo mã SP
-                if (prodCodeLower && sysCodeRaw && sysCodeRaw === prodCodeLower) return true;
-                // 2. Mã SP có trong tên sản phẩm hóa đơn (vd: "...model COV-22-RS")
-                if (sysCodeRaw && prodNameLower.includes(sysCodeRaw)) return true;
-                if (sysCodeRaw.length >= 6 && sysCodeRaw.includes(prodNameLower)) return true;
-
-                // 3. So sánh tên rút gọn: bỏ khoảng trắng/dấu phân cách
-                // VD: "màn phủ 1mx100m" ↔ "màn phủ 1m x 100m" → compact khớp
-                const prodCompact = compactName(prodNameLower);
-                const sysCompact = compactName(sysNameLower);
-                if (prodCompact && sysCompact) {
-                  if (prodCompact === sysCompact) return true;
-                  const minLen = Math.min(prodCompact.length, sysCompact.length);
-                  if (minLen >= 5 && (prodCompact.includes(sysCompact) || sysCompact.includes(prodCompact))) return true;
-                }
-
-                // 4. Số chứa trong tên (soft guard — chỉ loại nếu cả hai có số VÀ khác nhau rõ ràng)
-                const prodNums = (prodNameLower.match(/\d+/g) || []).sort().join(',');
-                const sysNums = (sysNameLower.match(/\d+/g) || []).sort().join(',');
-                if (prodNums && sysNums && prodNums !== sysNums) return false;
-
-                // 5. Độ tương đồng Levenshtein (ngưỡng 0.80)
-                const sim = calculateSimilarity(prodNameLower, sysNameLower);
-                if (sim >= 0.80) return true;
-
-                // 6. Tên nằm trong nhau (tên dài bao tên ngắn)
-                if (prodNameLower.length >= 5 && sysNameLower.length >= 5) {
-                  if (prodNameLower.includes(sysNameLower) || sysNameLower.includes(prodNameLower)) return true;
-                }
-                return false;
-              });
-              if (!hasMatch) prod.isNewSystemProduct = true;
-            }
-          }
-
-          if (inv.sellerName && systemSuppliers.length > 0) {
-            const sellerLower = inv.sellerName.toLowerCase().trim();
-            const supplierMatch = systemSuppliers.some(sup => {
-              const supName = (sup.name || '').toLowerCase().trim();
-              if (!supName) return false;
-              const sim = calculateSimilarity(sellerLower, supName);
-              return sim >= 0.8 || sellerLower.includes(supName) || supName.includes(sellerLower);
-            });
-            if (!supplierMatch) inv.isNewSupplier = true;
-          }
+          matchInvoiceProductsAndSuppliers(inv, systemProducts, systemSuppliers);
 
           const displayFileName = invoiceList.length > 1
             ? `${originalName} (HĐ ${invIdx + 1}${inv.invoiceNumber ? ` - Số ${inv.invoiceNumber}` : ''})`
