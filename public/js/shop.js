@@ -1423,31 +1423,59 @@ const UPSELL_RULES = [
   }
 ];
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+}
+
 function getSmartRecommendations(targetProduct, limit = 2) {
   if (!targetProduct || !Array.isArray(products) || products.length === 0) return [];
+  if (targetProduct.enableUpsell === false) return [];
 
-  const activeRule = UPSELL_RULES.find(r => r.match(targetProduct));
   const excludeCodes = new Set([targetProduct.ma, ...(cart || []).map(x => x.ma)]);
-  const candidates = products.filter(p => !excludeCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh');
+  let finalRecs = [];
 
-  const scored = candidates.map(cand => {
-    let score = 0;
-    if (activeRule) {
-      score += activeRule.boost(cand);
-      score += activeRule.penalize(cand);
-    }
-    if (cand.loai === targetProduct.loai) score += 5;
-    // Upgrade in same category
-    if (cand.loai === targetProduct.loai && cand.gia > targetProduct.gia && cand.gia <= targetProduct.gia * 3) {
-      score += 6;
-    }
-    if (cand.isBestSeller) score += 3;
-    if (cand.image) score += 2;
-    return { cand, score };
-  });
+  // 1. Admin-configured custom linked products
+  if (Array.isArray(targetProduct.upsellProducts) && targetProduct.upsellProducts.length > 0) {
+    const customItems = targetProduct.upsellProducts
+      .map(code => products.find(p => p.ma === code))
+      .filter(p => p && !excludeCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
+    
+    customItems.forEach(p => {
+      p._isCustomUpsell = true;
+      excludeCodes.add(p.ma);
+      finalRecs.push(p);
+    });
+  }
 
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, limit).map(x => x.cand);
+  // 2. If fewer than limit, supplement with smart heuristic recommendations
+  if (finalRecs.length < limit) {
+    const activeRule = UPSELL_RULES.find(r => r.match(targetProduct));
+    const candidates = products.filter(p => !excludeCodes.has(p.ma) && p.gia > 0 && p.trangthai !== 'Ngừng kinh doanh' && p.trangthai !== 'Ngừng theo dõi');
+
+    const scored = candidates.map(cand => {
+      let score = 0;
+      if (activeRule) {
+        score += activeRule.boost(cand);
+        score += activeRule.penalize(cand);
+      }
+      if (cand.loai === targetProduct.loai) score += 5;
+      // Upgrade in same category
+      if (cand.loai === targetProduct.loai && cand.gia > targetProduct.gia && cand.gia <= targetProduct.gia * 3) {
+        score += 6;
+      }
+      if (cand.isBestSeller) score += 3;
+      if (cand.image) score += 2;
+      return { cand, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const needed = limit - finalRecs.length;
+    const additional = scored.slice(0, needed).map(x => x.cand);
+    finalRecs = [...finalRecs, ...additional];
+  }
+
+  return finalRecs.slice(0, limit);
 }
 
 function getCartRecommendations(currentCart, limit = 3) {
@@ -1581,12 +1609,13 @@ function quickAddUpsellToCart(ma, btnEl) {
 let currentComboItems = [];
 
 function renderComboSection(mainProduct) {
+  if (!mainProduct || mainProduct.enableUpsell === false) return '';
   const recs = getSmartRecommendations(mainProduct, 2);
   if (!recs || recs.length === 0) return '';
 
   currentComboItems = [
     { product: mainProduct, isMain: true, checked: true },
-    ...recs.map(p => ({ product: p, isMain: false, checked: true }))
+    ...recs.map(p => ({ product: p, isMain: false, isCustomUpsell: !!p._isCustomUpsell, checked: true }))
   ];
 
   const totalComboPrice = currentComboItems.reduce((s, it) => it.checked ? s + it.product.gia : s, 0);
@@ -1594,14 +1623,18 @@ function renderComboSection(mainProduct) {
   return `
     <div class="combo-section-wrap" id="detailComboSection">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <span class="combo-badge">
             <i class="fa-solid fa-layer-group"></i> Combo Thường Mua Cùng
           </span>
-          <span class="text-xs text-slate-500 font-semibold hidden xs:inline">Tiết kiệm thời gian & thi công đồng bộ</span>
+          ${mainProduct.upsellCriteria ? `
+            <span class="text-[11px] font-black text-amber-900 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-300/80 dark:border-amber-700/80 flex items-center gap-1.5 shadow-xs">
+              <i class="fa-solid fa-arrow-trend-up text-amber-600 dark:text-amber-400"></i> Tiêu chí: ${escapeHtml(mainProduct.upsellCriteria)}
+            </span>
+          ` : '<span class="text-xs text-slate-500 font-semibold hidden xs:inline">Tiết kiệm thời gian & thi công đồng bộ</span>'}
         </div>
         <span class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/60">
-          Gợi ý thi công
+          ${mainProduct.upsellCriteria ? 'Gợi ý nâng cấp' : 'Gợi ý thi công'}
         </span>
       </div>
 
@@ -1618,9 +1651,13 @@ function renderComboSection(mainProduct) {
               </div>
               <div class="min-w-0 flex-1">
                 <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">${item.product.ten}</div>
-                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 font-medium">
+                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 font-medium flex-wrap">
                   <span class="font-mono text-amber-600 dark:text-amber-400 font-bold">${item.product.ma}</span>
-                  ${item.isMain ? '<span class="text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">Sản phẩm chính</span>' : '<span class="text-slate-500">Phụ kiện mua kèm</span>'}
+                  ${item.isMain 
+                    ? '<span class="text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">Sản phẩm chính</span>' 
+                    : (item.isCustomUpsell 
+                      ? '<span class="text-amber-800 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 px-1.5 py-0.2 rounded text-[9px] font-bold border border-amber-200/60">Khuyên dùng</span>' 
+                      : '<span class="text-slate-500">Phụ kiện mua kèm</span>')}
                 </div>
               </div>
             </label>

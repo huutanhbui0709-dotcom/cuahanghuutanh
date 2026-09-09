@@ -1655,6 +1655,7 @@ function renderAdminTable() {
   const statusFilter = document.getElementById('adminStatusFilter')?.value || '';
   const bestSellerFilter = document.getElementById('adminBestSellerFilter')?.value || '';
   const imageFilter = document.getElementById('adminImageFilter')?.value || '';
+  const upsellFilter = document.getElementById('adminUpsellFilter')?.value || '';
 
   let list = products.filter(p => {
     if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
@@ -1664,6 +1665,9 @@ function renderAdminTable() {
     if (bestSellerFilter === 'no' && p.isBestSeller) return false;
     if (imageFilter === 'yes' && !p.image) return false;
     if (imageFilter === 'no' && p.image) return false;
+    if (upsellFilter === 'yes' && p.enableUpsell === false) return false;
+    if (upsellFilter === 'custom' && (p.enableUpsell === false || !Array.isArray(p.upsellProducts) || p.upsellProducts.length === 0)) return false;
+    if (upsellFilter === 'no' && p.enableUpsell !== false) return false;
     return true;
   });
 
@@ -1681,7 +1685,18 @@ function renderAdminTable() {
           <td>${(adminPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
           <td>${p.image ? `<img src="${getProductImageUrl(p)}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" />` : '<i class="fa-solid fa-box"></i>'}</td>
           <td><code style="font-size:.78rem;background:var(--bg);padding:2px 6px;border-radius:4px">${p.ma}</code></td>
-          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.ten.replace(/"/g, '&quot;')}">${p.ten}</td>
+          <td style="max-width:320px;line-height:1.3">
+            <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600" title="${p.ten.replace(/"/g, '&quot;')}">${p.ten}</div>
+            ${p.enableUpsell !== false ? `
+              <div style="margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                <span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef3c7;color:#92400e;border:1px solid #fde68a" title="Tiêu chí Up-sell: ${p.upsellCriteria || 'Ma trận ngành hàng'} (${Array.isArray(p.upsellProducts) ? p.upsellProducts.length : 0} SP chỉ định)">
+                  <i class="fa-solid fa-arrow-trend-up text-amber-500" style="font-size:9px"></i>
+                  ${p.upsellCriteria ? p.upsellCriteria : 'Up-sell'}
+                  ${Array.isArray(p.upsellProducts) && p.upsellProducts.length > 0 ? `<span style="opacity:0.85">(${p.upsellProducts.length} SP)</span>` : ''}
+                </span>
+              </div>
+            ` : ''}
+          </td>
           <td style="font-weight:700;color:var(--primary)">${formatPrice(p.gia)}</td>
           <td>${p.donvi || '-'}</td>
           <td><span class="badge ${p.loai === 'Hàng hóa dịch vụ' ? 'badge-green' : 'badge-blue'}">${p.loai || '-'}</span></td>
@@ -1845,6 +1860,142 @@ document.addEventListener('click', (e) => {
 });
 
 // ==============================
+// UP-SELLING & UPGRADE CRITERIA CONFIGURATION
+// ==============================
+let currentModalUpsellProducts = [];
+
+function toggleUpsellSettingsSection(enabled) {
+  const body = document.getElementById('pf_upsell_body');
+  if (body) {
+    body.style.opacity = enabled ? '1' : '0.4';
+    body.style.pointerEvents = enabled ? 'auto' : 'none';
+  }
+}
+
+function handleUpsellCriteriaChange(val) {
+  const customInput = document.getElementById('pf_customUpsellCriteria');
+  if (!customInput) return;
+  if (val === 'custom') {
+    customInput.style.display = 'block';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+  }
+}
+
+function searchUpsellCandidates(kw) {
+  const resDiv = document.getElementById('pf_upsellSearchResults');
+  if (!resDiv) return;
+  const term = (kw || '').trim().toLowerCase();
+  if (!term) {
+    resDiv.style.display = 'none';
+    resDiv.innerHTML = '';
+    return;
+  }
+
+  const currentMa = document.getElementById('pf_ma')?.value.trim();
+  const selectedSet = new Set(currentModalUpsellProducts);
+
+  const matched = (products || []).filter(p => {
+    if (p.ma === currentMa) return false;
+    if (selectedSet.has(p.ma)) return false;
+    return p.ten.toLowerCase().includes(term) || p.ma.toLowerCase().includes(term);
+  }).slice(0, 8);
+
+  if (matched.length === 0) {
+    resDiv.innerHTML = '<div class="p-3 text-center text-slate-400">Không tìm thấy sản phẩm phù hợp</div>';
+    resDiv.style.display = 'block';
+    return;
+  }
+
+  resDiv.innerHTML = matched.map(p => `
+    <div onclick="addUpsellCandidate('${p.ma.replace(/'/g, "\\'")}')" 
+      class="p-2 hover:bg-amber-50 dark:hover:bg-slate-700/60 rounded-lg cursor-pointer flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-700/40 last:border-0 transition">
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+          ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-cover" />` : '<i class="fa-solid fa-box text-slate-400 text-xs"></i>'}
+        </div>
+        <div class="min-w-0">
+          <div class="font-bold text-slate-800 dark:text-white truncate text-xs">${p.ten}</div>
+          <div class="text-[10px] text-slate-400 font-mono">${p.ma} · ${formatPrice(p.gia)}</div>
+        </div>
+      </div>
+      <button type="button" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-[11px] rounded flex items-center gap-1 flex-shrink-0 cursor-pointer">
+        <i class="fa-solid fa-plus text-[10px]"></i> Chọn
+      </button>
+    </div>
+  `).join('');
+  resDiv.style.display = 'block';
+}
+
+function addUpsellCandidate(ma) {
+  if (currentModalUpsellProducts.length >= 4) {
+    showToast('<i class="fa-solid fa-triangle-exclamation"></i> Tối đa 4 sản phẩm Up-sell cho mỗi mặt hàng', 'warning');
+    return;
+  }
+  if (!currentModalUpsellProducts.includes(ma)) {
+    currentModalUpsellProducts.push(ma);
+  }
+  const searchInput = document.getElementById('pf_upsellSearch');
+  if (searchInput) searchInput.value = '';
+  const resDiv = document.getElementById('pf_upsellSearchResults');
+  if (resDiv) {
+    resDiv.style.display = 'none';
+    resDiv.innerHTML = '';
+  }
+  renderSelectedUpsellBadges();
+}
+
+function removeUpsellProduct(ma) {
+  currentModalUpsellProducts = currentModalUpsellProducts.filter(x => x !== ma);
+  renderSelectedUpsellBadges();
+}
+
+function renderSelectedUpsellBadges() {
+  const container = document.getElementById('pf_selectedUpsellList');
+  const countEl = document.getElementById('pf_upsellSelectedCount');
+  if (!container) return;
+
+  if (countEl) {
+    countEl.textContent = `Đã chọn: ${currentModalUpsellProducts.length}/4`;
+  }
+
+  if (currentModalUpsellProducts.length === 0) {
+    container.innerHTML = '<div class="text-center py-2 text-slate-400 text-xs italic" id="pf_noUpsellNotice">Chưa chọn sản phẩm liên kết nào (Hệ thống sẽ tự động dùng ma trận ngành hàng thông minh).</div>';
+    return;
+  }
+
+  container.innerHTML = currentModalUpsellProducts.map((ma, idx) => {
+    const p = (products || []).find(x => x.ma === ma) || { ma, ten: 'Sản phẩm không xác định', gia: 0 };
+    return `
+      <div class="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-5 h-5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center flex-shrink-0">${idx + 1}</span>
+          <div class="w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+            ${p.image ? `<img src="${getProductImageUrl(p)}" class="w-full h-full object-cover" />` : '<i class="fa-solid fa-box text-slate-400 text-xs"></i>'}
+          </div>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-800 dark:text-white truncate">${p.ten}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${p.ma} · <span class="text-amber-600 font-bold">${formatPrice(p.gia)}</span></div>
+          </div>
+        </div>
+        <button type="button" onclick="removeUpsellProduct('${ma.replace(/'/g, "\\'")}')" class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center text-xs transition cursor-pointer" title="Gỡ khỏi danh sách">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+document.addEventListener('click', (e) => {
+  const searchWrap = document.getElementById('pf_upsellSearch');
+  const resDiv = document.getElementById('pf_upsellSearchResults');
+  if (resDiv && searchWrap && !searchWrap.contains(e.target) && !resDiv.contains(e.target)) {
+    resDiv.style.display = 'none';
+  }
+});
+
+// ==============================
 // PRODUCT ADD / EDIT / DELETE
 // ==============================
 function openProductModal(ma) {
@@ -1873,7 +2024,48 @@ function openProductModal(ma) {
 
   document.getElementById('pf_trangthai').value = p ? (p.trangthai || 'Đang theo dõi') : 'Đang theo dõi';
 
+  // Up-selling Configuration Loading
+  const enableUpsellEl = document.getElementById('pf_enableUpsell');
+  if (enableUpsellEl) {
+    enableUpsellEl.checked = p ? (p.enableUpsell !== false) : true;
+    toggleUpsellSettingsSection(enableUpsellEl.checked);
+  }
 
+  const criteriaSelect = document.getElementById('pf_upsellCriteria');
+  const customCriteriaInput = document.getElementById('pf_customUpsellCriteria');
+  if (criteriaSelect && customCriteriaInput) {
+    const criteriaVal = p?.upsellCriteria || '';
+    const presetOptions = [
+      'Công suất / Tải lớn hơn',
+      'Dòng cao cấp / Độ bền cao',
+      'Quy cách lớn hơn tiết kiệm hơn',
+      'Phụ kiện thi công đồng bộ khuyên dùng',
+      'Combo đầy đủ dụng cụ lắp đặt'
+    ];
+    if (presetOptions.includes(criteriaVal)) {
+      criteriaSelect.value = criteriaVal;
+      customCriteriaInput.style.display = 'none';
+      customCriteriaInput.value = '';
+    } else if (criteriaVal) {
+      criteriaSelect.value = 'custom';
+      customCriteriaInput.style.display = 'block';
+      customCriteriaInput.value = criteriaVal;
+    } else {
+      criteriaSelect.value = '';
+      customCriteriaInput.style.display = 'none';
+      customCriteriaInput.value = '';
+    }
+  }
+
+  currentModalUpsellProducts = Array.isArray(p?.upsellProducts) ? [...p.upsellProducts] : [];
+  const searchInput = document.getElementById('pf_upsellSearch');
+  if (searchInput) searchInput.value = '';
+  const searchRes = document.getElementById('pf_upsellSearchResults');
+  if (searchRes) {
+    searchRes.style.display = 'none';
+    searchRes.innerHTML = '';
+  }
+  renderSelectedUpsellBadges();
 
   // Image preview
   document.getElementById('pf_image').value = '';
@@ -1935,6 +2127,23 @@ async function saveProductForm() {
     formData.append('donvi', donvi);
     formData.append('loai', loai);
     formData.append('trangthai', trangthai);
+
+    // Up-selling fields
+    const enableUpsellEl = document.getElementById('pf_enableUpsell');
+    const enableUpsell = enableUpsellEl ? enableUpsellEl.checked : true;
+    const criteriaSelect = document.getElementById('pf_upsellCriteria');
+    const customCriteriaInput = document.getElementById('pf_customUpsellCriteria');
+    let upsellCriteria = '';
+    if (criteriaSelect) {
+      upsellCriteria = criteriaSelect.value === 'custom' 
+        ? (customCriteriaInput?.value.trim() || '') 
+        : criteriaSelect.value.trim();
+    }
+    const upsellProducts = JSON.stringify(currentModalUpsellProducts);
+
+    formData.append('enableUpsell', enableUpsell);
+    formData.append('upsellCriteria', upsellCriteria);
+    formData.append('upsellProducts', upsellProducts);
 
     const imageFile = document.getElementById('pf_image').files[0];
     if (imageFile) {

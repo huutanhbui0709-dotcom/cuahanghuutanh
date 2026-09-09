@@ -580,6 +580,12 @@
                   <option value="yes">Đã có ảnh</option>
                   <option value="no">Chưa có ảnh</option>
                 </select>
+                <select class="admin-select" id="adminUpsellFilter" onchange="adminPage = 1; renderAdminTable()">
+                  <option value="">Tất cả Up-sell</option>
+                  <option value="yes">Đã bật Up-sell</option>
+                  <option value="custom">Có SP chỉ định</option>
+                  <option value="no">Chưa bật Up-sell</option>
+                </select>
               </div>
 
               <!-- Product Table Area -->
@@ -1812,6 +1818,76 @@
             </div>
           </div>
         </div>
+
+        <!-- CẤU HÌNH UP-SELLING & TIÊU CHÍ NÂNG CẤP -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-amber-300/80 dark:border-amber-700/60 p-5 shadow-xs space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-inner">
+                <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  Cấu hình Up-selling & Tiêu chí Mua Kèm
+                  <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/60">Tăng doanh số</span>
+                </h4>
+                <p class="text-[11px] text-slate-400">Gợi ý sản phẩm nâng cấp hoặc phụ kiện đồng bộ trên giao diện khách hàng</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer select-none">
+              <input type="checkbox" id="pf_enableUpsell" class="sr-only peer" onchange="toggleUpsellSettingsSection(this.checked)">
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              <span class="ml-2 text-xs font-bold text-slate-700 dark:text-slate-200">Kích hoạt Up-sell</span>
+            </label>
+          </div>
+
+          <div id="pf_upsell_body" class="space-y-4 transition-all">
+            <!-- Tiêu chí Up-selling -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Tiêu chí Up-selling hiển thị cho khách <span class="text-amber-600 dark:text-amber-400 font-normal">(Hiển thị thành huy hiệu nổi bật)</span>
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <select class="form-control" id="pf_upsellCriteria" onchange="handleUpsellCriteriaChange(this.value)">
+                  <option value="">-- Chọn tiêu chí gợi ý --</option>
+                  <option value="Công suất / Tải lớn hơn">⚡ Công suất / Tải lớn hơn (Bơm, Đèn, Dây tải lớn)</option>
+                  <option value="Dòng cao cấp / Độ bền cao">🛡️ Dòng cao cấp / Độ bền cao (Inox 304, Hàng chính hãng)</option>
+                  <option value="Quy cách lớn hơn tiết kiệm hơn">📦 Quy cách lớn hơn tiết kiệm hơn (Cuộn 100m, Thùng, Lon lớn)</option>
+                  <option value="Phụ kiện thi công đồng bộ khuyên dùng">🛠️ Phụ kiện thi công đồng bộ khuyên dùng (Keo PVC, Băng keo non)</option>
+                  <option value="Combo đầy đủ dụng cụ lắp đặt">🧰 Combo đầy đủ dụng cụ lắp đặt (Mũi khoan, Vít, Tắc kê)</option>
+                  <option value="custom">✏️ Nhập tiêu chí tùy chỉnh khác...</option>
+                </select>
+                <input type="text" class="form-control" id="pf_customUpsellCriteria" placeholder="Nhập tiêu chí tùy chỉnh (VD: Đổi trả 1-1, Bản mới nhất...)" style="display: none;" />
+              </div>
+              <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info text-amber-500"></i>
+                <span>Khách hàng sẽ nhìn thấy tiêu chí này trên huy hiệu combo/nâng cấp để đưa ra quyết định mua ngay.</span>
+              </div>
+            </div>
+
+            <!-- Danh sách sản phẩm liên kết cụ thể -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Sản phẩm nâng cấp / mua kèm cụ thể <span class="text-slate-400 font-normal">(Chọn tối đa 4 sản phẩm)</span>
+                </label>
+                <span class="text-[11px] text-amber-700 dark:text-amber-400 font-semibold" id="pf_upsellSelectedCount">Đã chọn: 0/4</span>
+              </div>
+
+              <!-- Search candidates box -->
+              <div class="relative mb-2.5">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                <input type="text" class="form-control pl-8 pr-8" id="pf_upsellSearch" placeholder="Gõ tên hoặc mã SP để tìm kiếm và thêm vào Up-sell..." oninput="searchUpsellCandidates(this.value)" autocomplete="off" />
+                <div id="pf_upsellSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-52 overflow-y-auto z-50 p-1 text-xs" style="display: none;"></div>
+              </div>
+
+              <!-- Selected items list -->
+              <div id="pf_selectedUpsellList" class="space-y-1.5 min-h-[42px] p-2 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/60 dark:border-slate-700">
+                <div class="text-center py-2 text-slate-400 text-xs italic" id="pf_noUpsellNotice">Chưa chọn sản phẩm liên kết nào (Hệ thống sẽ tự động dùng ma trận ngành hàng thông minh).</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- FOOTER -->
@@ -2726,7 +2802,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="js/admin.js?v=5.0"></script>
+  <script src="js/admin.js?v=5.1"></script>
 </body>
 
 </html>

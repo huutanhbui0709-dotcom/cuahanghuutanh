@@ -1867,6 +1867,17 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
     return res.status(409).json({ ok: false, message: 'Mã sản phẩm đã tồn tại.' });
   }
 
+  const { enableUpsell, upsellCriteria, upsellProducts } = req.body || {};
+  let parsedUpsellProducts = [];
+  if (upsellProducts) {
+    try {
+      parsedUpsellProducts = typeof upsellProducts === 'string' ? JSON.parse(upsellProducts) : upsellProducts;
+    } catch (e) {
+      parsedUpsellProducts = String(upsellProducts).split(',').map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  if (!Array.isArray(parsedUpsellProducts)) parsedUpsellProducts = [];
+
   const product = {
     stt: products.length + 1,
     ma: cleanMa,
@@ -1875,6 +1886,9 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
     donvi: String(donvi || '').trim(),
     loai: String(loai || 'Hàng hóa thường').trim(),
     trangthai: String(trangthai || 'Đang theo dõi').trim(),
+    enableUpsell: enableUpsell === undefined ? true : (enableUpsell === true || enableUpsell === 'true' || enableUpsell === '1'),
+    upsellCriteria: String(upsellCriteria || '').trim(),
+    upsellProducts: parsedUpsellProducts,
   };
 
   product.updatedAt = Date.now();
@@ -1908,12 +1922,27 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
   const product = products.find((p) => p.ma === maParam);
   if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
-  const { ten, gia, donvi, loai, trangthai } = req.body || {};
+  const { ten, gia, donvi, loai, trangthai, enableUpsell, upsellCriteria, upsellProducts } = req.body || {};
   if (ten !== undefined) product.ten = String(ten).trim();
   if (gia !== undefined) product.gia = parseInt(gia, 10) || 0;
   if (donvi !== undefined) product.donvi = String(donvi).trim();
   if (loai !== undefined) product.loai = String(loai).trim();
   if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
+  if (enableUpsell !== undefined) {
+    product.enableUpsell = enableUpsell === true || enableUpsell === 'true' || enableUpsell === '1';
+  }
+  if (upsellCriteria !== undefined) {
+    product.upsellCriteria = String(upsellCriteria).trim();
+  }
+  if (upsellProducts !== undefined) {
+    let parsed = [];
+    try {
+      parsed = typeof upsellProducts === 'string' ? JSON.parse(upsellProducts) : upsellProducts;
+    } catch (e) {
+      parsed = String(upsellProducts).split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    product.upsellProducts = Array.isArray(parsed) ? parsed : [];
+  }
 
   product.updatedAt = Date.now();
   if (req.file) {
@@ -1949,12 +1978,27 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
   const product = products.find((p) => p.ma === maParam);
   if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
-  const { ten, gia, donvi, loai, trangthai } = req.body || {};
+  const { ten, gia, donvi, loai, trangthai, enableUpsell, upsellCriteria, upsellProducts } = req.body || {};
   if (ten !== undefined) product.ten = String(ten).trim();
   if (gia !== undefined) product.gia = parseInt(gia, 10) || 0;
   if (donvi !== undefined) product.donvi = String(donvi).trim();
   if (loai !== undefined) product.loai = String(loai).trim();
   if (trangthai !== undefined) product.trangthai = String(trangthai).trim();
+  if (enableUpsell !== undefined) {
+    product.enableUpsell = enableUpsell === true || enableUpsell === 'true' || enableUpsell === '1';
+  }
+  if (upsellCriteria !== undefined) {
+    product.upsellCriteria = String(upsellCriteria).trim();
+  }
+  if (upsellProducts !== undefined) {
+    let parsed = [];
+    try {
+      parsed = typeof upsellProducts === 'string' ? JSON.parse(upsellProducts) : upsellProducts;
+    } catch (e) {
+      parsed = String(upsellProducts).split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    product.upsellProducts = Array.isArray(parsed) ? parsed : [];
+  }
 
   product.updatedAt = Date.now();
   if (req.file) {
