@@ -3151,27 +3151,27 @@ async function printOrderInvoice(id) {
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
-    .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
-    .store-name { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; text-transform: uppercase; }
-    .store-sub { font-size: 11px; color: #475569; margin-top: 2px; }
+    body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 14px; margin-bottom: 20px; }
+    .store-name { font-size: 18px; font-weight: bold; color: #000; text-transform: uppercase; }
+    .store-sub { font-size: 13px; color: #333; margin-top: 2px; }
     .slip-meta { text-align: right; }
-    .slip-code { font-weight: 800; font-size: 15px; color: #0f172a; }
-    .title { text-align: center; font-size: 20px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; color: #0f172a; }
-    .sub-title { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 12px; }
+    .slip-code { font-weight: bold; font-size: 16px; color: #000; }
+    .title { text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; color: #000; }
+    .sub-title { text-align: center; font-size: 13px; color: #333; margin-bottom: 20px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fafafa; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 12px; }
-    th { background: #f1f5f9; font-weight: 700; text-align: left; font-size: 11.5px; white-space: nowrap; }
+    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; }
+    th { background: #f2f2f2; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: 700; font-size: 13px; background: #f8fafc; }
+    .total-row { font-weight: bold; font-size: 13.5px; background: #fafafa; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
-    .sig-block { font-size: 12px; }
-    .sig-role { font-weight: 700; color: #0f172a; }
-    .sig-sub { color: #64748b; font-size: 11px; margin-top: 2px; }
+    .sig-block { font-size: 13px; }
+    .sig-role { font-weight: bold; color: #000; }
+    .sig-sub { color: #555; font-size: 12px; margin-top: 2px; font-style: italic; }
     .sig-space { height: 75px; }
-    .footer-note { text-align: center; font-size: 11px; color: #64748b; margin-top: 25px; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
+    .footer-note { text-align: center; font-size: 12px; color: #555; margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 10px; font-style: italic; }
     @media print {
       body { padding: 14mm 15mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none; }
@@ -3186,12 +3186,12 @@ async function printOrderInvoice(id) {
     </div>
     <div class="slip-meta">
       <div class="slip-code">#${o.id}</div>
-      <div style="color:#64748b;font-size:11px;margin-top:2px">Ngày in: ${printDate}</div>
+      <div style="color:#555;font-size:12px;margin-top:2px">Ngày in: ${printDate}</div>
     </div>
   </div>
 
   <div class="title">HÓA ĐƠN BÁN HÀNG</div>
-  <div class="sub-title">(Ngày đặt hàng: <strong style="color:#0f172a">${formatOrderDateOnly(o.createdAt)}</strong>)</div>
+  <div class="sub-title">(Ngày đặt hàng: <strong style="color:#000">${formatOrderDateOnly(o.createdAt)}</strong>)</div>
 
   <div class="info-grid">
     <div><strong>Khách hàng:</strong> ${customerName}</div>
@@ -3199,7 +3199,7 @@ async function printOrderInvoice(id) {
     <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">Miễn phí giao hàng</span>' : 'Giao hàng tiêu chuẩn'}</div>
     <div><strong>Phương thức:</strong> Thanh toán khi nhận hàng (COD)</div>
     <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${shippingAddress || 'Nhận tại cửa hàng'}
-      ${o.coordinates || o.coords || o.lat ? `<span style="font-size:11px;color:#64748b;margin-left:6px">(Tọa độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`})</span>` : ''}
+      ${o.coordinates || o.coords || o.lat ? `<span style="font-size:12px;color:#555;margin-left:6px">(Tọa độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`})</span>` : ''}
     </div>
     ${o.note ? `<div style="grid-column: span 2"><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
   </div>
@@ -3207,14 +3207,14 @@ async function printOrderInvoice(id) {
   <table>
     <thead>
       <tr>
-        <th class="text-center" style="width:36px;white-space:nowrap">STT</th>
-        <th style="white-space:nowrap">Mã SP</th>
-        <th style="min-width:140px">Tên sản phẩm</th>
-        <th class="text-center" style="width:55px;white-space:nowrap">ĐVT</th>
-        <th class="text-right" style="white-space:nowrap">Đơn giá</th>
-        <th class="text-center" style="width:80px;white-space:nowrap">Số lượng</th>
-        <th class="text-right" style="white-space:nowrap">Thành tiền</th>
-        <th style="width:80px;white-space:nowrap">Ghi chú</th>
+        <th style="width:38px;text-align:center;white-space:nowrap">STT</th>
+        <th style="width:120px;text-align:center;white-space:nowrap">Mã SP</th>
+        <th style="min-width:150px;text-align:center">Tên sản phẩm</th>
+        <th style="width:55px;text-align:center;white-space:nowrap">ĐVT</th>
+        <th style="width:90px;text-align:center;white-space:nowrap">Đơn giá</th>
+        <th style="width:75px;text-align:center;white-space:nowrap">Số lượng</th>
+        <th style="width:105px;text-align:center;white-space:nowrap">Thành tiền</th>
+        <th style="width:80px;text-align:center;white-space:nowrap">Ghi chú</th>
       </tr>
     </thead>
     <tbody>
@@ -8411,28 +8411,28 @@ async function printReturnSlip(returnId) {
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
-    .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
-    .store-name { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; text-transform: uppercase; }
-    .store-sub { font-size: 11px; color: #475569; margin-top: 2px; }
+    body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 14px; margin-bottom: 20px; }
+    .store-name { font-size: 18px; font-weight: bold; color: #000; text-transform: uppercase; }
+    .store-sub { font-size: 13px; color: #333; margin-top: 2px; }
     .slip-meta { text-align: right; }
-    .slip-code { font-weight: 800; font-size: 15px; color: #0f172a; }
-    .title { text-align: center; font-size: 20px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; color: #0f172a; }
-    .sub-title { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 12px; }
+    .slip-code { font-weight: bold; font-size: 16px; color: #000; }
+    .title { text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; color: #000; }
+    .sub-title { text-align: center; font-size: 13px; color: #333; margin-bottom: 20px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fafafa; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 12px; }
-    th { background: #f1f5f9; font-weight: 700; text-align: left; font-size: 11.5px; white-space: nowrap; }
+    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; }
+    th { background: #f2f2f2; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: 700; font-size: 13px; background: #f8fafc; }
+    .total-row { font-weight: bold; font-size: 13.5px; background: #fafafa; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
-    .sig-block { font-size: 12px; }
-    .sig-role { font-weight: 700; color: #0f172a; }
-    .sig-sub { color: #64748b; font-size: 11px; margin-top: 2px; }
+    .sig-block { font-size: 13px; }
+    .sig-role { font-weight: bold; color: #000; }
+    .sig-sub { color: #555; font-size: 12px; margin-top: 2px; font-style: italic; }
     .sig-space { height: 75px; }
-    .footer-note { text-align: center; font-size: 11px; color: #64748b; margin-top: 25px; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
-    .words-note { text-align: right; font-size: 12px; font-style: italic; color: #334155; margin-top: -12px; margin-bottom: 16px; }
+    .footer-note { text-align: center; font-size: 12px; color: #555; margin-top: 25px; border-top: 1px dashed #ccc; padding-top: 10px; font-style: italic; }
+    .words-note { text-align: right; font-size: 13px; font-style: italic; color: #333; margin-top: -12px; margin-bottom: 16px; }
     @media print {
       body { padding: 14mm 15mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none; }
@@ -8447,33 +8447,33 @@ async function printReturnSlip(returnId) {
     </div>
     <div class="slip-meta">
       <div class="slip-code">${ret.id}</div>
-      <div style="color:#64748b;font-size:11px;margin-top:2px">Ngày in: ${printDate}</div>
+      <div style="color:#555;font-size:12px;margin-top:2px">Ngày in: ${printDate}</div>
     </div>
   </div>
 
   <div class="title">PHIẾU TRẢ HÀNG & HOÀN TIỀN</div>
-  <div class="sub-title">(Kèm theo đơn hàng gốc: <strong style="color:#0f172a;font-family:monospace">#${ret.orderId}</strong> - Ngày lập: <strong style="color:#0f172a">${formatOrderDateOnly(ret.createdAt) || printDate}</strong>)</div>
+  <div class="sub-title">(Kèm theo đơn hàng gốc: <strong style="color:#000">#${ret.orderId}</strong> - Ngày lập: <strong style="color:#000">${formatOrderDateOnly(ret.createdAt) || printDate}</strong>)</div>
 
   <div class="info-grid">
     <div><strong>Khách hàng:</strong> ${customerName}</div>
     <div><strong>Số điện thoại:</strong> ${ret.phone || '—'}</div>
     <div style="grid-column: span 2"><strong>Địa chỉ:</strong> ${returnAddress}</div>
     <div><strong>Lý do trả hàng:</strong> ${ret.reason || '—'}</div>
-    <div><strong>Tình trạng nhập kho:</strong> <span style="font-weight:700;color:${ret.restock ? '#15803d' : '#475569'}">${ret.restock ? 'Đã hoàn hàng về tồn kho' : 'Không nhập lại kho'}</span></div>
+    <div><strong>Tình trạng nhập kho:</strong> <span style="font-weight:bold;color:${ret.restock ? '#15803d' : '#444'}">${ret.restock ? 'Đã hoàn hàng về tồn kho' : 'Không nhập lại kho'}</span></div>
     ${ret.note ? `<div style="grid-column: span 2"><strong>Ghi chú:</strong> ${ret.note}</div>` : ''}
   </div>
 
   <table>
     <thead>
       <tr>
-        <th class="text-center" style="width:36px;white-space:nowrap">STT</th>
-        <th style="white-space:nowrap">Mã SP</th>
-        <th style="min-width:140px">Tên sản phẩm</th>
-        <th class="text-center" style="width:55px;white-space:nowrap">ĐVT</th>
-        <th class="text-right" style="white-space:nowrap">Đơn giá</th>
-        <th class="text-center" style="width:95px;white-space:nowrap">Số lượng trả</th>
-        <th class="text-right" style="white-space:nowrap">Thành tiền hoàn</th>
-        <th style="width:80px;white-space:nowrap">Ghi chú</th>
+        <th style="width:38px;text-align:center;white-space:nowrap">STT</th>
+        <th style="width:120px;text-align:center;white-space:nowrap">Mã SP</th>
+        <th style="min-width:140px;text-align:center">Tên sản phẩm</th>
+        <th style="width:55px;text-align:center;white-space:nowrap">ĐVT</th>
+        <th style="width:90px;text-align:center;white-space:nowrap">Đơn giá</th>
+        <th style="width:95px;text-align:center;white-space:nowrap">Số lượng trả</th>
+        <th style="width:115px;text-align:center;white-space:nowrap">Thành tiền hoàn</th>
+        <th style="width:80px;text-align:center;white-space:nowrap">Ghi chú</th>
       </tr>
     </thead>
     <tbody>
