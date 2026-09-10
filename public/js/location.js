@@ -12,21 +12,8 @@
   var btn = document.createElement('button');
   btn.type = 'button';
   btn.id = 'btnGetLocation';
-  // btn.textContent = '\uD83D\uDCCD S\u1EED d\u1EE5ng v\u1ECB tr\u00ED hi\u1EC7n t\u1EA1i';
+  btn.className = 'btn-get-location';
   btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Sử dụng vị trí hiện tại';
-
-  btn.style.cssText =
-    'margin-top:6px;padding:6px 12px;font-size:12px;font-weight:700;' +
-    'color:#92400e;background:#fef3c7;border:1.5px solid #fbbf24;' +
-    'border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;' +
-    'gap:4px;transition:all .15s;';
-
-  btn.addEventListener('mouseenter', function () {
-    btn.style.background = '#fde68a';
-  });
-  btn.addEventListener('mouseleave', function () {
-    btn.style.background = '#fef3c7';
-  });
 
   /* Chen nut ngay sau o input dia chi */
   addressInput.parentNode.insertBefore(btn, addressInput.nextSibling);

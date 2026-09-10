@@ -1069,10 +1069,7 @@
 
   html.dark .form-control,
   html.dark .filter-select,
-  html.dark input[type="text"],
-  html.dark input[type="number"],
-  html.dark input[type="password"],
-  html.dark input[type="date"],
+  html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="image"]),
   html.dark select,
   html.dark textarea {
     background-color: #0b1120 !important;
@@ -1810,6 +1807,42 @@ html.dark .combo-plus-connector {
 html.dark .mix-blend-multiply,
 html.dark img {
   mix-blend-mode: normal !important;
+}
+
+/* Nút "Sử dụng vị trí hiện tại" trong Modal Đặt Hàng */
+.btn-get-location {
+  margin-top: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  background-color: #fef3c7;
+  border: 1.5px solid #fbbf24;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-get-location:hover {
+  background-color: #fde68a;
+  color: #78350f;
+}
+
+html.dark .btn-get-location,
+html.dark #btnGetLocation {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html.dark .btn-get-location:hover,
+html.dark #btnGetLocation:hover {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+  border-color: #f59e0b !important;
+  color: #fef3c7 !important;
 }
 
 
