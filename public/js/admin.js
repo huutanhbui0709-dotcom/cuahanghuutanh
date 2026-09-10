@@ -817,6 +817,7 @@ function renderDashboard() {
   _renderDashboardCharts();
   renderQuarterSection();
   _renderDashboardTopSuppliers();
+  _renderDashboardReturns();
 }
 
 function _parseReceiptDate(r) {
@@ -1605,6 +1606,127 @@ function _renderDashboardTopSuppliers() {
         <td style="padding:10px 12px;text-align:right;font-weight:700;color:#0f172a;">${valFmt}₫</td>
         <td style="padding:10px 12px;text-align:center;">
           <span style="display:inline-block;padding:3px 10px;border-radius:9999px;font-size:0.72rem;font-weight:600;background:${badge.bg};color:${badge.color};border:1px solid ${badge.border};">${badge.text}</span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function _getDashboardFilteredReturns() {
+  if (!Array.isArray(orderReturns) || orderReturns.length === 0) return [];
+  const filter = _getDashboardTimeFilterRange();
+  if (filter.type === 'all') return orderReturns;
+
+  return orderReturns.filter(ret => {
+    let t = ret.timestamp;
+    if (!t && ret.createdAt) {
+      const match = String(ret.createdAt).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (match) {
+        t = new Date(parseInt(match[3], 10), parseInt(match[2], 10) - 1, parseInt(match[1], 10)).getTime();
+      }
+    }
+    if (!t) return true;
+    if (filter.startDate && t < filter.startDate.getTime()) return false;
+    if (filter.endDate && t > filter.endDate.getTime()) return false;
+    return true;
+  });
+}
+
+function _renderDashboardReturns() {
+  const tbody = document.getElementById('dashboardReturnsBody');
+  if (!tbody) return;
+
+  const filtered = _getDashboardFilteredReturns();
+  const listToDisplay = filtered.slice(0, 10);
+
+  // Tính toán số liệu thống kê trả hàng
+  let totalSlips = filtered.length;
+  let totalRefund = 0;
+  let totalQty = 0;
+  let totalRestocked = 0;
+
+  filtered.forEach(ret => {
+    totalRefund += Number(ret.totalRefund) || 0;
+    if (ret.restock) totalRestocked++;
+    (ret.items || []).forEach(it => {
+      totalQty += Number(it.returnQty) || 0;
+    });
+  });
+
+  const countBadge = document.getElementById('dashReturnCountBadge');
+  if (countBadge) countBadge.textContent = `${totalSlips} phiếu`;
+
+  const kpiSlips = document.getElementById('dashReturnTotalSlips');
+  if (kpiSlips) kpiSlips.textContent = totalSlips.toLocaleString('vi-VN');
+
+  const kpiRefund = document.getElementById('dashReturnTotalRefund');
+  if (kpiRefund) kpiRefund.textContent = formatPrice(totalRefund);
+
+  const kpiQty = document.getElementById('dashReturnTotalQty');
+  if (kpiQty) kpiQty.textContent = `${totalQty.toLocaleString('vi-VN')} SP`;
+
+  const kpiRestocked = document.getElementById('dashReturnRestockedCount');
+  if (kpiRestocked) kpiRestocked.textContent = `${totalRestocked} phiếu`;
+
+  if (listToDisplay.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" class="text-center py-8 text-slate-400 dark:text-slate-500">
+          <i class="fa-solid fa-rotate-left text-2xl mb-1.5 opacity-40 block"></i>
+          <span class="text-xs font-bold">Không có dữ liệu trả hàng trong khoảng thời gian này</span>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = listToDisplay.map((ret, index) => {
+    const itemsSummary = (ret.items || []).map(it => `${it.ten || it.ma} (x${it.returnQty} ${it.donvi || ''})`).join(', ');
+    const itemsCount = (ret.items || []).reduce((acc, cur) => acc + (Number(cur.returnQty) || 0), 0);
+    const restockBadge = ret.restock
+      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"><i class="fa-solid fa-check text-[10px]"></i> Đã hoàn kho</span>`
+      : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">Không hoàn kho</span>`;
+
+    return `
+      <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+        <td class="py-3 px-3 text-center text-slate-400 font-medium">${index + 1}</td>
+        <td class="py-3 px-3 font-mono font-bold whitespace-nowrap">
+          <button type="button" onclick="viewReturnDetail('${ret.id}')" class="text-slate-900 dark:text-white hover:text-rose-600 dark:hover:text-rose-400 font-mono font-bold hover:underline transition cursor-pointer">
+            ${ret.id}
+          </button>
+        </td>
+        <td class="py-3 px-3 whitespace-nowrap">
+          <button type="button" onclick="viewOrderDetail('${ret.orderId}')" class="text-indigo-600 dark:text-indigo-400 hover:underline font-mono font-bold flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-receipt text-[11px]"></i> ${ret.orderId}
+          </button>
+        </td>
+        <td class="py-3 px-3">
+          <div class="font-bold text-slate-900 dark:text-white">${ret.customer || '—'}</div>
+          <div class="text-[11px] text-slate-400 font-mono">${ret.phone || '—'}</div>
+        </td>
+        <td class="py-3 px-3 max-w-[220px] truncate" title="${itemsSummary}">
+          <span class="font-bold text-slate-800 dark:text-slate-200">${itemsCount} SP:</span>
+          <span class="text-slate-500 dark:text-slate-400">${itemsSummary}</span>
+        </td>
+        <td class="py-3 px-3 text-right font-black text-rose-600 dark:text-rose-400 whitespace-nowrap font-mono">
+          ${formatPrice(ret.totalRefund || 0)}
+        </td>
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          ${restockBadge}
+        </td>
+        <td class="py-3 px-3 max-w-[140px] truncate text-slate-700 dark:text-slate-300 font-medium" title="${ret.reason || ''}">
+          ${ret.reason || '—'}
+        </td>
+        <td class="py-3 px-3 text-center text-slate-400 whitespace-nowrap text-[11px]">${ret.createdAt || '—'}</td>
+        <td class="py-3 px-3 text-center whitespace-nowrap">
+          <div class="flex items-center justify-center gap-1.5">
+            <button class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs transition cursor-pointer" title="Xem chi tiết phiếu trả" onclick="viewReturnDetail('${ret.id}')">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+            <button class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs transition cursor-pointer" title="In phiếu trả hàng" onclick="printReturnSlip('${ret.id}')">
+              <i class="fa-solid fa-print"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -7302,6 +7424,7 @@ async function loadReturns() {
     
     updateReturnsKPIs();
     renderReturnsTable();
+    _renderDashboardReturns();
   } catch (err) {
     console.error('Lỗi tải phiếu trả hàng:', err);
     const tbody = document.getElementById('returnsTableBody');

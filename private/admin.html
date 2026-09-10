@@ -494,6 +494,85 @@
               </table>
             </div>
           </div>
+
+          <!-- ================= RECENT ORDER RETURNS (DATA TRẢ HÀNG) ================= -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs mt-6" id="dashboardReturnsSection">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+                      Dữ liệu trả hàng gần đây
+                    </h3>
+                    <span id="dashReturnCountBadge" class="bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                      0 phiếu
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                    Theo dõi các phiếu hoàn trả hàng, số lượng thu hồi và giá trị hoàn tiền
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 self-start sm:self-auto">
+                <a href="#" onclick="adminTab('returns', null); return false;"
+                  class="text-xs text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 font-bold transition flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50/60 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/60 hover:border-rose-300">
+                  <span>Xem tất cả phiếu trả</span> <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- Mini Summary Metric Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4" id="dashboardReturnMetrics">
+              <div class="bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200/60 dark:border-slate-700/60">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tổng phiếu trả</span>
+                <span id="dashReturnTotalSlips" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+              </div>
+              <div class="bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200/60 dark:border-slate-700/60">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tổng tiền hoàn trả</span>
+                <span id="dashReturnTotalRefund" class="text-lg font-black text-rose-600 dark:text-rose-400">0₫</span>
+              </div>
+              <div class="bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200/60 dark:border-slate-700/60">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">SP thu hồi</span>
+                <span id="dashReturnTotalQty" class="text-lg font-black text-amber-600 dark:text-amber-400">0 SP</span>
+              </div>
+              <div class="bg-slate-50/80 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200/60 dark:border-slate-700/60">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Hoàn lại kho</span>
+                <span id="dashReturnRestockedCount" class="text-lg font-black text-emerald-600 dark:text-emerald-400">0 phiếu</span>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-slate-50/90 dark:bg-slate-800/90">
+                    <th class="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-10 border-b border-slate-200/80 dark:border-slate-800">#</th>
+                    <th class="py-3 px-3 text-left font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Mã phiếu</th>
+                    <th class="py-3 px-3 text-left font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Đơn hàng gốc</th>
+                    <th class="py-3 px-3 text-left font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Khách hàng</th>
+                    <th class="py-3 px-3 text-left font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Sản phẩm trả</th>
+                    <th class="py-3 px-3 text-right font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Tiền hoàn</th>
+                    <th class="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Nhập kho</th>
+                    <th class="py-3 px-3 text-left font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Lý do</th>
+                    <th class="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800">Ngày tạo</th>
+                    <th class="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/80 dark:border-slate-800 w-24">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardReturnsBody" class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                  <tr>
+                    <td colspan="10" class="text-center py-6 text-slate-400 dark:text-slate-500">
+                      <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu trả hàng...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- ================= PRODUCTS TAB ================= -->
