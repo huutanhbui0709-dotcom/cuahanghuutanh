@@ -3151,21 +3151,21 @@ async function printOrderInvoice(id) {
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
+    body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
     .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
     .store-name { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; text-transform: uppercase; }
     .store-sub { font-size: 11px; color: #475569; margin-top: 2px; }
     .slip-meta { text-align: right; }
-    .slip-code { font-family: monospace; font-weight: 800; font-size: 15px; color: #0f172a; }
+    .slip-code { font-weight: 800; font-size: 15px; color: #0f172a; }
     .title { text-align: center; font-size: 20px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; color: #0f172a; }
     .sub-title { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 20px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 12px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
     th, td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 12px; }
-    th { background: #f1f5f9; font-weight: 800; text-align: left; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+    th { background: #f1f5f9; font-weight: 700; text-align: left; font-size: 11.5px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: 800; font-size: 13px; background: #f8fafc; }
+    .total-row { font-weight: 700; font-size: 13px; background: #f8fafc; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
     .sig-block { font-size: 12px; }
     .sig-role { font-weight: 700; color: #0f172a; }
@@ -3207,26 +3207,26 @@ async function printOrderInvoice(id) {
   <table>
     <thead>
       <tr>
-        <th class="text-center" style="width:35px">STT</th>
-        <th>Mã SP</th>
-        <th>Tên sản phẩm</th>
-        <th class="text-center">ĐVT</th>
-        <th class="text-right">Đơn giá</th>
-        <th class="text-center">Số lượng</th>
-        <th class="text-right">Thành tiền</th>
-        <th>Ghi chú</th>
+        <th class="text-center" style="width:36px;white-space:nowrap">STT</th>
+        <th style="white-space:nowrap">Mã SP</th>
+        <th style="min-width:140px">Tên sản phẩm</th>
+        <th class="text-center" style="width:55px;white-space:nowrap">ĐVT</th>
+        <th class="text-right" style="white-space:nowrap">Đơn giá</th>
+        <th class="text-center" style="width:80px;white-space:nowrap">Số lượng</th>
+        <th class="text-right" style="white-space:nowrap">Thành tiền</th>
+        <th style="width:80px;white-space:nowrap">Ghi chú</th>
       </tr>
     </thead>
     <tbody>
       ${(o.items || []).map((item, idx) => `
         <tr>
           <td class="text-center">${idx + 1}</td>
-          <td style="font-family:monospace;font-weight:700;white-space:nowrap">${item.ma || '—'}</td>
+          <td style="font-weight:600;white-space:nowrap">${item.ma || '—'}</td>
           <td>${item.ten || ''}</td>
           <td class="text-center" style="white-space:nowrap">${item.donvi || 'Cái'}</td>
-          <td class="text-right" style="font-family:monospace;white-space:nowrap">${item.gia ? item.gia.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}</td>
-          <td class="text-center" style="font-weight:800;font-family:monospace;white-space:nowrap">${item.qty}</td>
-          <td class="text-right" style="font-weight:800;font-family:monospace;white-space:nowrap">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') + '₫' : '—'}</td>
+          <td class="text-right" style="white-space:nowrap">${item.gia ? item.gia.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}</td>
+          <td class="text-center" style="font-weight:700;white-space:nowrap">${item.qty}</td>
+          <td class="text-right" style="font-weight:700;white-space:nowrap">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') + '₫' : '—'}</td>
           <td style="font-size:11px;color:#64748b">${item.note || ''}</td>
         </tr>
       `).join('')}
@@ -3234,33 +3234,33 @@ async function printOrderInvoice(id) {
     <tfoot>
       <tr class="total-row">
         <td colspan="5" class="text-right">Tổng tiền hàng:</td>
-        <td class="text-center" style="font-family:monospace;font-weight:800;white-space:nowrap">${totalQty}</td>
-        <td class="text-right" style="font-family:monospace;font-weight:800;white-space:nowrap">${subtotal.toLocaleString('vi-VN')}₫</td>
+        <td class="text-center" style="font-weight:700;white-space:nowrap">${totalQty}</td>
+        <td class="text-right" style="font-weight:700;white-space:nowrap">${subtotal.toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
       ${discount > 0 ? `
         <tr class="total-row">
           <td colspan="6" class="text-right">Giảm giá chiết khấu:</td>
-          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a;white-space:nowrap">-${discount.toLocaleString('vi-VN')}₫</td>
+          <td class="text-right" style="font-weight:700;color:#16a34a;white-space:nowrap">-${discount.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
       ` : ''}
       ${isFreeShipping ? `
         <tr class="total-row">
           <td colspan="6" class="text-right" style="color:#16a34a;font-weight:700">Phí vận chuyển (Miễn phí giao hàng KV Thốt Nốt):</td>
-          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a;white-space:nowrap">0₫</td>
+          <td class="text-right" style="font-weight:700;color:#16a34a;white-space:nowrap">0₫</td>
           <td></td>
         </tr>
       ` : (shipping > 0 ? `
         <tr class="total-row">
           <td colspan="6" class="text-right">Phí vận chuyển:</td>
-          <td class="text-right" style="font-family:monospace;font-weight:800;white-space:nowrap">+${shipping.toLocaleString('vi-VN')}₫</td>
+          <td class="text-right" style="font-weight:700;white-space:nowrap">+${shipping.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
       ` : '')}
       <tr class="total-row" style="background:#f1f5f9;font-size:13px;border-top:2px solid #0f172a">
-        <td colspan="6" class="text-right" style="font-weight:900">TỔNG CỘNG THANH TOÁN:</td>
-        <td class="text-right" style="color:#b91c1c;font-family:monospace;font-weight:900;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
+        <td colspan="6" class="text-right" style="font-weight:800">TỔNG CỘNG THANH TOÁN:</td>
+        <td class="text-right" style="color:#b91c1c;font-weight:800;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
     </tfoot>
@@ -8411,21 +8411,21 @@ async function printReturnSlip(returnId) {
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
+    body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
     .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
     .store-name { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; text-transform: uppercase; }
     .store-sub { font-size: 11px; color: #475569; margin-top: 2px; }
     .slip-meta { text-align: right; }
-    .slip-code { font-family: monospace; font-weight: 800; font-size: 15px; color: #0f172a; }
+    .slip-code { font-weight: 800; font-size: 15px; color: #0f172a; }
     .title { text-align: center; font-size: 20px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; color: #0f172a; }
     .sub-title { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 20px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #f8fafc; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 12px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
     th, td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 12px; }
-    th { background: #f1f5f9; font-weight: 800; text-align: left; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+    th { background: #f1f5f9; font-weight: 700; text-align: left; font-size: 11.5px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: 800; font-size: 13px; background: #f8fafc; }
+    .total-row { font-weight: 700; font-size: 13px; background: #f8fafc; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
     .sig-block { font-size: 12px; }
     .sig-role { font-weight: 700; color: #0f172a; }
@@ -8466,35 +8466,35 @@ async function printReturnSlip(returnId) {
   <table>
     <thead>
       <tr>
-        <th class="text-center" style="width:35px">STT</th>
-        <th>Mã SP</th>
-        <th>Tên sản phẩm</th>
-        <th class="text-center">ĐVT</th>
-        <th class="text-right">Đơn giá</th>
-        <th class="text-center">Số lượng trả</th>
-        <th class="text-right">Thành tiền hoàn</th>
-        <th>Ghi chú</th>
+        <th class="text-center" style="width:36px;white-space:nowrap">STT</th>
+        <th style="white-space:nowrap">Mã SP</th>
+        <th style="min-width:140px">Tên sản phẩm</th>
+        <th class="text-center" style="width:55px;white-space:nowrap">ĐVT</th>
+        <th class="text-right" style="white-space:nowrap">Đơn giá</th>
+        <th class="text-center" style="width:95px;white-space:nowrap">Số lượng trả</th>
+        <th class="text-right" style="white-space:nowrap">Thành tiền hoàn</th>
+        <th style="width:80px;white-space:nowrap">Ghi chú</th>
       </tr>
     </thead>
     <tbody>
       ${(ret.items || []).map((it, idx) => `
         <tr>
           <td class="text-center">${idx + 1}</td>
-          <td style="font-family:monospace;font-weight:700">${it.ma}</td>
+          <td style="font-weight:600;white-space:nowrap">${it.ma}</td>
           <td>${it.ten || it.ma}</td>
-          <td class="text-center">${it.donvi || 'Cái'}</td>
-          <td class="text-right" style="font-family:monospace">${it.unitPrice ? it.unitPrice.toLocaleString('vi-VN') + '₫' : '0₫'}</td>
-          <td class="text-center" style="font-weight:800;font-family:monospace">${it.returnQty}</td>
-          <td class="text-right" style="font-weight:800;font-family:monospace;color:#b91c1c">${it.returnTotal ? it.returnTotal.toLocaleString('vi-VN') + '₫' : '0₫'}</td>
+          <td class="text-center" style="white-space:nowrap">${it.donvi || 'Cái'}</td>
+          <td class="text-right" style="white-space:nowrap">${it.unitPrice ? it.unitPrice.toLocaleString('vi-VN') + '₫' : '0₫'}</td>
+          <td class="text-center" style="font-weight:700;white-space:nowrap">${it.returnQty}</td>
+          <td class="text-right" style="font-weight:700;color:#b91c1c;white-space:nowrap">${it.returnTotal ? it.returnTotal.toLocaleString('vi-VN') + '₫' : '0₫'}</td>
           <td style="font-size:11px;color:#64748b">${it.reason || ''}</td>
         </tr>
       `).join('')}
     </tbody>
     <tfoot>
       <tr class="total-row" style="background:#f1f5f9;font-size:13px;border-top:2px solid #0f172a">
-        <td colspan="5" class="text-right" style="font-weight:900">TỔNG CỘNG TIỀN HOÀN TRẢ:</td>
-        <td class="text-center" style="font-family:monospace;font-weight:900">${totalQty}</td>
-        <td class="text-right" style="color:#b91c1c;font-family:monospace;font-weight:900;font-size:14px">${(ret.totalRefund || 0).toLocaleString('vi-VN')}₫</td>
+        <td colspan="5" class="text-right" style="font-weight:800">TỔNG CỘNG TIỀN HOÀN TRẢ:</td>
+        <td class="text-center" style="font-weight:700;white-space:nowrap">${totalQty}</td>
+        <td class="text-right" style="color:#b91c1c;font-weight:800;font-size:14px;white-space:nowrap">${(ret.totalRefund || 0).toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
     </tfoot>
