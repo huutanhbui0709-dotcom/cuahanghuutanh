@@ -3177,7 +3177,7 @@ async function printOrderInvoice(id) {
   <div class="info-grid">
     <div><strong>Khách hàng:</strong> ${customerName}</div>
     <div><strong>Số điện thoại:</strong> ${o.phone || '—'}</div>
-    <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">✓ Miễn phí giao hàng (Đạt chuẩn ≥ 300k)</span>' : 'Giao hàng tiêu chuẩn'}</div>
+    <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">Miễn phí giao hàng</span>' : 'Giao hàng tiêu chuẩn'}</div>
     <div><strong>Phương thức:</strong> Thanh toán khi nhận hàng (COD)</div>
     <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${shippingAddress || 'Nhận tại cửa hàng'}
       ${o.coordinates || o.coords || o.lat ? `<span style="font-size:11px;color:#64748b;margin-left:6px">(Tọa độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`})</span>` : ''}
