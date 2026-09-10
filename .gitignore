@@ -7,10 +7,12 @@ node/
 # .gitignore
 data/public_img/
 data/orders.json
+data/products.json
 data/settings.json
 data/suppliers.json
 data/spam_devices.json
 data/stock_receipts.json
 data/order_returns.json
 .vercel
+
 

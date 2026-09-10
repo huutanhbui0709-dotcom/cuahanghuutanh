@@ -1654,69 +1654,96 @@ function renderComboSection(mainProduct) {
   ];
 
   const totalComboPrice = currentComboItems.reduce((s, it) => it.checked ? s + it.product.gia : s, 0);
+  const selectedCount = currentComboItems.filter(it => it.checked).length;
 
   return `
     <div class="combo-section-wrap" id="detailComboSection">
-      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="combo-badge">
-            <i class="fa-solid fa-layer-group"></i> Combo Thường Mua Cùng
+      <!-- Combo Header -->
+      <div class="flex items-center justify-between mb-3.5 flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs shadow-xs">
+            <i class="fa-solid fa-layer-group"></i>
           </span>
-          ${mainProduct.upsellCriteria ? `
-            <span class="text-[11px] font-black text-amber-900 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-300/80 dark:border-amber-700/80 flex items-center gap-1.5 shadow-xs">
-              <i class="fa-solid fa-arrow-trend-up text-amber-600 dark:text-amber-400"></i> Tiêu chí: ${escapeHtml(mainProduct.upsellCriteria)}
-            </span>
-          ` : '<span class="text-xs text-slate-500 font-semibold hidden xs:inline">Tiết kiệm thời gian & thi công đồng bộ</span>'}
+          <h3 class="text-sm font-black text-slate-900 dark:text-white tracking-tight">
+            Thường được mua cùng (Combo Gợi Ý)
+          </h3>
         </div>
-        <span class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-800/60">
-          ${mainProduct.upsellCriteria ? 'Gợi ý nâng cấp' : 'Gợi ý thi công'}
+        <span class="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/50 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+          <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Tiết kiệm thời gian & thi công đồng bộ
         </span>
       </div>
 
-      <!-- Combo Items List -->
-      <div class="space-y-2 mb-3">
-        ${currentComboItems.map((item) => `
-          <div class="combo-item-card ${item.checked ? 'selected' : ''}" id="combo_row_${item.product.ma.replace(/'/g, "\\'")}">
-            <label class="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
-              <input type="checkbox" ${item.checked ? 'checked' : ''} ${item.isMain ? 'disabled' : ''} 
-                onchange="toggleComboCheckbox('${item.product.ma.replace(/'/g, "\\'")}', this.checked)"
-                class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-slate-300 accent-amber-500 cursor-pointer" />
-              <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200/60 dark:border-slate-700">
-                ${item.product.image ? `<img src="${getProductImageUrl(item.product)}" class="w-full h-full object-contain" />` : `<span class="text-base">${getIcon(item.product.ten)}</span>`}
+      <!-- Combo Flow Cards Container -->
+      <div class="bg-slate-50/80 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-3.5 overflow-hidden">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 sm:gap-2.5 w-full">
+          ${currentComboItems.map((item, idx) => `
+            ${idx > 0 ? `
+              <div class="combo-plus-pill mx-auto md:mx-0 flex-shrink-0">
+                <i class="fa-solid fa-plus"></i>
               </div>
+            ` : ''}
+
+            <!-- Card item -->
+            <div class="combo-item-card flex-1 min-w-0 w-full ${item.checked ? 'selected' : ''}" id="combo_row_${item.product.ma.replace(/'/g, "\\'")}" onclick="handleComboCardClick('${item.product.ma.replace(/'/g, "\\'")}', event)">
+              <input type="checkbox" ${item.checked ? 'checked' : ''} ${item.isMain ? 'disabled' : ''}
+                id="combo_chk_${item.product.ma.replace(/'/g, "\\'")}"
+                onchange="toggleComboCheckbox('${item.product.ma.replace(/'/g, "\\'")}', this.checked)"
+                class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-slate-300 dark:border-slate-600 accent-amber-500 cursor-pointer flex-shrink-0" />
+              
+              <div class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 p-1 border border-slate-200/70 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs">
+                ${item.product.image ? `<img src="${getProductImageUrl(item.product)}" class="w-full h-full object-contain" />` : `<span class="text-lg opacity-80">${getIcon(item.product.ten)}</span>`}
+              </div>
+
               <div class="min-w-0 flex-1">
-                <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">${item.product.ten}</div>
-                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 font-medium flex-wrap">
-                  <span class="font-mono text-amber-600 dark:text-amber-400 font-bold">${item.product.ma}</span>
-                  ${item.isMain 
-                    ? '<span class="text-amber-700 bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">Sản phẩm chính</span>' 
-                    : (item.isCustomUpsell 
-                      ? '<span class="text-amber-800 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 px-1.5 py-0.2 rounded text-[9px] font-bold border border-amber-200/60">Khuyên dùng</span>' 
-                      : '<span class="text-slate-500">Phụ kiện mua kèm</span>')}
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[9px] uppercase font-extrabold px-1.5 py-0.2 rounded ${item.isMain ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'}">
+                    ${item.isMain ? 'Sản phẩm này' : (item.isCustomUpsell ? 'Khuyên dùng' : 'Gợi ý kèm')}
+                  </span>
+                </div>
+                <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate block" title="${escapeHtml(item.product.ten)}">
+                  ${escapeHtml(item.product.ten)}
+                </div>
+                <div class="text-xs font-black text-slate-900 dark:text-amber-400 font-mono mt-0.5">
+                  ${formatPrice(item.product.gia)}
                 </div>
               </div>
-            </label>
-            <div class="text-right flex-shrink-0">
-              <div class="text-xs font-black text-slate-900 dark:text-white font-mono">${formatPrice(item.product.gia)}</div>
-              ${item.product.donvi ? `<div class="text-[10px] text-slate-400 font-semibold">${item.product.donvi}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Combo Summary Footer Bar -->
+        <div class="mt-3.5 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 text-xs">
+            <div class="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+              <span>Đã chọn: <strong class="text-slate-900 dark:text-white font-extrabold" id="comboSelectedCount">${selectedCount} sản phẩm</strong></span>
+            </div>
+            <span class="text-slate-300 dark:text-slate-700">|</span>
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-slate-400">Tổng combo:</span>
+              <span class="text-base font-black text-slate-900 dark:text-amber-400 font-mono" id="comboTotalPrice">${formatPrice(totalComboPrice)}</span>
             </div>
           </div>
-        `).join('')}
-      </div>
 
-      <!-- Combo Action Bar -->
-      <div class="flex items-center justify-between pt-2 border-t border-slate-200/70 dark:border-slate-800 flex-wrap gap-2">
-        <div>
-          <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tổng combo:</span>
-          <span class="text-base font-black text-slate-900 dark:text-amber-400 font-mono" id="comboTotalPrice">${formatPrice(totalComboPrice)}</span>
+          <button type="button" onclick="addComboToCart()" class="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-amber-400 dark:text-slate-950 font-extrabold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
+            <i class="fa-solid fa-cart-arrow-down text-sm"></i>
+            <span>Thêm cả combo vào giỏ</span>
+          </button>
         </div>
-        <button type="button" onclick="addComboToCart()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-amber-400 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
-          <i class="fa-solid fa-cart-arrow-down"></i>
-          <span>Thêm cả bộ vào giỏ</span>
-        </button>
       </div>
     </div>
   `;
+}
+
+function handleComboCardClick(ma, event) {
+  if (event.target.tagName === 'INPUT') return;
+  const item = currentComboItems.find(x => x.product.ma === ma);
+  if (!item || item.isMain) return;
+  const chk = document.getElementById(`combo_chk_${ma}`);
+  if (chk) {
+    chk.checked = !chk.checked;
+    toggleComboCheckbox(ma, chk.checked);
+  }
 }
 
 function toggleComboCheckbox(ma, isChecked) {
@@ -1727,9 +1754,14 @@ function toggleComboCheckbox(ma, isChecked) {
   const row = document.getElementById(`combo_row_${ma}`);
   if (row) row.classList.toggle('selected', isChecked);
 
-  const total = currentComboItems.reduce((s, it) => it.checked ? s + it.product.gia : s, 0);
+  const selectedItems = currentComboItems.filter(it => it.checked);
+  const total = selectedItems.reduce((s, it) => s + it.product.gia, 0);
+
   const totalEl = document.getElementById('comboTotalPrice');
   if (totalEl) totalEl.textContent = formatPrice(total);
+
+  const countEl = document.getElementById('comboSelectedCount');
+  if (countEl) countEl.textContent = `${selectedItems.length} sản phẩm`;
 }
 
 function addComboToCart() {
@@ -1766,90 +1798,118 @@ function showProductDetails(ma) {
 
   // Render content
   contentEl.innerHTML = `
-    <div class="flex flex-col md:flex-row md:items-stretch">
-      <!-- Cột trái: Hình ảnh -->
-      <div class="w-full md:w-1/2 bg-slate-50 dark:bg-slate-850 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex items-center justify-center p-6 min-h-[260px] md:min-h-[360px] relative">
-        ${p.image ? `
-          <div class="relative w-full h-[220px] md:h-[310px] flex items-center justify-center group/img overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-3 border border-slate-200/50 dark:border-slate-700 shadow-inner">
-            <img src="${getProductImageUrl(p)}" alt="${p.ten}" class="max-w-full max-h-full object-contain transition duration-300 group-hover/img:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${getProductImageUrl(p)}')" />
-            <button onclick="openFullScreenImage('${getProductImageUrl(p)}')" class="absolute bottom-3 right-3 bg-white/95 dark:bg-slate-700 text-slate-800 dark:text-white w-8 h-8 rounded-lg shadow-sm border border-slate-150 dark:border-slate-600 transition flex items-center justify-center" title="Xem ảnh đầy đủ">
-              <i class="fa-solid fa-up-right-and-down-left-from-center text-[11px]"></i>
+    <!-- Top Section: 2-Column Hero Layout (Mobile Optimized) -->
+    <div class="p-3.5 xs:p-4 sm:p-7 grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-8 items-stretch">
+      <!-- Cột trái: Hình ảnh sản phẩm (Gọn gàng trên Mobile, không chiếm hết màn hình) -->
+      <div class="md:col-span-5 flex flex-col">
+        <div class="relative w-full h-44 xs:h-52 sm:h-64 md:h-full md:aspect-square bg-gradient-to-b from-slate-50 to-slate-150/70 dark:from-slate-800/90 dark:to-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center p-3 sm:p-5 overflow-hidden group shadow-inner">
+          <!-- Huy hiệu chính hãng góc trái -->
+          <div class="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide shadow-sm">
+              <i class="fa-solid fa-certificate text-[9px]"></i> Chính hãng
+            </span>
+          </div>
+
+          <!-- Nút xem ảnh phóng to -->
+          ${p.image ? `
+            <button onclick="openFullScreenImage('${getProductImageUrl(p)}')" class="absolute bottom-2.5 right-2.5 sm:bottom-3 sm:right-3 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 dark:bg-slate-700/90 text-slate-600 hover:text-amber-600 dark:text-slate-300 dark:hover:text-amber-400 border border-slate-200/80 dark:border-slate-600 shadow-sm flex items-center justify-center transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 z-10 active:scale-90" title="Phóng to ảnh">
+              <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px] sm:text-xs"></i>
             </button>
-          </div>
-        ` : `
-          <div class="flex flex-col items-center justify-center text-center p-8">
-            <div class="w-24 h-24 rounded-full bg-slate-200/50 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-4 shadow-inner">
-              <span class="text-5xl select-none opacity-80">${getIcon(p.ten)}</span>
+            <img src="${getProductImageUrl(p)}" alt="${escapeHtml(p.ten)}" class="max-w-full max-h-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105 cursor-zoom-in" onclick="openFullScreenImage('${getProductImageUrl(p)}')" />
+          ` : `
+            <div class="flex flex-col items-center justify-center text-center p-4">
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2 border border-slate-200/60 dark:border-slate-700 shadow-xs">
+                <span class="text-3xl sm:text-4xl select-none opacity-85">${getIcon(p.ten)}</span>
+              </div>
+              <span class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Hữu Tánh Hardware</span>
             </div>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Không có hình ảnh</span>
-          </div>
-        `}
+          `}
+        </div>
       </div>
-      
-      <!-- Cột phải: Thông tin sản phẩm -->
-      <div class="w-full md:w-1/2 p-5 xs:p-6 flex flex-col justify-between">
-        <div>
-          <!-- Loại sản phẩm -->
-          <div class="mb-2">
-            <span class="text-[10px] font-extrabold tracking-wide uppercase px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-100/70 dark:border-indigo-800 inline-block">
-              ${p.loai || 'Hàng hóa'}
+
+      <!-- Cột phải: Thông tin sản phẩm & Mua hàng -->
+      <div class="md:col-span-7 flex flex-col justify-between">
+        <div class="space-y-2.5 sm:space-y-3.5">
+          <!-- Category, SKU & Status (pr-12 avoids collision with modal close button) -->
+          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap pr-10 sm:pr-14">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              ${escapeHtml(p.loai || 'Hàng hóa')}
+            </span>
+
+            <span class="text-[10px] sm:text-[11px] font-mono font-semibold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/70 px-1.5 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700">
+              #${escapeHtml(p.ma)}
+            </span>
+
+            <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200/80 dark:border-emerald-800/80">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              ${(p.trangthai && (p.trangthai.toLowerCase().includes('hết') || p.trangthai.toLowerCase().includes('ngừng'))) ? 'Tạm hết hàng' : 'Còn hàng'}
             </span>
           </div>
-          
-          <!-- Tên sản phẩm -->
-          <h2 class="text-base xs:text-lg md:text-xl font-extrabold text-slate-900 dark:text-white leading-tight mb-2 select-text" title="${p.ten}">
-            ${p.ten}
+
+          <!-- Product Name -->
+          <h2 class="text-base xs:text-lg sm:text-2xl font-black text-slate-900 dark:text-white leading-snug tracking-tight">
+            ${escapeHtml(p.ten)}
           </h2>
-          
-          <!-- Mã sản phẩm & Trạng thái -->
-          <div class="flex items-center gap-2 mb-4 flex-wrap">
-            <span class="text-[11px] font-mono text-slate-500 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 px-2 py-0.5 rounded flex items-center gap-1 font-semibold select-all">
-              <i class="fa-solid fa-hashtag text-slate-400"></i> ${p.ma}
-            </span>
-            <button onclick="copyToClipboard('${p.ma.replace(/'/g, "\\'")}', this)" class="text-slate-400 hover:text-amber-500 transition text-[11px] p-1" title="Sao chép mã">
-              <i class="fa-regular fa-copy"></i>
-            </button>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.trangthai === 'Đang theo dõi' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-100 dark:border-amber-800'}">
-              ${p.trangthai || 'Có sẵn'}
-            </span>
-          </div>
-          
-          <!-- Khung Giá & Đơn vị -->
-          <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700 flex items-center justify-between mb-5">
+
+          <!-- Price & Unit Box -->
+          <div class="p-2.5 sm:p-4 rounded-2xl bg-amber-50/40 dark:bg-slate-800/70 border border-amber-200/60 dark:border-slate-700 flex items-center justify-between">
             <div>
-              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Đơn giá</span>
-              <span class="text-lg md:text-xl font-black text-blue-600 dark:text-amber-400">${formatPrice(p.gia)}</span>
+              <span class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">Đơn giá niêm yết</span>
+              <div class="flex items-baseline gap-1.5 sm:gap-2">
+                <span class="text-xl xs:text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 font-mono tracking-tight">${formatPrice(p.gia)}</span>
+                ${p.donvi ? `<span class="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-md border border-slate-200/70 dark:border-slate-600">/ ${escapeHtml(p.donvi)}</span>` : ''}
+              </div>
             </div>
-            <div class="text-right">
-              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Đơn vị tính</span>
-              <span class="inline-block px-2.5 py-0.5 bg-slate-200/60 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-extrabold rounded-lg">${p.donvi || 'Cái'}</span>
+            <div class="text-right pl-3 border-l border-amber-200/50 dark:border-slate-700">
+              <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Giá đại lý / thợ</span>
+              <span class="text-[11px] sm:text-xs font-extrabold text-slate-700 dark:text-slate-300">Chiết khấu tốt</span>
+            </div>
+          </div>
+
+          <!-- Single Row Trust Bar: 1 hàng ngang tinh gọn, không bao giờ bị cắt cụt chữ trên Mobile -->
+          <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10px] xs:text-[11px]">
+            <div class="flex items-center justify-center gap-1 py-1 px-1 bg-white dark:bg-slate-750 rounded-lg shadow-2xs text-slate-700 dark:text-slate-200 font-bold">
+              <i class="fa-solid fa-truck-fast text-amber-500 text-xs flex-shrink-0"></i>
+              <span class="whitespace-nowrap">Giao 2h</span>
+            </div>
+            <div class="flex items-center justify-center gap-1 py-1 px-1 bg-white dark:bg-slate-750 rounded-lg shadow-2xs text-slate-700 dark:text-slate-200 font-bold">
+              <i class="fa-solid fa-rotate-left text-amber-500 text-xs flex-shrink-0"></i>
+              <span class="whitespace-nowrap">Đổi 7 ngày</span>
+            </div>
+            <div class="flex items-center justify-center gap-1 py-1 px-1 bg-white dark:bg-slate-750 rounded-lg shadow-2xs text-slate-700 dark:text-slate-200 font-bold">
+              <i class="fa-solid fa-shield-check text-amber-500 text-xs flex-shrink-0"></i>
+              <span class="whitespace-nowrap">Chính hãng</span>
             </div>
           </div>
         </div>
-        
-        <!-- Chọn số lượng & Thêm vào giỏ -->
-        <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Số lượng mua</span>
-            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700">
-              <button onclick="changeDetailQty(-1)" class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-200 hover:bg-slate-50 active:scale-95 transition">
-                <i class="fa-solid fa-minus text-[10px]"></i>
-              </button>
-              <input type="number" id="detailQtyInput" value="1" min="1" class="w-10 text-center font-extrabold text-slate-800 dark:text-white bg-transparent focus:outline-none text-xs" onchange="validateDetailQty(this)" />
-              <button onclick="changeDetailQty(1)" class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-200 hover:bg-slate-50 active:scale-95 transition">
-                <i class="fa-solid fa-plus text-[10px]"></i>
-              </button>
-            </div>
+
+        <!-- Mua lẻ: Số lượng & Nút Thêm vào giỏ (CÙNG 1 HÀNG TRÊN CẢ MOBILE LẪN DESKTOP) -->
+        <div class="mt-3 pt-3 border-t border-slate-150 dark:border-slate-800 flex items-center gap-2 sm:gap-3">
+          <!-- Stepper compact -->
+          <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 w-24 xs:w-28 sm:w-36 h-11 shadow-inner flex-shrink-0">
+            <button onclick="changeDetailQty(-1)" class="w-7 h-7 xs:w-8 xs:h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-xs flex items-center justify-center font-bold hover:bg-slate-50 dark:hover:bg-slate-650 active:scale-95 transition" title="Giảm số lượng">
+              <i class="fa-solid fa-minus text-[10px]"></i>
+            </button>
+            <input type="number" id="detailQtyInput" value="1" min="1" class="w-6 xs:w-8 text-center font-extrabold text-slate-900 dark:text-white bg-transparent focus:outline-none text-xs sm:text-sm" onchange="validateDetailQty(this)" />
+            <button onclick="changeDetailQty(1)" class="w-7 h-7 xs:w-8 xs:h-8 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-xs flex items-center justify-center font-bold hover:bg-slate-50 dark:hover:bg-slate-650 active:scale-95 transition" title="Tăng số lượng">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+            </button>
           </div>
-          
-          <button onclick="addDetailProductToCart('${p.ma.replace(/'/g, "\\'")}')" class="w-full py-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-900 font-extrabold rounded-xl text-sm shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-cart-plus text-base"></i>
-            <span id="detailAddToCartText">Thêm vào giỏ hàng</span>
+
+          <!-- Nút Thêm vào giỏ -->
+          <button onclick="addDetailProductToCart('${p.ma.replace(/'/g, "\\'")}')" class="flex-1 h-11 px-3 sm:px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.98] text-slate-950 font-extrabold rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-between group cursor-pointer text-xs sm:text-sm">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-bag-shopping text-sm group-hover:scale-110 transition-transform"></i>
+              <span class="whitespace-nowrap">Thêm vào giỏ</span>
+            </span>
+            <span id="detailAddToCartText" class="font-black font-mono border-l border-amber-700/25 pl-2 sm:pl-3 whitespace-nowrap">${formatPrice(p.gia)}</span>
           </button>
         </div>
       </div>
     </div>
-    <!-- Frequently Bought Together / Combo Section -->
+
+    <!-- Lower Section: Combo Mua Cùng (Card Flow) -->
     ${renderComboSection(p)}
   `;
 
@@ -1917,9 +1977,9 @@ function updateDetailPriceTotal() {
 
   const total = currentViewingProduct.gia * currentDetailQty;
   if (total) {
-    textSpan.textContent = `Thêm vào giỏ - ${formatPrice(total)}`;
+    textSpan.textContent = formatPrice(total);
   } else {
-    textSpan.textContent = 'Thêm vào giỏ - Liên hệ';
+    textSpan.textContent = 'Liên hệ';
   }
 }
 

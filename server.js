@@ -391,54 +391,6 @@ async function initializeData() {
           try { products = JSON.parse(rowMap.products); } catch { products = []; }
           console.log(`✅ Loaded ${products.length} products from Vercel DB.`);
 
-          // Tự động đồng bộ giá bán từ file seed nếu sản phẩm trong DB đang có giá = 0
-          try {
-            let seedProducts = null;
-            try {
-              seedProducts = require('./data/products.json');
-            } catch (rErr) {
-              const rawSeed = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
-              seedProducts = JSON.parse(rawSeed);
-            }
-            if (Array.isArray(seedProducts) && seedProducts.length > 0) {
-              let updatedCount = 0;
-              const seedMap = new Map(seedProducts.map(sp => [sp.ma, sp]));
-              products.forEach(p => {
-                const sp = seedMap.get(p.ma);
-                if (sp) {
-                  let changed = false;
-                  if ((!p.gia || p.gia === 0) && sp.gia > 0) {
-                    p.gia = sp.gia;
-                    if (sp.donvi && !p.donvi) p.donvi = sp.donvi;
-                    changed = true;
-                  }
-                  if (sp.loai && (p.loai === 'Hàng hóa thường' || p.loai === 'Đồ ngu' || (!p.loai && sp.loai))) {
-                    p.loai = sp.loai;
-                    changed = true;
-                  }
-                  if (sp.enableUpsell !== undefined && p.enableUpsell !== sp.enableUpsell) {
-                    p.enableUpsell = sp.enableUpsell;
-                    changed = true;
-                  }
-                  if (sp.upsellCriteria && p.upsellCriteria !== sp.upsellCriteria) {
-                    p.upsellCriteria = sp.upsellCriteria;
-                    changed = true;
-                  }
-                  if (Array.isArray(sp.upsellProducts) && JSON.stringify(p.upsellProducts || []) !== JSON.stringify(sp.upsellProducts)) {
-                    p.upsellProducts = sp.upsellProducts;
-                    changed = true;
-                  }
-                  if (changed) updatedCount++;
-                }
-              });
-              if (updatedCount > 0) {
-                console.log(`⚡ Tự động cập nhật thông tin & up-selling cho ${updatedCount} sản phẩm từ file seed.`);
-                await saveProducts(products);
-              }
-            }
-          } catch (seedErr) {
-            console.warn('Không thể đọc file seed để đồng bộ giá và up-selling:', seedErr.message);
-          }
         } else {
           try {
             const raw = await fsp.readFile(BUNDLED_PRODUCTS_SEED, 'utf8');
