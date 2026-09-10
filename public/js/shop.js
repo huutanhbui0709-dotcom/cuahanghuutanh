@@ -1399,26 +1399,44 @@ enableGradualSwipeToClose('orderModal', closeOrderModal);
 const UPSELL_RULES = [
   {
     id: 'plumbing',
-    match: (p) => p.loai === 'Ống nước' || /(^|\s)(ống|co|lơi|tê|van|luppe|ren|bít|măng)(\s|[0-9]|$)/i.test(p.ten),
-    boost: (cand) => (cand.loai === 'Ống nước' ? 6 : 0) + (/(^|\s)(keo dán|băng keo non|co|tê|van|lưỡi cưa)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
-    penalize: (cand) => ['Đồ điện', 'Dây điện', 'Đèn Led'].includes(cand.loai) ? -20 : 0
+    match: (p) => p.loai === 'Ống nước' || /(^|\s)(ống|co|lơi|tê|van|luppe|ren|bít|măng|rắc co|vòi|sen)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (cand.loai === 'Ống nước' ? 6 : 0) + (/(^|\s)(keo dán|băng keo non|co|tê|van|lưỡi cưa|kéo cắt ống|dây xả|lọc rác)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    penalize: (cand) => ['Đồ điện', 'Dây điện', 'Đèn Led', 'Gia Dụng'].includes(cand.loai) ? -20 : 0
   },
   {
     id: 'electrical',
-    match: (p) => ['Đồ điện', 'Dây điện', 'Đèn Led', 'Bóng đèn'].includes(p.loai) || /(^|\s)(điện|cầu dao|mcb|dây|ổ cắm|công tắc|đèn|led|bóng)(\s|[0-9]|$)/i.test(p.ten),
-    boost: (cand) => (['Đồ điện', 'Dây điện', 'Đèn Led', 'Bóng đèn'].includes(cand.loai) ? 6 : 0) + (/(^|\s)(băng keo|bút thử|phích|ổ cắm|công tắc|kìm)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    match: (p) => ['Đồ điện', 'Dây điện'].includes(p.loai) || /(^|\s)(điện|cầu dao|mcb|dây|ổ cắm|công tắc|phích|ruột gà|hộp nổi)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (['Đồ điện', 'Dây điện'].includes(cand.loai) ? 6 : 0) + (/(^|\s)(băng keo|bút thử|phích|ổ cắm|công tắc|kìm|ống luồn|hộp nổi|mặt)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
     penalize: (cand) => (cand.loai === 'Ống nước' ? -20 : 0)
   },
   {
-    id: 'tools',
-    match: (p) => p.loai === 'Dụng cụ' || /(^|\s)(khoan|mũi|vít|ốc|kìm|búa|tô vít|thước|đá cắt)(\s|[0-9]|$)/i.test(p.ten),
-    boost: (cand) => (cand.loai === 'Dụng cụ' ? 6 : 0) + (/(^|\s)(mũi khoan|vít|tắc kê|thước|đá cắt|đá mài)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    id: 'lighting',
+    match: (p) => ['Đèn Led', 'Bóng đèn', 'Đèn pin', 'Đèn lồng'].includes(p.loai) || /(^|\s)(đèn|bóng|tuýp|led|búp|trụ nhôm)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (['Đèn Led', 'Bóng đèn', 'Đèn pin'].includes(cand.loai) ? 8 : 0) + (/(^|\s)(đui đèn|đuôi đèn|phích cắm|ổ cắm|dây điện)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
+    penalize: (cand) => (['Ống nước', 'Xe rùa'].includes(cand.loai) ? -20 : 0)
+  },
+  {
+    id: 'tools_machinery',
+    match: (p) => p.loai === 'Dụng cụ' || /(^|\s)(máy khoan|máy mài|máy đục|máy chà|laser|khoan|mũi|vít|ốc|kìm|búa|tô vít|thước|đá cắt|đá mài|lưỡi cưa|dao rọc)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => (cand.loai === 'Dụng cụ' ? 6 : 0) + (/(^|\s)(mũi khoan|mũi đục|đá cắt|đá mài|lưỡi cưa|tô vít|kìm|silicone|dao rọc)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0),
     penalize: (cand) => 0
   },
   {
     id: 'paint',
     match: (p) => p.loai === 'Nước sơn' || /(^|\s)(sơn|chống thấm)(\s|[0-9]|$)/i.test(p.ten),
-    boost: (cand) => /(^|\s)(cọ|lăn|rulo|keo giấy|nhám|xăng)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0,
+    boost: (cand) => /(^|\s)(sơn|cọ|lăn|rulo|keo giấy|nhám|xăng|bay trét|silicone|dao rọc)(\s|[0-9]|$)/i.test(cand.ten) ? 14 : 0,
+    penalize: (cand) => 0
+  },
+  {
+    id: 'household',
+    match: (p) => p.loai === 'Gia Dụng' || /(^|\s)(bình đun|siêu tốc|quạt|senko)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => /(^|\s)(phích cắm|ổ cắm|ổ dài|ổ quay)(\s|[0-9]|$)/i.test(cand.ten) ? 16 : 0,
+    penalize: (cand) => (['Ống nước', 'Xe rùa'].includes(cand.loai) ? -15 : 0)
+  },
+  {
+    id: 'construction',
+    match: (p) => ['Xe rùa'].includes(p.loai) || /(^|\s)(xe rùa|bạt xanh|màn phủ|xà beng|xẻng)(\s|[0-9]|$)/i.test(p.ten),
+    boost: (cand) => /(^|\s)(xe rùa|bạt|xẻng|xà beng)(\s|[0-9]|$)/i.test(cand.ten) ? 16 : 0,
     penalize: (cand) => 0
   }
 ];

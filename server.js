@@ -401,20 +401,39 @@ async function initializeData() {
               const seedMap = new Map(seedProducts.map(sp => [sp.ma, sp]));
               products.forEach(p => {
                 const sp = seedMap.get(p.ma);
-                if (sp && (!p.gia || p.gia === 0) && sp.gia > 0) {
-                  p.gia = sp.gia;
-                  if (sp.donvi && !p.donvi) p.donvi = sp.donvi;
-                  if (sp.loai && (!p.loai || p.loai === 'Hàng hóa thường')) p.loai = sp.loai;
-                  updatedCount++;
+                if (sp) {
+                  let changed = false;
+                  if ((!p.gia || p.gia === 0) && sp.gia > 0) {
+                    p.gia = sp.gia;
+                    if (sp.donvi && !p.donvi) p.donvi = sp.donvi;
+                    changed = true;
+                  }
+                  if (sp.loai && (p.loai === 'Hàng hóa thường' || p.loai === 'Đồ ngu' || (!p.loai && sp.loai))) {
+                    p.loai = sp.loai;
+                    changed = true;
+                  }
+                  if (sp.enableUpsell !== undefined && p.enableUpsell !== sp.enableUpsell) {
+                    p.enableUpsell = sp.enableUpsell;
+                    changed = true;
+                  }
+                  if (sp.upsellCriteria && p.upsellCriteria !== sp.upsellCriteria) {
+                    p.upsellCriteria = sp.upsellCriteria;
+                    changed = true;
+                  }
+                  if (Array.isArray(sp.upsellProducts) && JSON.stringify(p.upsellProducts || []) !== JSON.stringify(sp.upsellProducts)) {
+                    p.upsellProducts = sp.upsellProducts;
+                    changed = true;
+                  }
+                  if (changed) updatedCount++;
                 }
               });
               if (updatedCount > 0) {
-                console.log(`⚡ Tự động cập nhật giá cho ${updatedCount} sản phẩm từ file seed.`);
+                console.log(`⚡ Tự động cập nhật thông tin & up-selling cho ${updatedCount} sản phẩm từ file seed.`);
                 await saveProducts(products);
               }
             }
           } catch (seedErr) {
-            console.warn('Không thể đọc file seed để đồng bộ giá:', seedErr.message);
+            console.warn('Không thể đọc file seed để đồng bộ giá và up-selling:', seedErr.message);
           }
         } else {
           try {
