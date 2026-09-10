@@ -8,6 +8,8 @@ if (window.location.protocol === 'file:') {
 let products = [];
 let orders = [];
 let suppliers = [];
+let allInventoryReceipts = [];
+let orderReturns = [];
 
 const ITEMS_PER_PAGE = 24;
 let adminPage = 1;
@@ -7523,7 +7525,7 @@ async function srfm_deleteReceipt() {
 // Chỉ cho phép trả hàng cho các đơn hàng "Đã xác nhận"
 // =====================================================================
 
-let orderReturns = [];
+// orderReturns is declared at the top-level state
 let returnPage = 1;
 const RETURNS_PER_PAGE = 15;
 let _currentReturnOrder = null;
