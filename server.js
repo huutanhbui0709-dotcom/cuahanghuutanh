@@ -347,6 +347,10 @@ async function initDbSchema() {
         import_cost NUMERIC DEFAULT 0
       );
     `;
+    // Bổ sung Indexes tối ưu hiệu năng truy vấn Dashboard & Quý
+    await sql`CREATE INDEX IF NOT EXISTS idx_stock_receipt_items_receipt_id ON stock_receipt_items(receipt_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_stock_receipts_created_at ON stock_receipts(created_at DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)`;
     console.log('✅ Vercel DB tables initialized successfully.');
   } catch (err) {
     console.error('❌ Lỗi tạo table trong Vercel DB:', err);
@@ -2979,10 +2983,19 @@ app.get('/api/admin/inventory/receipts', requireAdmin, async (req, res) => {
   try {
     if (IS_VERCEL) {
       const { rows } = await sql`
-        SELECT r.*,
-               (SELECT COUNT(*)::int FROM stock_receipt_items WHERE receipt_id = r.id) as item_count,
-               (SELECT COALESCE(SUM(quantity), 0)::numeric FROM stock_receipt_items WHERE receipt_id = r.id) as total_quantity
+        SELECT r.id, r.receipt_code, r.import_date, r.supplier_name, r.note,
+               r.warehouse_name, r.total_amount, r.tax_code, r.invoice_number,
+               r.serial_number, r.created_at,
+               COALESCE(agg.item_count, 0)::int as item_count,
+               COALESCE(agg.total_quantity, 0)::numeric as total_quantity
         FROM stock_receipts r
+        LEFT JOIN (
+          SELECT receipt_id,
+                 COUNT(*)::int as item_count,
+                 COALESCE(SUM(quantity), 0)::numeric as total_quantity
+          FROM stock_receipt_items
+          GROUP BY receipt_id
+        ) agg ON agg.receipt_id = r.id
         ORDER BY r.created_at DESC, r.id DESC
       `;
       const formatted = rows.map(r => ({

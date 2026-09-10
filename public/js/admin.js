@@ -283,13 +283,23 @@ async function adminLogout() {
 // LOAD DATA
 // ==============================
 async function loadAllData() {
-  await Promise.all([loadProducts(), loadOrders(), loadSuppliers(), loadReturns()]);
+  // 1. Render immediate skeleton state so the UI is responsive in 0ms without blank gaps
+  renderDashboard(true);
+
+  // 2. Concurrently fetch all datasets in parallel
+  await Promise.allSettled([
+    loadProducts(),
+    loadOrders(),
+    loadSuppliers(),
+    loadReturns(),
+    loadInventoryHistory()
+  ]);
+
+  // 3. Render fully loaded data once
   populateProductTypeFilter();
-  renderDashboard();
+  renderDashboard(false);
   renderAdminTable();
   renderOrdersTable();
-  // Load inventory in background, then refresh dashboard KPIs & charts
-  loadInventoryHistory().then(() => renderDashboard()).catch(() => {});
 }
 
 
@@ -561,7 +571,7 @@ function _getAllAvailableYears(selectedYear) {
   return Array.from(yearSet).sort((a, b) => b - a);
 }
 
-function initDashboardFilterBar() {
+function initDashboardFilterBar(isLoading = false) {
   const yearSelect = document.getElementById('dashFilterYear');
   if (!yearSelect) return;
 
@@ -572,10 +582,10 @@ function initDashboardFilterBar() {
     `<option value="custom">✏️ Nhập năm khác...</option>`;
   yearSelect.value = String(activeYear);
 
-  _updateDashboardFilterUI();
+  _updateDashboardFilterUI(isLoading);
 }
 
-function _updateDashboardFilterUI() {
+function _updateDashboardFilterUI(isLoading = false) {
   const filter = _getDashboardTimeFilterRange();
   const receipts = _getDashboardFilteredReceipts();
   const hasData = receipts.length > 0;
@@ -583,7 +593,9 @@ function _updateDashboardFilterUI() {
   // 1. Update active text label
   const labelEl = document.getElementById('dashFilterActiveLabel');
   if (labelEl) {
-    if (!hasData) {
+    if (isLoading && !hasData) {
+      labelEl.innerHTML = `${filter.label} <span class="text-indigo-500 dark:text-indigo-400 font-medium ml-1"><i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Đang tải...</span>`;
+    } else if (!hasData) {
       labelEl.innerHTML = `${filter.label} <span class="text-amber-500 dark:text-amber-400 font-bold ml-1">(Chưa có dữ liệu)</span>`;
     } else {
       labelEl.textContent = filter.label;
@@ -811,13 +823,13 @@ function _getDashboardTimeFilterRange() {
   };
 }
 
-function renderDashboard() {
-  initDashboardFilterBar();
-  _renderDashboardKpis();
-  _renderDashboardCharts();
-  renderQuarterSection();
-  _renderDashboardTopSuppliers();
-  _renderDashboardReturns();
+function renderDashboard(isLoading = false) {
+  initDashboardFilterBar(isLoading);
+  _renderDashboardKpis(isLoading);
+  _renderDashboardCharts(isLoading);
+  renderQuarterSection(isLoading);
+  _renderDashboardTopSuppliers(isLoading);
+  _renderDashboardReturns(isLoading);
 }
 
 function _parseReceiptDate(r) {
@@ -858,9 +870,23 @@ function _getDashboardFilteredReceipts() {
   });
 }
 
-function _renderDashboardKpis() {
+function _renderDashboardKpis(isLoading = false) {
   const grid = document.getElementById('dashboardKpiGrid');
   if (!grid) return;
+
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
+    grid.innerHTML = Array.from({ length: 6 }).map(() => `
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
+        <div class="flex justify-between items-center mb-3">
+          <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
+          <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
+        </div>
+        <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
+        <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
+      </div>
+    `).join('');
+    return;
+  }
 
   const receipts = _getDashboardFilteredReceipts();
   const totalReceipts = receipts.length;
@@ -934,7 +960,7 @@ function _renderDashboardKpis() {
   `).join('');
 }
 
-function _renderDashboardCharts() {
+function _renderDashboardCharts(isLoading = false) {
   const receipts = _getDashboardFilteredReceipts();
   const filter = _getDashboardTimeFilterRange();
 
@@ -945,6 +971,21 @@ function _renderDashboardCharts() {
   const donutTitleEl = document.getElementById('dashDonutChartTitle');
   if (donutTitleEl) {
     donutTitleEl.textContent = `Cơ cấu giá trị theo NCC (${filter.shortLabel})`;
+  }
+
+  // Nếu đang loading và chưa có data receipts thì hiển thị placeholder nhẹ nhàng
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
+    const lineEmptyEl = document.getElementById('dashboardLineEmptyState');
+    const lineEmptyText = document.getElementById('dashboardLineEmptyText');
+    if (lineEmptyEl) {
+      if (lineEmptyText) lineEmptyText.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Đang tổng hợp dữ liệu biểu đồ...`;
+      lineEmptyEl.classList.remove('hidden');
+    }
+    const centerEl = document.getElementById('dashboardDonutCenter');
+    if (centerEl) {
+      centerEl.innerHTML = `<div style="font-size:0.7rem;color:#94a3b8;"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải...</div>`;
+    }
+    return;
   }
 
   // ─── Line Chart ───────────────────────────────────────────────────────
@@ -979,51 +1020,57 @@ function _renderDashboardCharts() {
     if (lineEmptyEl) lineEmptyEl.classList.add('hidden');
     if (lineCtx) {
       if (_dashLineChart) { _dashLineChart.destroy(); _dashLineChart = null; }
-      const isDark = document.documentElement.classList.contains('dark');
-      const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
-      const textColor = isDark ? '#94a3b8' : '#64748b';
+      if (typeof Chart !== 'undefined') {
+        try {
+          const isDark = document.documentElement.classList.contains('dark');
+          const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
+          const textColor = isDark ? '#94a3b8' : '#64748b';
 
-      _dashLineChart = new Chart(lineCtx, {
-        type: 'line',
-        data: {
-          labels: lineLabels,
-          datasets: [{
-            label: 'Giá trị nhập (₫)',
-            data: lineData,
-            borderColor: '#2563eb',
-            backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
-            borderWidth: 2,
-            pointRadius: lineData.length <= 30 ? 3 : 0,
-            pointHoverRadius: 5,
-            tension: 0.35,
-            fill: true,
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          animation: { duration: 300 },
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + '₫'
+          _dashLineChart = new Chart(lineCtx, {
+            type: 'line',
+            data: {
+              labels: lineLabels,
+              datasets: [{
+                label: 'Giá trị nhập (₫)',
+                data: lineData,
+                borderColor: '#2563eb',
+                backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
+                borderWidth: 2,
+                pointRadius: lineData.length <= 30 ? 3 : 0,
+                pointHoverRadius: 5,
+                tension: 0.35,
+                fill: true,
+              }]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 300 },
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + '₫'
+                  }
+                }
+              },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 10 } },
+                y: {
+                  grid: { color: gridColor },
+                  ticks: {
+                    color: textColor,
+                    font: { size: 10 },
+                    callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+                  }
+                }
               }
             }
-          },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 10 } },
-            y: {
-              grid: { color: gridColor },
-              ticks: {
-                color: textColor,
-                font: { size: 10 },
-                callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
-              }
-            }
-          }
+          });
+        } catch (err) {
+          console.warn('Lỗi vẽ biểu đồ line:', err);
         }
-      });
+      }
     }
   }
 
@@ -1054,30 +1101,34 @@ function _renderDashboardCharts() {
   const donutCtx = document.getElementById('dashboardDonutChart');
   if (donutCtx) {
     if (_dashDonutChart) { _dashDonutChart.destroy(); _dashDonutChart = null; }
-    if (donutData.length > 0 && totalDonut > 0) {
-      _dashDonutChart = new Chart(donutCtx, {
-        type: 'doughnut',
-        data: {
-          labels: donutLabels,
-          datasets: [{ data: donutData, backgroundColor: COLORS.slice(0, donutLabels.length), borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff', hoverOffset: 4 }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          cutout: '65%',
-          animation: { duration: 300 },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => {
-                  const pct = totalDonut > 0 ? ((ctx.raw / totalDonut) * 100).toFixed(1) : 0;
-                  return ` ${Number(ctx.raw).toLocaleString('vi-VN')}₫ (${pct}%)`;
+    if (donutData.length > 0 && totalDonut > 0 && typeof Chart !== 'undefined') {
+      try {
+        _dashDonutChart = new Chart(donutCtx, {
+          type: 'doughnut',
+          data: {
+            labels: donutLabels,
+            datasets: [{ data: donutData, backgroundColor: COLORS.slice(0, donutLabels.length), borderWidth: 2, borderColor: document.documentElement.classList.contains('dark') ? '#0f172a' : '#fff', hoverOffset: 4 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '65%',
+            animation: { duration: 300 },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    const pct = totalDonut > 0 ? ((ctx.raw / totalDonut) * 100).toFixed(1) : 0;
+                    return ` ${Number(ctx.raw).toLocaleString('vi-VN')}₫ (${pct}%)`;
+                  }
                 }
               }
             }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.warn('Lỗi vẽ biểu đồ donut:', err);
+      }
     }
 
     // Center label
@@ -1136,7 +1187,7 @@ function filterDashboardByQuarter(year, quarter) {
   showToast(`<i class="fa-solid fa-filter"></i> Đang hiển thị chi tiết Quý ${quarter}/${year}`, 'success');
 }
 
-function renderQuarterSection() {
+function renderQuarterSection(isLoading = false) {
   const container = document.getElementById('dashboardQuarterSection');
   if (!container) return;
 
@@ -1157,6 +1208,29 @@ function renderQuarterSection() {
 
   const yearBadge = document.getElementById('quarterYearBadge');
   if (yearBadge) yearBadge.textContent = `Năm ${selectedYear}`;
+
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
+    const cardsGrid = document.getElementById('quarterCardsGrid');
+    if (cardsGrid) {
+      cardsGrid.innerHTML = [1, 2, 3, 4].map(() => `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[180px]">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+              <div class="h-4 w-14 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            </div>
+            <div class="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg mb-2"></div>
+            <div class="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
+            <div class="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+          </div>
+          <div class="h-8 w-full bg-slate-200 dark:bg-slate-800 rounded-xl mt-3"></div>
+        </div>
+      `).join('');
+    }
+    const chartSubtext = document.getElementById('quarterChartSubtext');
+    if (chartSubtext) chartSubtext.innerHTML = `<span class="text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải dữ liệu năm ${selectedYear}...</span>`;
+    return;
+  }
 
   // 2. Compute metrics for each quarter of selectedYear
   const quarterData = [1, 2, 3, 4].map(q => {
@@ -1337,98 +1411,104 @@ function renderQuarterSection() {
       _dashQuarterChart = null;
     }
 
-    const isDark = document.documentElement.classList.contains('dark');
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
+    if (typeof Chart !== 'undefined') {
+      try {
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
 
-    _dashQuarterChart = new Chart(chartCanvas, {
-      data: {
-        labels: ['Quý 1 (T1-T3)', 'Quý 2 (T4-T6)', 'Quý 3 (T7-T9)', 'Quý 4 (T10-T12)'],
-        datasets: [
-          {
-            type: 'bar',
-            label: 'Giá trị nhập (₫)',
-            data: quarterData.map(q => q.totalAmount),
-            backgroundColor: [
-              'rgba(79, 70, 229, 0.85)',
-              'rgba(14, 165, 233, 0.85)',
-              'rgba(16, 185, 129, 0.85)',
-              'rgba(245, 158, 11, 0.85)'
-            ],
-            borderRadius: 8,
-            borderSkipped: false,
-            yAxisID: 'y',
-            order: 2
+        _dashQuarterChart = new Chart(chartCanvas, {
+          data: {
+            labels: ['Quý 1 (T1-T3)', 'Quý 2 (T4-T6)', 'Quý 3 (T7-T9)', 'Quý 4 (T10-T12)'],
+            datasets: [
+              {
+                type: 'bar',
+                label: 'Giá trị nhập (₫)',
+                data: quarterData.map(q => q.totalAmount),
+                backgroundColor: [
+                  'rgba(79, 70, 229, 0.85)',
+                  'rgba(14, 165, 233, 0.85)',
+                  'rgba(16, 185, 129, 0.85)',
+                  'rgba(245, 158, 11, 0.85)'
+                ],
+                borderRadius: 8,
+                borderSkipped: false,
+                yAxisID: 'y',
+                order: 2
+              },
+              {
+                type: 'line',
+                label: 'Số phiếu nhập',
+                data: quarterData.map(q => q.receiptCount),
+                borderColor: '#ea580c',
+                backgroundColor: '#ea580c',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#ea580c',
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.25,
+                yAxisID: 'y1',
+                order: 1
+              }
+            ]
           },
-          {
-            type: 'line',
-            label: 'Số phiếu nhập',
-            data: quarterData.map(q => q.receiptCount),
-            borderColor: '#ea580c',
-            backgroundColor: '#ea580c',
-            borderWidth: 2.5,
-            pointBackgroundColor: '#ea580c',
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.25,
-            yAxisID: 'y1',
-            order: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: {
-              boxWidth: 12,
-              font: { size: 11, weight: 'bold', family: '"Plus Jakarta Sans", sans-serif' },
-              color: textColor
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                if (ctx.dataset.yAxisID === 'y') {
-                  return ` Giá trị nhập: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`;
-                } else {
-                  return ` Số phiếu nhập: ${ctx.raw} phiếu`;
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 11, weight: 'bold', family: '"Plus Jakarta Sans", sans-serif' },
+                  color: textColor
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (ctx.dataset.yAxisID === 'y') {
+                      return ` Giá trị nhập: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`;
+                    } else {
+                      return ` Số phiếu nhập: ${ctx.raw} phiếu`;
+                    }
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { color: textColor, font: { size: 10, weight: '600' } }
+              },
+              y: {
+                position: 'left',
+                grid: { color: gridColor },
+                ticks: {
+                  color: textColor,
+                  font: { size: 10 },
+                  callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+                }
+              },
+              y1: {
+                position: 'right',
+                grid: { display: false },
+                ticks: {
+                  color: '#ea580c',
+                  font: { size: 10 },
+                  stepSize: 1,
+                  callback: v => v + ' phiếu'
                 }
               }
             }
           }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: textColor, font: { size: 10, weight: '600' } }
-          },
-          y: {
-            position: 'left',
-            grid: { color: gridColor },
-            ticks: {
-              color: textColor,
-              font: { size: 10 },
-              callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
-            }
-          },
-          y1: {
-            position: 'right',
-            grid: { display: false },
-            ticks: {
-              color: '#ea580c',
-              font: { size: 10 },
-              stepSize: 1,
-              callback: v => v + ' phiếu'
-            }
-          }
-        }
+        });
+      } catch (err) {
+        console.warn('Lỗi vẽ biểu đồ so sánh quý:', err);
       }
-    });
+    }
   }
 
   // 5. Render Insights
@@ -1527,9 +1607,21 @@ function renderQuarterSection() {
 }
 
 
-function _renderDashboardTopSuppliers() {
+function _renderDashboardTopSuppliers(isLoading = false) {
   const tbody = document.getElementById('dashboardTopSuppliersBody');
   if (!tbody) return;
+
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center py-6 text-slate-400 dark:text-slate-500">
+          <i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu nhà cung cấp...
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   const receipts = _getDashboardFilteredReceipts();
 
   if (receipts.length === 0) {
@@ -1632,9 +1724,20 @@ function _getDashboardFilteredReturns() {
   });
 }
 
-function _renderDashboardReturns() {
+function _renderDashboardReturns(isLoading = false) {
   const tbody = document.getElementById('dashboardReturnsBody');
   if (!tbody) return;
+
+  if (isLoading && (!orderReturns || orderReturns.length === 0)) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" class="text-center py-6 text-slate-400 dark:text-slate-500">
+          <i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu phiếu trả hàng...
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
   const filtered = _getDashboardFilteredReturns();
   const listToDisplay = filtered.slice(0, 10);
@@ -5111,31 +5214,41 @@ function goToOrderDetailFromStock(orderId) {
 }
 
 async function loadInventoryHistory() {
+  const isInventoryTabActive = document.getElementById('tab-inventory')?.classList.contains('active');
   const tbody = document.getElementById('inventoryHistoryTableBody');
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">
-        <i class="fa-solid fa-spinner fa-spin"></i> Đang tải lịch sử nhập kho...
-      </td>
-    </tr>
-  `;
+  if (tbody && isInventoryTabActive) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; color: var(--muted); padding: 20px 0;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Đang tải lịch sử nhập kho...
+        </td>
+      </tr>
+    `;
+  }
 
   try {
     const res = await adminFetch('/api/admin/inventory/receipts');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     allInventoryReceipts = await res.json();
 
-    filterInventoryHistory();
-
+    if (typeof filterInventoryHistory === 'function') {
+      try {
+        filterInventoryHistory();
+      } catch (err) {
+        console.warn('Lỗi filterInventoryHistory:', err);
+      }
+    }
   } catch (err) {
     console.error('Lỗi khi tải lịch sử nhập kho:', err);
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align: center; color: var(--danger); padding: 20px 0;">
-          <i class="fa-solid fa-circle-exclamation"></i> Không thể tải dữ liệu: ${err.message}
-        </td>
-      </tr>
-    `;
+    if (tbody && isInventoryTabActive) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--danger); padding: 20px 0;">
+            <i class="fa-solid fa-circle-exclamation"></i> Không thể tải dữ liệu: ${err.message}
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
