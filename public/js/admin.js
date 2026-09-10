@@ -2556,6 +2556,25 @@ function formatOrderDateText(str) {
   return str;
 }
 
+function formatOrderDateOnly(str) {
+  if (!str) return '—';
+  if (typeof str === 'string' && str.includes('<')) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = str;
+    str = tmp.textContent.replace(/\s+/g, ' ').trim();
+  }
+  // Pattern 1: HH:mm[:ss] DD/MM/YYYY
+  const m1 = str.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m1) return `${m1[4].padStart(2, '0')}/${m1[5].padStart(2, '0')}/${m1[6]}`;
+  // Pattern 2: DD/MM/YYYY
+  const m2 = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m2) return `${m2[1].padStart(2, '0')}/${m2[2].padStart(2, '0')}/${m2[3]}`;
+  // Pattern 3: YYYY-MM-DD
+  const m3 = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m3) return `${m3[3]}/${m3[2]}/${m3[1]}`;
+  return str;
+}
+
 function changeOrderPageSize(size) {
   ORDERS_PER_PAGE = parseInt(size) || 10;
   orderPage = 1;
@@ -3108,9 +3127,9 @@ async function printOrderInvoice(id) {
     if (s.address) shopAddress = s.address;
   } catch (_) { }
 
-  // Định dạng ngày in hóa đơn
+  // Định dạng ngày in hóa đơn (chỉ giữ ngày, bỏ giờ)
   const now = new Date();
-  const printDateTime = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  const printDate = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
 
   // Tính tổng tiền hàng (trước giảm giá)
   const subtotal = (o.items || []).reduce((s, item) => s + (item.gia || 0) * (item.qty || 0), 0);
@@ -3167,12 +3186,12 @@ async function printOrderInvoice(id) {
     </div>
     <div class="slip-meta">
       <div class="slip-code">#${o.id}</div>
-      <div style="color:#64748b;font-size:11px;margin-top:2px">Ngày in: ${printDateTime}</div>
+      <div style="color:#64748b;font-size:11px;margin-top:2px">Ngày in: ${printDate}</div>
     </div>
   </div>
 
   <div class="title">HÓA ĐƠN BÁN HÀNG</div>
-  <div class="sub-title">(Ngày đặt hàng: <strong style="color:#0f172a">${formatOrderDateText(o.createdAt)}</strong>)</div>
+  <div class="sub-title">(Ngày đặt hàng: <strong style="color:#0f172a">${formatOrderDateOnly(o.createdAt)}</strong>)</div>
 
   <div class="info-grid">
     <div><strong>Khách hàng:</strong> ${customerName}</div>
@@ -8377,7 +8396,7 @@ async function printReturnSlip(returnId) {
 
   // Định dạng ngày in phiếu
   const now = new Date();
-  const printDateTime = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  const printDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
 
   const totalQty = (ret.items || []).reduce((acc, cur) => acc + (Number(cur.returnQty) || 0), 0);
   const totalRefundInWords = numberToVietnameseWords(ret.totalRefund || 0);
@@ -8428,12 +8447,12 @@ async function printReturnSlip(returnId) {
     </div>
     <div class="slip-meta">
       <div class="slip-code">${ret.id}</div>
-      <div style="color:#64748b;font-size:11px;margin-top:2px">Ngày in: ${printDateTime}</div>
+      <div style="color:#64748b;font-size:11px;margin-top:2px">Ngày in: ${printDate}</div>
     </div>
   </div>
 
   <div class="title">PHIẾU TRẢ HÀNG & HOÀN TIỀN</div>
-  <div class="sub-title">(Kèm theo đơn hàng gốc: <strong style="color:#0f172a;font-family:monospace">#${ret.orderId}</strong> - Ngày lập: <strong style="color:#0f172a">${ret.createdAt || printDateTime}</strong>)</div>
+  <div class="sub-title">(Kèm theo đơn hàng gốc: <strong style="color:#0f172a;font-family:monospace">#${ret.orderId}</strong> - Ngày lập: <strong style="color:#0f172a">${formatOrderDateOnly(ret.createdAt) || printDate}</strong>)</div>
 
   <div class="info-grid">
     <div><strong>Khách hàng:</strong> ${customerName}</div>
