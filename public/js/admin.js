@@ -3130,9 +3130,9 @@ async function printOrderInvoice(id) {
   <meta charset="utf-8">
   <title>Hóa Đơn Bán Hàng - ${o.id}</title>
   <style>
-    @page { size: A4 portrait; margin: 15mm; }
+    @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; padding: 24px; color: #0f172a; line-height: 1.5; font-size: 13px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
     .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
     .store-name { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; text-transform: uppercase; }
     .store-sub { font-size: 11px; color: #475569; margin-top: 2px; }
@@ -3154,7 +3154,7 @@ async function printOrderInvoice(id) {
     .sig-space { height: 75px; }
     .footer-note { text-align: center; font-size: 11px; color: #64748b; margin-top: 25px; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
     @media print {
-      body { padding: 0; }
+      body { padding: 14mm 15mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none; }
     }
   </style>
@@ -8390,9 +8390,9 @@ async function printReturnSlip(returnId) {
   <meta charset="utf-8">
   <title>Phiếu Trả Hàng & Hoàn Tiền - ${ret.id}</title>
   <style>
-    @page { size: A4 portrait; margin: 15mm; }
+    @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; padding: 24px; color: #0f172a; line-height: 1.5; font-size: 13px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Plus Jakarta Sans", sans-serif; padding: 14mm 15mm; color: #0f172a; line-height: 1.5; font-size: 13px; }
     .header { display: flex; justify-content: space-between; border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
     .store-name { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; text-transform: uppercase; }
     .store-sub { font-size: 11px; color: #475569; margin-top: 2px; }
@@ -8415,7 +8415,7 @@ async function printReturnSlip(returnId) {
     .footer-note { text-align: center; font-size: 11px; color: #64748b; margin-top: 25px; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
     .words-note { text-align: right; font-size: 12px; font-style: italic; color: #334155; margin-top: -12px; margin-bottom: 16px; }
     @media print {
-      body { padding: 0; }
+      body { padding: 14mm 15mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none; }
     }
   </style>
