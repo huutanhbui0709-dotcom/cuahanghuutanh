@@ -1012,6 +1012,7 @@ async function handleCreateManualOrder(req, res) {
 
     const itemsTotal = orderItems.reduce((sum, x) => sum + x.unitPrice * x.quantity, 0);
     const grandTotal = itemsTotal + sFee;
+    const isFreeShipping = itemsTotal >= 300000;
 
     const order = {
       id: 'DH' + Date.now().toString().slice(-8),
@@ -1023,6 +1024,7 @@ async function handleCreateManualOrder(req, res) {
       items: orderItems,
       shippingFee: sFee,
       total: grandTotal,
+      freeShipping: isFreeShipping,
       status: orderStatus,
       deviceId: 'admin',
       visitorId: 'admin'
@@ -1321,6 +1323,7 @@ app.post('/api/orders', async (req, res) => {
   }
 
   const total = orderItems.reduce((s, x) => s + x.gia * x.qty, 0);
+  const isFreeShipping = total >= 300000;
   const order = {
     id: 'DH' + Date.now().toString().slice(-8),
     createdAt: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
@@ -1330,6 +1333,7 @@ app.post('/api/orders', async (req, res) => {
     note: cNote,
     items: orderItems,
     total,
+    freeShipping: isFreeShipping,
     status: 'Chờ xác nhận',
     deviceId, // Lưu ID thiết bị
     visitorId,

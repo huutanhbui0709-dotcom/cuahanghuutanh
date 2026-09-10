@@ -2297,6 +2297,8 @@ async function performOrderLookup() {
       </div>
     `).join('');
 
+    const isFreeShipping = Boolean(order.freeShipping || order.isFreeShipping || Number(order.total) >= 300000);
+
     resultDiv.innerHTML = `
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <!-- Header thông tin chung -->
@@ -2345,6 +2347,27 @@ async function performOrderLookup() {
             <div class="border border-slate-100 rounded-xl px-4 py-2 bg-slate-50/50 max-h-[300px] overflow-y-auto">
               ${itemsHtml}
             </div>
+          </div>
+
+          <!-- Vận chuyển -->
+          <div class="rounded-xl p-3 border flex items-center justify-between gap-2 ${
+            isFreeShipping
+              ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/60'
+              : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/70 dark:border-slate-700/60'
+          }">
+            <div class="flex items-center gap-2 text-xs">
+              <i class="fa-solid fa-truck-fast ${isFreeShipping ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}"></i>
+              <span class="font-bold ${isFreeShipping ? 'text-emerald-800 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-400'}">
+                ${isFreeShipping ? 'Đủ điều kiện Miễn phí giao hàng KV Thốt Nốt' : 'Giao hàng tiêu chuẩn'}
+              </span>
+            </div>
+            <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+              isFreeShipping
+                ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+            }">
+              ${isFreeShipping ? 'Freeship (0đ)' : 'Theo biểu phí'}
+            </span>
           </div>
 
           <!-- Tổng tiền -->

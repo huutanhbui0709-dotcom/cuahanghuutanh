@@ -2687,7 +2687,16 @@ function renderOrdersTable() {
           <td style="white-space:nowrap;font-family:monospace;font-size:.78rem">${o.phone}</td>
           <td style="max-width:120px;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.address}">${o.address}</td>
           <td style="white-space:nowrap;text-align:center"><span class="order-detail font-bold" style="font-size:.78rem">${o.items.length} SP</span></td>
-          <td style="white-space:nowrap;font-weight:700;color:var(--primary);font-size:.8rem">${formatPrice(o.total)}</td>
+          <td style="white-space:nowrap;font-weight:700;color:var(--primary);font-size:.8rem">
+            <div>${formatPrice(o.total)}</div>
+            ${(o.freeShipping || o.total >= 300000) ? `
+              <div class="mt-0.5">
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/70" title="Đơn hàng đủ điều kiện miễn phí giao hàng KV Thốt Nốt (≥ 300.000đ)">
+                  <i class="fa-solid fa-truck-fast text-[9px]"></i> Freeship
+                </span>
+              </div>
+            ` : ''}
+          </td>
           <td style="white-space:nowrap;text-align:center">${formatOrderDate(o.createdAt)}</td>
           <td style="white-space:nowrap;text-align:center"><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td style="white-space:nowrap;text-align:center">
@@ -2882,10 +2891,14 @@ function viewOrderDetail(id) {
   const orderReturnsList = (orderReturns || []).filter(r => r.orderId === o.id);
   const totalRefunded = orderReturnsList.reduce((sum, r) => sum + (Number(r.totalRefund) || 0), 0);
 
+  // Điều kiện miễn phí giao hàng: đơn >= 300.000đ hoặc cờ freeShipping
+  const FREE_SHIPPING_THRESHOLD = 300000;
+  const isFreeShipping = Boolean(o.freeShipping || o.isFreeShipping || subtotal >= FREE_SHIPPING_THRESHOLD || grandTotal >= FREE_SHIPPING_THRESHOLD);
+
   document.getElementById('orderDetailBody').innerHTML = `
     <div class="space-y-4">
       <!-- Info Cards (Stitch Style) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 text-xs">
         <div>
           <span class="text-slate-400 block mb-0.5 text-[11px] font-bold uppercase tracking-wider">Mã đơn hàng</span>
           <span class="font-mono font-extrabold text-slate-900 dark:text-amber-400 text-sm">#${o.id}</span>
@@ -2898,6 +2911,20 @@ function viewOrderDetail(id) {
           <span class="text-slate-400 block mb-0.5 text-[11px] font-bold uppercase tracking-wider">Khách hàng</span>
           <div class="font-bold text-slate-900 dark:text-white truncate">${o.customer || 'Khách lẻ'}</div>
           ${o.phone ? `<div class="font-mono text-slate-500 dark:text-slate-400 text-[11px]">${o.phone}</div>` : ''}
+        </div>
+        <div>
+          <span class="text-slate-400 block mb-0.5 text-[11px] font-bold uppercase tracking-wider">Vận chuyển</span>
+          ${isFreeShipping ? `
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+              <i class="fa-solid fa-truck-fast text-emerald-600 dark:text-emerald-400"></i> Miễn ship
+            </span>
+            <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Đạt chuẩn (≥ 300k)</div>
+          ` : `
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+              <i class="fa-solid fa-truck text-slate-400"></i> Tiêu chuẩn
+            </span>
+            <div class="text-[10px] text-slate-400 mt-0.5">Chưa đạt miễn ship</div>
+          `}
         </div>
         <div>
           <span class="text-slate-400 block mb-0.5 text-[11px] font-bold uppercase tracking-wider">Trạng thái</span>
@@ -2917,7 +2944,7 @@ function viewOrderDetail(id) {
       </div>
 
       <!-- Delivery Info & Notes -->
-      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 text-xs space-y-1.5 text-slate-600 dark:text-slate-300 shadow-xs">
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 text-xs space-y-2 text-slate-600 dark:text-slate-300 shadow-xs">
         <div class="flex items-baseline gap-2">
           <span class="text-slate-400 font-medium">Địa chỉ giao hàng:</span>
           <strong class="text-slate-900 dark:text-white font-semibold">${o.address || '—'}</strong>
@@ -2928,6 +2955,33 @@ function viewOrderDetail(id) {
             <span class="text-slate-900 dark:text-white italic">${o.note}</span>
           </div>
         ` : ''}
+
+        <!-- Free shipping highlight banner -->
+        ${isFreeShipping ? `
+          <div class="mt-2.5 p-3 bg-emerald-50/90 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/90 dark:border-emerald-800/60 flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                <i class="fa-solid fa-truck-fast"></i>
+              </span>
+              <div>
+                <strong class="text-emerald-800 dark:text-emerald-300 font-extrabold text-xs block">
+                  Đơn hàng ĐỦ ĐIỀU KIỆN Miễn phí giao hàng (Khu vực Thốt Nốt)
+                </strong>
+                <span class="text-emerald-600/90 dark:text-emerald-400/90 text-[11px]">
+                  Giá trị đơn hàng đạt ${formatPrice(subtotal || grandTotal)} (vượt mốc 300.000đ). Cửa hàng hỗ trợ giao hàng miễn phí.
+                </span>
+              </div>
+            </div>
+            <span class="text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white px-2.5 py-1 rounded-lg shadow-xs flex-shrink-0 flex items-center gap-1">
+              <i class="fa-solid fa-circle-check"></i> ĐẠT CHUẨN FREESHIP
+            </span>
+          </div>
+        ` : `
+          <div class="mt-2 p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/70 dark:border-slate-700/60 flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs">
+            <i class="fa-solid fa-circle-info text-slate-400"></i>
+            <span>Giao hàng tính cước tiêu chuẩn (Cần thêm <strong>${formatPrice(Math.max(0, FREE_SHIPPING_THRESHOLD - (subtotal || grandTotal)))}</strong> để đạt mức miễn ship 300.000đ KV Thốt Nốt).</span>
+          </div>
+        `}
       </div>
 
       <!-- Return slips alert if exists -->
@@ -2971,11 +3025,26 @@ function viewOrderDetail(id) {
                 <td class="py-3 px-3 text-slate-400 italic text-[11px]">${item.note || '—'}</td>
               </tr>`).join('')}
           </tbody>
-          <tfoot class="bg-slate-50 dark:bg-slate-800/80 font-bold border-t-2 border-slate-200 dark:border-slate-700">
-            <tr>
-              <td colspan="5" class="py-3 px-3 text-right text-slate-600 dark:text-slate-300">Tổng cộng (${totalQty} sản phẩm):</td>
+          <tfoot class="bg-slate-50 dark:bg-slate-800/80 font-bold border-t-2 border-slate-200 dark:border-slate-700 text-xs">
+            <tr class="border-b border-slate-200/60 dark:border-slate-700/60">
+              <td colspan="5" class="py-2.5 px-3 text-right text-slate-500 dark:text-slate-400 font-semibold">Tạm tính tiền hàng (${totalQty} sản phẩm):</td>
+              <td class="py-2.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300">${totalQty}</td>
+              <td class="py-2.5 px-4 text-right font-bold text-slate-800 dark:text-slate-200 font-mono">${formatPrice(subtotal)}</td>
+              <td></td>
+            </tr>
+            <tr class="border-b border-slate-200/60 dark:border-slate-700/60">
+              <td colspan="6" class="py-2 px-3 text-right text-slate-500 dark:text-slate-400 font-semibold">Cước vận chuyển (KV Thốt Nốt):</td>
+              <td class="py-2 px-4 text-right font-black font-mono">
+                ${isFreeShipping
+                  ? '<span class="text-emerald-600 dark:text-emerald-400 flex items-center justify-end gap-1"><i class="fa-solid fa-truck-fast text-xs"></i> 0đ (Miễn ship)</span>'
+                  : (shipping > 0 ? formatPrice(shipping) : '<span class="text-slate-400 font-normal">Chưa tính cước</span>')}
+              </td>
+              <td></td>
+            </tr>
+            <tr class="text-sm">
+              <td colspan="5" class="py-3 px-3 text-right text-slate-800 dark:text-slate-100 font-black">Tổng cộng thanh toán:</td>
               <td class="py-3 px-3 text-center font-black text-slate-900 dark:text-white">${totalQty}</td>
-              <td class="py-3 px-4 text-right font-black text-amber-600 dark:text-amber-400 text-sm font-mono">${formatPrice(grandTotal)}</td>
+              <td class="py-3 px-4 text-right font-black text-amber-600 dark:text-amber-400 text-base font-mono">${formatPrice(grandTotal)}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -3049,6 +3118,7 @@ async function printOrderInvoice(id) {
   const shipping = Number(o.shippingFee || o.shipping || 0);
   const grandTotal = Number(o.total || (subtotal - discount + shipping));
   const totalQty = (o.items || []).reduce((s, item) => s + (Number(item.qty) || 0), 0);
+  const isFreeShipping = Boolean(o.freeShipping || o.isFreeShipping || subtotal >= 300000 || grandTotal >= 300000);
 
   // Địa chỉ + tọa độ
   const shippingAddress = o.shippingAddress || o.address || '';
@@ -3107,6 +3177,8 @@ async function printOrderInvoice(id) {
   <div class="info-grid">
     <div><strong>Khách hàng:</strong> ${customerName}</div>
     <div><strong>Số điện thoại:</strong> ${o.phone || '—'}</div>
+    <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">✓ Miễn phí giao hàng (Đạt chuẩn ≥ 300k)</span>' : 'Giao hàng tiêu chuẩn'}</div>
+    <div><strong>Phương thức:</strong> Thanh toán khi nhận hàng (COD)</div>
     <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${shippingAddress || 'Nhận tại cửa hàng'}
       ${o.coordinates || o.coords || o.lat ? `<span style="font-size:11px;color:#64748b;margin-left:6px">(Tọa độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`})</span>` : ''}
     </div>
@@ -3154,13 +3226,19 @@ async function printOrderInvoice(id) {
           <td></td>
         </tr>
       ` : ''}
-      ${shipping > 0 ? `
+      ${isFreeShipping ? `
+        <tr class="total-row">
+          <td colspan="6" class="text-right">Phí vận chuyển (KV Thốt Nốt):</td>
+          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a">0₫ (Miễn ship)</td>
+          <td></td>
+        </tr>
+      ` : (shipping > 0 ? `
         <tr class="total-row">
           <td colspan="6" class="text-right">Phí vận chuyển:</td>
           <td class="text-right" style="font-family:monospace;font-weight:800">+${shipping.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
-      ` : ''}
+      ` : '')}
       <tr class="total-row" style="background:#f1f5f9;font-size:13px;border-top:2px solid #0f172a">
         <td colspan="6" class="text-right" style="font-weight:900">TỔNG CỘNG THANH TOÁN:</td>
         <td class="text-right" style="color:#b91c1c;font-family:monospace;font-weight:900;font-size:14px">${grandTotal.toLocaleString('vi-VN')}₫</td>
