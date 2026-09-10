@@ -1015,6 +1015,17 @@
     background-color: #0d1527 !important;
   }
 
+  html.dark .bg-slate-100\/95,
+  html.dark #categoryMobileRow {
+    background-color: rgba(9, 13, 22, 0.95) !important;
+    border-color: #1e293b !important;
+  }
+
+  html.dark .bg-white\/95 {
+    background-color: rgba(19, 27, 46, 0.95) !important;
+    border-color: #1e293b !important;
+  }
+
   html.dark .text-slate-900,
   html.dark .text-slate-800,
   html.dark .text-slate-700 {
@@ -1221,15 +1232,29 @@
     border-color: #1e293b !important;
   }
 
-  html.dark .cat-pill {
+  html.dark .cat-pill:not(.active) {
     background-color: #131b2e !important;
     border-color: #334155 !important;
     color: #94a3b8 !important;
   }
 
-  html.dark .cat-pill:hover {
+  html.dark .cat-pill.active {
+    background: linear-gradient(135deg, #f59e0b, #f97316) !important;
+    border-color: transparent !important;
+    color: #1e293b !important;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+    font-weight: 700 !important;
+  }
+
+  html.dark .cat-pill:hover:not(.active) {
     color: #f59e0b !important;
     border-color: #f59e0b !important;
+  }
+
+  html.dark #countBadge {
+    background-color: rgba(120, 53, 15, 0.35) !important;
+    color: #fcd34d !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
   }
 
   html.dark .cat-btn {
@@ -1779,6 +1804,12 @@ html.dark .combo-item-card.selected {
 html.dark .combo-plus-connector {
   background-color: #1e293b;
   color: #94a3b8;
+}
+
+/* Đảm bảo ảnh sản phẩm không bị tối/mờ trong Dark Mode do blend mode */
+html.dark .mix-blend-multiply,
+html.dark img {
+  mix-blend-mode: normal !important;
 }
 
 

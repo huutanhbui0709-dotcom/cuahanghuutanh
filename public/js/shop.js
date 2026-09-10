@@ -332,7 +332,7 @@ function renderShop() {
     <!-- ========== DESKTOP CARD (ẩn trên mobile) ========== -->
     <div class="max-sm:hidden group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 transition-all duration-300">
       <div class="relative aspect-[4/3] bg-slate-50 border-b border-slate-100 flex items-center justify-center overflow-hidden cursor-pointer p-4" onclick="showProductDetails('${p.ma.replace(/'/g, "\\'")}')">
-        ${p.image ? `<img src="${getProductImageUrl(p)}" loading="lazy" decoding="async" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-6xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
+        ${p.image ? `<img src="${getProductImageUrl(p)}" loading="lazy" decoding="async" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />` : `<span class="text-6xl select-none opacity-50 group-hover:scale-105 transition-transform duration-500">${getIcon(p.ten)}</span>`}
         <span class="absolute top-3 left-3 text-[11px] text-amber-900 bg-amber-400/90 px-2 py-1 rounded-md font-bold shadow-sm">
           ${p.loai || 'Hàng hóa'}
         </span>
