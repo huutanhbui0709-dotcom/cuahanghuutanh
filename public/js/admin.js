@@ -3159,13 +3159,13 @@ async function printOrderInvoice(id) {
     .slip-code { font-weight: bold; font-size: 16px; color: #000; }
     .title { text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; color: #000; }
     .sub-title { text-align: center; font-size: 13px; color: #333; margin-bottom: 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fafafa; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; }
-    th { background: #f2f2f2; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fff; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
+    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; background: #fff; }
+    th { background: #fff; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: bold; font-size: 13.5px; background: #fafafa; }
+    .total-row { font-weight: bold; font-size: 13.5px; background: #fff; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
     .sig-block { font-size: 13px; }
     .sig-role { font-weight: bold; color: #000; }
@@ -3258,9 +3258,9 @@ async function printOrderInvoice(id) {
           <td></td>
         </tr>
       ` : '')}
-      <tr class="total-row" style="background:#f1f5f9;font-size:13px;border-top:2px solid #0f172a">
-        <td colspan="6" class="text-right" style="font-weight:800">TỔNG CỘNG THANH TOÁN:</td>
-        <td class="text-right" style="color:#b91c1c;font-weight:800;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
+      <tr class="total-row" style="background:#fff;font-size:13.5px;border-top:2px solid #000">
+        <td colspan="6" class="text-right" style="font-weight:bold">TỔNG CỘNG THANH TOÁN:</td>
+        <td class="text-right" style="color:#b91c1c;font-weight:bold;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
     </tfoot>
@@ -8419,13 +8419,13 @@ async function printReturnSlip(returnId) {
     .slip-code { font-weight: bold; font-size: 16px; color: #000; }
     .title { text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; color: #000; }
     .sub-title { text-align: center; font-size: 13px; color: #333; margin-bottom: 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fafafa; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; }
-    th { background: #f2f2f2; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fff; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
+    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; background: #fff; }
+    th { background: #fff; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: bold; font-size: 13.5px; background: #fafafa; }
+    .total-row { font-weight: bold; font-size: 13.5px; background: #fff; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
     .sig-block { font-size: 13px; }
     .sig-role { font-weight: bold; color: #000; }
@@ -8491,10 +8491,10 @@ async function printReturnSlip(returnId) {
       `).join('')}
     </tbody>
     <tfoot>
-      <tr class="total-row" style="background:#f1f5f9;font-size:13px;border-top:2px solid #0f172a">
-        <td colspan="5" class="text-right" style="font-weight:800">TỔNG CỘNG TIỀN HOÀN TRẢ:</td>
-        <td class="text-center" style="font-weight:700;white-space:nowrap">${totalQty}</td>
-        <td class="text-right" style="color:#b91c1c;font-weight:800;font-size:14px;white-space:nowrap">${(ret.totalRefund || 0).toLocaleString('vi-VN')}₫</td>
+      <tr class="total-row" style="background:#fff;font-size:13.5px;border-top:2px solid #000">
+        <td colspan="5" class="text-right" style="font-weight:bold">TỔNG CỘNG TIỀN HOÀN TRẢ:</td>
+        <td class="text-center" style="font-weight:bold;white-space:nowrap">${totalQty}</td>
+        <td class="text-right" style="color:#b91c1c;font-weight:bold;font-size:14px;white-space:nowrap">${(ret.totalRefund || 0).toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
     </tfoot>
