@@ -3202,12 +3202,12 @@ async function printOrderInvoice(id) {
       ${(o.items || []).map((item, idx) => `
         <tr>
           <td class="text-center">${idx + 1}</td>
-          <td style="font-family:monospace;font-weight:700">${item.ma || '—'}</td>
+          <td style="font-family:monospace;font-weight:700;white-space:nowrap">${item.ma || '—'}</td>
           <td>${item.ten || ''}</td>
-          <td class="text-center">${item.donvi || 'Cái'}</td>
-          <td class="text-right" style="font-family:monospace">${item.gia ? item.gia.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}</td>
-          <td class="text-center" style="font-weight:800;font-family:monospace">${item.qty}</td>
-          <td class="text-right" style="font-weight:800;font-family:monospace">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') + '₫' : '—'}</td>
+          <td class="text-center" style="white-space:nowrap">${item.donvi || 'Cái'}</td>
+          <td class="text-right" style="font-family:monospace;white-space:nowrap">${item.gia ? item.gia.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}</td>
+          <td class="text-center" style="font-weight:800;font-family:monospace;white-space:nowrap">${item.qty}</td>
+          <td class="text-right" style="font-weight:800;font-family:monospace;white-space:nowrap">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') + '₫' : '—'}</td>
           <td style="font-size:11px;color:#64748b">${item.note || ''}</td>
         </tr>
       `).join('')}
@@ -3215,33 +3215,33 @@ async function printOrderInvoice(id) {
     <tfoot>
       <tr class="total-row">
         <td colspan="5" class="text-right">Tổng tiền hàng:</td>
-        <td class="text-center" style="font-family:monospace;font-weight:800">${totalQty}</td>
-        <td class="text-right" style="font-family:monospace;font-weight:800">${subtotal.toLocaleString('vi-VN')}₫</td>
+        <td class="text-center" style="font-family:monospace;font-weight:800;white-space:nowrap">${totalQty}</td>
+        <td class="text-right" style="font-family:monospace;font-weight:800;white-space:nowrap">${subtotal.toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
       ${discount > 0 ? `
         <tr class="total-row">
           <td colspan="6" class="text-right">Giảm giá chiết khấu:</td>
-          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a">-${discount.toLocaleString('vi-VN')}₫</td>
+          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a;white-space:nowrap">-${discount.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
       ` : ''}
       ${isFreeShipping ? `
         <tr class="total-row">
-          <td colspan="6" class="text-right">Phí vận chuyển (KV Thốt Nốt):</td>
-          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a">0₫ (Miễn ship)</td>
+          <td colspan="6" class="text-right" style="color:#16a34a;font-weight:700">Phí vận chuyển (Miễn phí giao hàng KV Thốt Nốt):</td>
+          <td class="text-right" style="font-family:monospace;font-weight:800;color:#16a34a;white-space:nowrap">0₫</td>
           <td></td>
         </tr>
       ` : (shipping > 0 ? `
         <tr class="total-row">
           <td colspan="6" class="text-right">Phí vận chuyển:</td>
-          <td class="text-right" style="font-family:monospace;font-weight:800">+${shipping.toLocaleString('vi-VN')}₫</td>
+          <td class="text-right" style="font-family:monospace;font-weight:800;white-space:nowrap">+${shipping.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
       ` : '')}
       <tr class="total-row" style="background:#f1f5f9;font-size:13px;border-top:2px solid #0f172a">
         <td colspan="6" class="text-right" style="font-weight:900">TỔNG CỘNG THANH TOÁN:</td>
-        <td class="text-right" style="color:#b91c1c;font-family:monospace;font-weight:900;font-size:14px">${grandTotal.toLocaleString('vi-VN')}₫</td>
+        <td class="text-right" style="color:#b91c1c;font-family:monospace;font-weight:900;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
         <td></td>
       </tr>
     </tfoot>
