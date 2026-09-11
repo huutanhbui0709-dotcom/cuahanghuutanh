@@ -3152,7 +3152,7 @@ async function printOrderInvoice(id) {
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; }
-    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 14px; margin-bottom: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
     .store-name { font-size: 18px; font-weight: bold; color: #000; text-transform: uppercase; }
     .store-sub { font-size: 13px; color: #333; margin-top: 2px; }
     .slip-meta { text-align: right; }
@@ -3182,7 +3182,8 @@ async function printOrderInvoice(id) {
   <div class="header">
     <div>
       <div class="store-name">${shopName}</div>
-      <div class="store-sub">${shopAddress} • Hotline: ${shopPhone}</div>
+      ${shopAddress ? `<div class="store-sub">${shopAddress}</div>` : ''}
+      ${shopPhone ? `<div class="store-sub" style="white-space:nowrap">Hotline: ${shopPhone}</div>` : ''}
     </div>
     <div class="slip-meta">
       <div class="slip-code">#${o.id}</div>
@@ -8412,7 +8413,7 @@ async function printReturnSlip(returnId) {
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; }
-    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 14px; margin-bottom: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
     .store-name { font-size: 18px; font-weight: bold; color: #000; text-transform: uppercase; }
     .store-sub { font-size: 13px; color: #333; margin-top: 2px; }
     .slip-meta { text-align: right; }
@@ -8443,7 +8444,8 @@ async function printReturnSlip(returnId) {
   <div class="header">
     <div>
       <div class="store-name">${shopName}</div>
-      <div class="store-sub">${shopAddress} • Hotline: ${shopPhone}</div>
+      ${shopAddress ? `<div class="store-sub">${shopAddress}</div>` : ''}
+      ${shopPhone ? `<div class="store-sub" style="white-space:nowrap">Hotline: ${shopPhone}</div>` : ''}
     </div>
     <div class="slip-meta">
       <div class="slip-code">${ret.id}</div>
