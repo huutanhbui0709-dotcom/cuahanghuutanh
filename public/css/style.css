@@ -1236,9 +1236,9 @@
   }
 
   html.dark .cat-pill.active {
-    background: linear-gradient(135deg, #f59e0b, #f97316) !important;
+    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
     border-color: transparent !important;
-    color: #1e293b !important;
+    color: #ffffff !important;
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
     font-weight: 700 !important;
   }
@@ -1255,12 +1255,29 @@
   }
 
   html.dark .cat-btn {
-    color: #94a3b8;
+    color: #cbd5e1;
   }
 
-  html.dark .cat-btn:hover {
+  html.dark .cat-btn:hover:not(.active) {
     background-color: #1e293b;
-    color: #f8fafc;
+    color: #ffffff;
+  }
+
+  html.dark .cat-btn.active {
+    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+    font-weight: 700 !important;
+  }
+
+  html.dark .cat-btn.active .cat-dot {
+    background: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  html.dark .cat-btn.active .cat-count-badge {
+    background: rgba(0, 0, 0, 0.25) !important;
+    color: #ffffff !important;
   }
 
   html.dark .cat-count-badge {

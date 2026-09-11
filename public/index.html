@@ -48,7 +48,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=2.8">
+  <link rel="stylesheet" href="css/style.css?v=2.9">
   <style>
     /* Đè CSS cũ bằng Tailwind tương thích với JS */
     #cartCount {
@@ -136,8 +136,8 @@
     }
 
     .cat-btn.active {
-      background: linear-gradient(135deg, #f59e0b, #f97316);
-      color: #1e293b;
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #ffffff !important;
       box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
       font-weight: 700;
     }
@@ -153,7 +153,7 @@
 
     .cat-btn.active .cat-dot {
       opacity: 1;
-      background: #1e293b;
+      background: #ffffff !important;
     }
 
     .cat-count-badge {
@@ -167,7 +167,8 @@
     }
 
     .cat-btn.active .cat-count-badge {
-      background: rgba(0, 0, 0, 0.15);
+      background: rgba(0, 0, 0, 0.2) !important;
+      color: #ffffff !important;
     }
 
     /* Mobile horizontal pill row */
@@ -198,10 +199,11 @@
     }
 
     .cat-pill.active {
-      background: linear-gradient(135deg, #f59e0b, #f97316);
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
       border-color: transparent;
-      color: #1e293b;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+      color: #ffffff !important;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+      font-weight: 700;
     }
 
     /* Show sidebar vs pill row based on viewport */
@@ -394,12 +396,12 @@
         </div>
 
         <!-- Desktop Category List -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+        <div class="bg-white dark:bg-[#131b2e] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden"
           id="categoryDesktopContainer">
           <!-- Header -->
-          <div class="px-4 py-3.5 border-b border-slate-100 flex items-center gap-2">
-            <span class="text-base"><i class="fa-solid fa-tag"></i></span>
-            <span class="text-sm font-extrabold text-slate-700 tracking-wide uppercase">Loại sản phẩm</span>
+          <div class="px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+            <span class="text-base text-amber-500"><i class="fa-solid fa-tag"></i></span>
+            <span class="text-sm font-extrabold text-slate-700 dark:text-slate-200 tracking-wide uppercase">Loại sản phẩm</span>
           </div>
           <!-- Category list -->
           <div class="p-2 max-h-[calc(100vh-340px)] min-h-[200px] overflow-y-auto" id="categoryList"
