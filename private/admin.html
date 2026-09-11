@@ -85,21 +85,49 @@
       }
     }
 
-    /* ===== HEADER BRAND TITLE ===== */
+    /* ===== HEADER LOGO & BRAND TITLE ===== */
+    .nav-logo {
+      width: 36px;
+      height: 36px;
+      max-width: 36px;
+      max-height: 36px;
+    }
     .nav-brand-title {
-      font-size: clamp(13px, 3.8vw, 17px);
+      font-size: clamp(12.5px, 3.7vw, 16px);
+      white-space: nowrap;
       letter-spacing: -0.01em;
+    }
+    .nav-btn {
+      width: 36px;
+      height: 36px;
+      padding: 0 !important;
     }
     @media (min-width: 400px) {
       .nav-brand-title {
-        font-size: clamp(14.5px, 4vw, 18px);
-        letter-spacing: 0.005em;
+        font-size: clamp(14px, 3.8vw, 17px);
+        letter-spacing: 0;
       }
     }
     @media (min-width: 640px) {
+      .nav-logo {
+        width: 44px;
+        height: 44px;
+        max-width: 44px;
+        max-height: 44px;
+      }
       .nav-brand-title {
         font-size: 1.25rem;
         letter-spacing: 0.025em;
+      }
+      .nav-btn {
+        width: auto;
+        height: auto;
+      }
+      #themeToggleBtn {
+        padding: 0.625rem 0.875rem !important;
+      }
+      #navActions a, #logoutBtn {
+        padding: 0.625rem 1rem !important;
       }
     }
   </style>
@@ -114,11 +142,9 @@
     <div class="w-full px-2.5 xs:px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
       <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 xs:flex-initial">
         <a href="/" target="_blank" class="flex items-center gap-1.5 xs:gap-2.5 sm:gap-3 min-w-0">
-          <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
-            class="h-8.5 w-8.5 xs:h-10 xs:w-10 sm:h-11 sm:w-11 object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
-          <span class="nav-brand-title font-extrabold text-amber-400 leading-tight">
-            <span class="inline-block whitespace-nowrap">CỬA HÀNG</span> <span class="inline-block whitespace-nowrap">HỮU TÁNH</span>
-          </span>
+          <img src="img/favicon/android-chrome-192x192.png" alt="Logo" width="36" height="36"
+            class="nav-logo object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
+          <span class="nav-brand-title font-extrabold text-amber-400 leading-tight">CỬA HÀNG HỮU TÁNH</span>
         </a>
         <span
           class="bg-slate-800 text-slate-300 font-bold px-2.5 py-1 rounded-full text-xs border border-slate-700 max-sm:hidden flex items-center gap-1.5 flex-shrink-0">
@@ -127,19 +153,19 @@
       </div>
       <div class="flex-shrink-0 flex items-center gap-1.5 xs:gap-2" id="navActions">
         <button id="themeToggleBtn" onclick="toggleTheme()"
-          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold w-9 h-9 sm:w-auto sm:h-auto px-0 sm:px-3.5 py-0 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-slate-700 hover:border-amber-400/40 shadow-xs cursor-pointer flex-shrink-0"
+          class="nav-btn bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-slate-700 hover:border-amber-400/40 shadow-xs cursor-pointer flex-shrink-0"
           title="Chuyển đổi giao diện Sáng / Tối">
           <i id="themeToggleIcon" class="fa-solid fa-moon"></i>
           <span class="max-md:hidden text-slate-300 font-medium text-xs" id="themeToggleText">Tối</span>
         </button>
         <a href="/" target="_blank"
-          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold w-9 h-9 sm:w-auto sm:h-auto px-0 sm:px-4 py-0 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-amber-400/30 hover:border-amber-400/60 shadow-xs flex-shrink-0"
+          class="nav-btn bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-amber-400/30 hover:border-amber-400/60 shadow-xs flex-shrink-0"
           title="Xem Cửa Hàng">
           <i class="fa-solid fa-store"></i>
           <span class="max-sm:hidden">Xem Cửa Hàng</span>
         </a>
         <button
-          class="bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-400 font-bold w-9 h-9 sm:w-auto sm:h-auto px-0 sm:px-4 py-0 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-rose-500/30 hidden flex-shrink-0"
+          class="nav-btn bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-400 font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-rose-500/30 hidden flex-shrink-0"
           id="logoutBtn" onclick="adminLogout()" title="Đăng xuất">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
           <span class="max-sm:hidden">Đăng xuất</span>

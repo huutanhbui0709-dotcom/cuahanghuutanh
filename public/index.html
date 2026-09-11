@@ -59,21 +59,49 @@
       display: flex !important;
     }
 
-    /* ===== HEADER BRAND TITLE ===== */
+    /* ===== HEADER LOGO & BRAND TITLE ===== */
+    .nav-logo {
+      width: 36px;
+      height: 36px;
+      max-width: 36px;
+      max-height: 36px;
+    }
     .nav-brand-title {
-      font-size: clamp(13px, 3.8vw, 17px);
+      font-size: clamp(12.5px, 3.7vw, 16px);
+      white-space: nowrap;
       letter-spacing: -0.01em;
+    }
+    .nav-btn {
+      width: 36px;
+      height: 36px;
+      padding: 0 !important;
     }
     @media (min-width: 400px) {
       .nav-brand-title {
-        font-size: clamp(14.5px, 4vw, 18px);
-        letter-spacing: 0.005em;
+        font-size: clamp(14px, 3.8vw, 17px);
+        letter-spacing: 0;
       }
     }
     @media (min-width: 640px) {
+      .nav-logo {
+        width: 48px;
+        height: 48px;
+        max-width: 48px;
+        max-height: 48px;
+      }
       .nav-brand-title {
         font-size: 1.5rem; /* 24px */
         letter-spacing: 0.025em;
+      }
+      .nav-btn {
+        width: auto;
+        height: auto;
+      }
+      #lookupBtn, #cartBtn {
+        padding: 0.625rem 1.25rem !important;
+      }
+      #themeToggleBtn {
+        padding: 0.625rem 0.875rem !important;
       }
     }
 
@@ -255,28 +283,26 @@
   <!-- NAV -->
   <nav class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-2.5 xs:px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-      <a href="/" class="flex items-center gap-1.5 xs:gap-2.5 sm:gap-3 min-w-0 flex-1 xs:flex-initial">
-        <img src="img/favicon/android-chrome-192x192.png" alt="Logo"
-          class="h-8.5 w-8.5 xs:h-10 xs:w-10 sm:h-12 sm:w-12 object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
-        <span class="nav-brand-title font-extrabold text-amber-400 leading-tight">
-          <span class="inline-block whitespace-nowrap">CỬA HÀNG</span> <span class="inline-block whitespace-nowrap">HỮU TÁNH</span>
-        </span>
+      <a href="/" class="flex items-center gap-1.5 xs:gap-2.5 sm:gap-3 min-w-0 flex-shrink">
+        <img src="img/favicon/android-chrome-192x192.png" alt="Logo" width="36" height="36"
+          class="nav-logo object-contain rounded-full border-2 border-amber-400 flex-shrink-0" />
+        <span class="nav-brand-title font-extrabold text-amber-400 leading-tight">CỬA HÀNG HỮU TÁNH</span>
       </a>
       <div class="flex-shrink-0 flex items-center gap-1.5 xs:gap-2">
         <button id="themeToggleBtn" onclick="toggleTheme()"
-          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold w-9 h-9 sm:w-auto sm:h-auto px-0 sm:px-3.5 py-0 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-slate-700 hover:border-amber-400/40 shadow-xs cursor-pointer flex-shrink-0"
+          class="nav-btn bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-slate-700 hover:border-amber-400/40 shadow-xs cursor-pointer flex-shrink-0"
           title="Chuyển đổi giao diện Sáng / Tối">
           <i id="themeToggleIcon" class="fa-solid fa-moon"></i>
           <span class="max-md:hidden text-slate-300 font-medium text-xs" id="themeToggleText">Tối</span>
         </button>
         <button
-          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold w-9 h-9 sm:w-auto sm:h-auto px-0 sm:px-5 py-0 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 xxs:gap-2 text-sm sm:text-base border border-amber-400/30 hover:border-amber-400/60 shadow-lg flex-shrink-0"
+          class="nav-btn bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 xxs:gap-2 text-sm sm:text-base border border-amber-400/30 hover:border-amber-400/60 shadow-lg flex-shrink-0"
           onclick="toggleLookupView()" id="lookupBtn">
           <span><i class="fa-solid fa-receipt" style="color: rgb(255, 212, 59);"></i></span>
           <span class="max-sm:hidden">Tra cứu đơn</span>
         </button>
         <button
-          class="relative bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold w-9 h-9 sm:w-auto sm:h-auto px-0 sm:px-5 py-0 sm:py-2.5 rounded-xl transition duration-150 flex items-center justify-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20 flex-shrink-0"
+          class="nav-btn relative bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-900 font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 xxs:gap-2 text-sm sm:text-base shadow-lg shadow-amber-500/20 flex-shrink-0"
           onclick="openCart()" id="cartBtn">
           <span><i class="fa-solid fa-cart-shopping"></i></span>
           <span class="max-sm:hidden">Giỏ hàng</span>
