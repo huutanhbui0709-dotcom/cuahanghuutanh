@@ -20,6 +20,54 @@ let orderPage = 1;
 let INVENTORY_PER_PAGE = 20;
 let inventoryPage = 1;
 
+// ==============================
+// VIETNAMESE ACCENT / DIACRITIC NORMALIZATION
+// ==============================
+function removeVietnameseTones(str) {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, m => (m === 'đ' ? 'd' : 'D'));
+}
+
+function matchProductSearch(p, query) {
+  if (!query || !query.trim()) return true;
+  if (!p) return false;
+
+  const rawQ = query.trim().toLowerCase();
+  const normQ = removeVietnameseTones(rawQ).toLowerCase();
+
+  const rawTen = String(p.ten || '').toLowerCase();
+  const rawMa = String(p.ma || '').toLowerCase();
+  const rawBarcode = String(p.barcode || '').toLowerCase();
+
+  // 1. Direct raw match (accented or exact code/barcode)
+  if (rawTen.includes(rawQ) || rawMa.includes(rawQ) || (rawBarcode && rawBarcode.includes(rawQ))) {
+    return true;
+  }
+
+  const normTen = removeVietnameseTones(rawTen).toLowerCase();
+  const normMa = removeVietnameseTones(rawMa).toLowerCase();
+  const normBarcode = removeVietnameseTones(rawBarcode).toLowerCase();
+
+  // 2. Tone-stripped unaccented substring match
+  if (normTen.includes(normQ) || normMa.includes(normQ) || (normBarcode && normBarcode.includes(normQ))) {
+    return true;
+  }
+
+  // 3. Multi-token word match (e.g. "binh 21" or "ong binh minh")
+  const tokens = normQ.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const combined = `${normMa} ${normTen} ${normBarcode}`;
+    if (tokens.every(t => combined.includes(t))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function formatPrice(p) {
   if (!p || p === 0) return 'Liên hệ';
   return p.toLocaleString('vi-VN') + '₫';
@@ -1877,7 +1925,7 @@ function renderPagination(total, current, id, onPage) {
 }
 
 function renderAdminTable() {
-  const q = (document.getElementById('adminSearch')?.value || '').toLowerCase();
+  const q = document.getElementById('adminSearch')?.value || '';
   const typeFilter = document.getElementById('adminTypeFilter')?.value || '';
   const statusFilter = document.getElementById('adminStatusFilter')?.value || '';
   const bestSellerFilter = document.getElementById('adminBestSellerFilter')?.value || '';
@@ -1885,7 +1933,7 @@ function renderAdminTable() {
   const upsellFilter = document.getElementById('adminUpsellFilter')?.value || '';
 
   let list = products.filter(p => {
-    if (q && !p.ten.toLowerCase().includes(q) && !p.ma.toLowerCase().includes(q)) return false;
+    if (q && !matchProductSearch(p, q)) return false;
     if (typeFilter && p.loai !== typeFilter) return false;
     if (statusFilter && (p.trangthai || 'Đang theo dõi') !== statusFilter) return false;
     if (bestSellerFilter === 'yes' && !p.isBestSeller) return false;
@@ -2126,7 +2174,7 @@ function searchUpsellCandidates(kw) {
   const matched = (products || []).filter(p => {
     if (p.ma === currentMa) return false;
     if (selectedSet.has(p.ma)) return false;
-    return p.ten.toLowerCase().includes(term) || p.ma.toLowerCase().includes(term);
+    return matchProductSearch(p, term);
   }).slice(0, 8);
 
   if (matched.length === 0) {
@@ -2632,8 +2680,12 @@ function renderOrdersTable() {
 
     // 2. Filter by search query
     if (searchQuery) {
+      const qNorm = removeVietnameseTones(searchQuery).toLowerCase();
+      const rawCustomer = String(o.customer || '').toLowerCase();
+      const normCustomer = removeVietnameseTones(rawCustomer).toLowerCase();
       const match = (o.id || '').toLowerCase().includes(searchQuery) ||
-        (o.customer || '').toLowerCase().includes(searchQuery) ||
+        rawCustomer.includes(searchQuery) ||
+        normCustomer.includes(qNorm) ||
         (o.phone || '').toLowerCase().includes(searchQuery);
       if (!match) return false;
     }
@@ -4972,11 +5024,7 @@ function sk_filterAndRender() {
   let list = (products || []).filter(p => p.trangthai !== 'Ngừng theo dõi');
 
   if (q) {
-    list = list.filter(p =>
-      (p.ma || '').toLowerCase().includes(q) ||
-      (p.ten || '').toLowerCase().includes(q) ||
-      (p.barcode || '').toLowerCase().includes(q)
-    );
+    list = list.filter(p => matchProductSearch(p, q));
   }
   if (cat) list = list.filter(p => p.loai === cat);
   if (status) list = list.filter(p => sk_getStockStatus(p.stock) === status);
@@ -6239,11 +6287,7 @@ function searchProductsForOrderCreation(query) {
   }
 
   if (q) {
-    matches = matches.filter(p => {
-      const ma = String(p.ma || '').toLowerCase();
-      const ten = String(p.ten || '').toLowerCase();
-      return ma.includes(q) || ten.includes(q);
-    });
+    matches = matches.filter(p => matchProductSearch(p, q));
   }
 
   // Adjust container styles according to the view mode
@@ -7012,10 +7056,7 @@ function srfm_onSkuInput(input, idx) {
   const drop = srfm_getSharedDropdown();
   if (!val || val.length < 1) { srfm_hideDropdown(); return; }
 
-  const matches = (products || []).filter(p =>
-    (p.ma || '').toLowerCase().includes(val) ||
-    (p.ten || '').toLowerCase().includes(val)
-  ).slice(0, 12);
+  const matches = (products || []).filter(p => matchProductSearch(p, val)).slice(0, 12);
 
   if (matches.length === 0) { srfm_hideDropdown(); return; }
 
@@ -7036,10 +7077,7 @@ function srfm_onNameInput(input, idx) {
   const drop = srfm_getSharedDropdown();
   if (!val || val.length < 1) { srfm_hideDropdown(); return; }
 
-  const matches = (products || []).filter(p =>
-    (p.ten || '').toLowerCase().includes(val) ||
-    (p.ma || '').toLowerCase().includes(val)
-  ).slice(0, 12);
+  const matches = (products || []).filter(p => matchProductSearch(p, val)).slice(0, 12);
 
   if (matches.length === 0) { srfm_hideDropdown(); return; }
 

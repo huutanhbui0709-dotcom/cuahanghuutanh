@@ -25,6 +25,54 @@ function getIcon(name) {
   return '<i class="fa-solid fa-box text-slate-400"></i>';
 }
 
+// ==============================
+// VIETNAMESE ACCENT / DIACRITIC NORMALIZATION
+// ==============================
+function removeVietnameseTones(str) {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, m => (m === 'đ' ? 'd' : 'D'));
+}
+
+function matchProductSearch(p, query) {
+  if (!query || !query.trim()) return true;
+  if (!p) return false;
+
+  const rawQ = query.trim().toLowerCase();
+  const normQ = removeVietnameseTones(rawQ).toLowerCase();
+
+  const rawTen = String(p.ten || '').toLowerCase();
+  const rawMa = String(p.ma || '').toLowerCase();
+  const rawBarcode = String(p.barcode || '').toLowerCase();
+
+  // 1. Direct raw match (accented or exact code/barcode)
+  if (rawTen.includes(rawQ) || rawMa.includes(rawQ) || (rawBarcode && rawBarcode.includes(rawQ))) {
+    return true;
+  }
+
+  const normTen = removeVietnameseTones(rawTen).toLowerCase();
+  const normMa = removeVietnameseTones(rawMa).toLowerCase();
+  const normBarcode = removeVietnameseTones(rawBarcode).toLowerCase();
+
+  // 2. Tone-stripped unaccented substring match
+  if (normTen.includes(normQ) || normMa.includes(normQ) || (normBarcode && normBarcode.includes(normQ))) {
+    return true;
+  }
+
+  // 3. Multi-token word match (e.g. "binh 21" or "ong binh minh")
+  const tokens = normQ.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const combined = `${normMa} ${normTen} ${normBarcode}`;
+    if (tokens.every(t => combined.includes(t))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function formatPrice(p) {
   if (!p || p === 0) return 'Liên hệ';
   return p.toLocaleString('vi-VN') + '₫';
@@ -253,11 +301,11 @@ async function loadProducts() {
 // SHOP
 // ==============================
 function getFilteredProducts() {
-  const q = document.getElementById('searchInput').value.toLowerCase().trim();
-  const sort = document.getElementById('sortSelect').value;
+  const q = (document.getElementById('searchInput')?.value || '').trim();
+  const sort = document.getElementById('sortSelect')?.value || '';
   let list = products.filter(p => {
     if (!p.ma || !p.ten) return false;
-    const match = !q || p.ten.toLowerCase().includes(q) || p.ma.toLowerCase().includes(q);
+    const match = !q || matchProductSearch(p, q);
     const matchType = !currentType || (currentType === 'bestseller' ? p.isBestSeller === true : p.loai === currentType);
     return match && matchType;
   });
