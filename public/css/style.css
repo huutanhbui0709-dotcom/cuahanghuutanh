@@ -2084,6 +2084,33 @@ html.dark input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Inventory Summary Badge */
+html.dark #inventoryReceiptsCountBadge {
+  color: #ffffff !important;
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html.dark #inventoryReceiptsCountBadge span {
+  color: #ffffff !important;
+}
+
+/* Inventory Bulk Delete Button */
+html.dark #inventoryBulkDeleteBtn {
+  color: #ffffff !important;
+  background-color: rgba(225, 29, 72, 0.25) !important;
+  border-color: rgba(244, 63, 94, 0.45) !important;
+}
+
+html.dark #inventoryBulkDeleteBtn:hover:not(:disabled) {
+  background-color: rgba(225, 29, 72, 0.45) !important;
+  border-color: rgba(244, 63, 94, 0.7) !important;
+}
+
+html.dark #inventoryBulkDeleteBtn * {
+  color: #ffffff !important;
+}
+
 
 
 

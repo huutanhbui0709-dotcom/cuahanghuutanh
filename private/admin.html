@@ -40,7 +40,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=3.0" />
+  <link rel="stylesheet" href="css/style.css?v=3.8" />
   <style>
     .srfm-dup-row,
     .srfm-dup-row td {
@@ -1066,24 +1066,24 @@
                         id="inventoryTotalCount">0</span>)</span>
                   </label>
                   <button id="inventoryBulkDeleteBtn" onclick="deleteSelectedInventoryReceipts()"
-                    class="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                    class="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 dark:text-white border border-rose-200 dark:border-rose-800/80 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
                     disabled style="opacity: 0.5; cursor: not-allowed;">
-                    <i class="fa-solid fa-trash-can"></i> Xóa
+                    <i class="fa-solid fa-trash-can text-rose-500 dark:text-white"></i> <span>Xóa</span>
                   </button>
                 </div>
 
                 <div class="flex items-center gap-3 text-xs flex-wrap" id="inventoryHistorySummaryTop">
-                  <span
-                    class="px-3 py-1 rounded-lg bg-amber-500/10 text-amber-800 font-extrabold border border-amber-200/60 flex items-center gap-1.5">
-                    <i class="fa-solid fa-file-invoice text-amber-600"></i>
-                    <span id="inventorySummaryCountTop">0</span> phiếu nhập
+                  <span id="inventoryReceiptsCountBadge"
+                    class="px-3 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-slate-800 dark:text-white font-extrabold border border-amber-200/60 dark:border-amber-500/30 flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-invoice text-amber-600 dark:text-amber-400"></i>
+                    <span id="inventorySummaryCountTop" class="text-slate-900 dark:text-white">0</span> <span class="text-slate-800 dark:text-white">phiếu nhập</span>
                   </span>
-                  <span class="text-slate-300 font-light">|</span>
+                  <span class="text-slate-300 dark:text-slate-600 font-light">|</span>
                   <span
-                    class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold border border-slate-200 flex items-center gap-1.5">
-                    <i class="fa-solid fa-coins text-amber-600"></i>
+                    class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-semibold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-coins text-amber-600 dark:text-amber-400"></i>
                     Tổng giá trị: <strong id="inventorySummaryTotalTop"
-                      class="text-slate-900 font-black ml-1">0đ</strong>
+                      class="text-slate-900 dark:text-white font-black ml-1">0đ</strong>
                   </span>
                 </div>
               </div>
