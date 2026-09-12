@@ -1714,6 +1714,11 @@ html.dark .admin-icon-btn:hover {
   border: 1px solid #fde68a;
 }
 
+.combo-flow-wrap {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
 .combo-item-card {
   display: flex;
   align-items: center;
@@ -1816,35 +1821,46 @@ html.dark .btn-quick-add.added {
 }
 
 html.dark .combo-section-wrap {
-  border-color: #1e293b;
-  background-color: #0b1120;
+  border-color: #1e293b !important;
+  background-color: #0b1120 !important;
 }
 
 html.dark .combo-badge {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.35);
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+html.dark .combo-flow-wrap {
+  background-color: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
 html.dark .combo-item-card {
-  background-color: #131d33;
-  border-color: #1e293b;
+  background-color: #162035 !important;
+  border: 1.5px solid #22324f !important;
 }
 
 html.dark .combo-item-card:hover {
-  border-color: #334155;
+  border-color: #3b82f6 !important;
+  background-color: #1c2a45 !important;
 }
 
 html.dark .combo-item-card.selected {
-  border-color: #f59e0b;
-  background-color: rgba(245, 158, 11, 0.08);
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(22, 32, 53, 0.95) 100%) !important;
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.22) !important;
 }
 
 html.dark .combo-plus-pill {
-  background-color: #1e293b;
-  border-color: #334155;
-  color: #94a3b8;
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+html.dark .combo-footer-bar {
+  border-color: #1e293b !important;
 }
 
 /* Đảm bảo ảnh sản phẩm không bị tối/mờ trong Dark Mode do blend mode */
@@ -1888,5 +1904,186 @@ html.dark #btnGetLocation:hover {
   border-color: #f59e0b !important;
   color: #fef3c7 !important;
 }
+
+/* ===================================================
+   Product Card "Thêm giỏ" (Add to Cart) Button
+   =================================================== */
+.btn-card-add {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover .btn-card-add {
+  background-color: #f59e0b;
+  color: #0f172a;
+  border-color: #f59e0b;
+}
+
+.btn-card-add:hover {
+  background-color: #d97706 !important;
+  color: #020617 !important;
+  border-color: #d97706 !important;
+  transform: scale(1.05);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+
+.btn-card-add:active {
+  transform: scale(0.95) !important;
+}
+
+/* Dark Mode Styles for .btn-card-add */
+html.dark .btn-card-add {
+  background-color: #1e293b !important;
+  color: #cbd5e1 !important;
+  border: 1px solid #334155 !important;
+}
+
+html.dark .group:hover .btn-card-add {
+  background-color: #f59e0b !important;
+  color: #0f172a !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25) !important;
+}
+
+html.dark .btn-card-add:hover {
+  background-color: #fbbf24 !important;
+  color: #020617 !important;
+  border-color: #fbbf24 !important;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45) !important;
+}
+
+html.dark .btn-card-add:active {
+  transform: scale(0.95) !important;
+}
+
+/* ===================================================
+   Order Lookup / Search Module Details
+   =================================================== */
+.order-items-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+html.dark .order-items-box {
+  background-color: #0b1120 !important;
+  border-color: #1e293b !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.order-total-box {
+  background-color: #fffbeb;
+  border: 1px solid #fef3c7;
+}
+
+html.dark .order-total-box {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(19, 27, 46, 0.95) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ===================================================
+   Search Tools Dark Mode
+   =================================================== */
+#lookupInput {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+}
+
+html.dark #lookupInput {
+  background-color: #0b1120 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark #lookupInput:focus {
+  background-color: #0b1120 !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), inset 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  outline: none !important;
+}
+
+html.dark #lookupInput::placeholder {
+  color: #64748b !important;
+}
+
+#btnLookupSearch {
+  background-color: #f59e0b !important;
+  color: #0f172a !important;
+  border: none !important;
+  transition: all 0.15s ease;
+}
+
+#btnLookupSearch:hover {
+  background-color: #d97706 !important;
+  color: #0f172a !important;
+}
+
+html.dark #btnLookupSearch {
+  background-color: #f59e0b !important;
+  color: #f8fafc !important;
+}
+
+html.dark #btnLookupSearch:hover {
+  background-color: #d97706 !important;
+  color: #f8fafc !important;
+}
+
+#btnLookupSearch:active {
+  transform: scale(0.96);
+}
+
+/* Product Search in Shop Controls */
+html.dark #searchInput {
+  background-color: #0b1120 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark #searchInput:focus {
+  background-color: #0b1120 !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+  outline: none !important;
+}
+
+html.dark #searchInput::placeholder {
+  color: #64748b !important;
+}
+
+html.dark #sortSelect {
+  background-color: #0b1120 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark #sortSelect:focus {
+  background-color: #0b1120 !important;
+  border-color: #f59e0b !important;
+  outline: none !important;
+}
+
+html.dark #shopControls {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+/* Global Autofill Fix for Dark Mode */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0b1120 inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+
 
 

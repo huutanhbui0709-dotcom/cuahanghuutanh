@@ -2623,6 +2623,32 @@ function formatOrderDateOnly(str) {
   return str;
 }
 
+function formatAdminOrderAddress(addr) {
+  if (!addr) return '—';
+  const str = String(addr).trim();
+  const regex = /\(?\s*(?:To[ạa]\s*độ|T[ọo]a\s*độ|Coordinates?)\s*:\s*([-\d.]+)[,\s]+([-\d.]+)\s*\)?/i;
+  const m = str.match(regex);
+  if (!m) {
+    return `<strong class="text-slate-900 dark:text-white font-semibold">${str}</strong>`;
+  }
+  const mainAddr = str.replace(m[0], '').replace(/[\s,–-]+$/, '').trim();
+  const lat = m[1];
+  const lon = m[2];
+  const coordText = `Toạ độ: ${lat}, ${lon}`;
+  return `
+    <div class="inline-block text-left leading-relaxed">
+      ${mainAddr ? `<div class="text-slate-900 dark:text-white font-semibold">${mainAddr}</div>` : ''}
+      <div class="mt-1 text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+        <i class="fa-solid fa-location-dot"></i>
+        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener noreferrer" class="hover:underline inline-flex items-center gap-1" title="Mở bản đồ Google Maps">
+          <span>${coordText}</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-75"></i>
+        </a>
+      </div>
+    </div>
+  `.trim();
+}
+
 function changeOrderPageSize(size) {
   ORDERS_PER_PAGE = parseInt(size) || 10;
   orderPage = 1;
@@ -3016,9 +3042,9 @@ function viewOrderDetail(id) {
 
       <!-- Delivery Info & Notes -->
       <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 text-xs space-y-2 text-slate-600 dark:text-slate-300 shadow-xs">
-        <div class="flex items-baseline gap-2">
-          <span class="text-slate-400 font-medium">Địa chỉ giao hàng:</span>
-          <strong class="text-slate-900 dark:text-white font-semibold">${o.address || '—'}</strong>
+        <div class="flex items-start gap-2">
+          <span class="text-slate-400 font-medium whitespace-nowrap mt-0.5">Địa chỉ giao hàng:</span>
+          <div>${formatAdminOrderAddress(o.address)}</div>
         </div>
         ${o.note ? `
           <div class="flex items-baseline gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
@@ -3192,8 +3218,18 @@ async function printOrderInvoice(id) {
   const isFreeShipping = Boolean(o.freeShipping || o.isFreeShipping || subtotal >= 300000 || grandTotal >= 300000);
 
   // Địa chỉ + tọa độ
-  const shippingAddress = o.shippingAddress || o.address || '';
+  const rawShippingAddress = o.shippingAddress || o.address || '';
   const customerName = o.customerName || o.customer || 'Khách lẻ';
+  const coordRegex = /\(?\s*(?:To[ạa]\s*độ|T[ọo]a\s*độ|Coordinates?)\s*:\s*([-\d.]+)[,\s]+([-\d.]+)\s*\)?/i;
+  const coordMatch = rawShippingAddress.match(coordRegex);
+  let cleanShippingAddress = rawShippingAddress;
+  let printCoordText = '';
+  if (coordMatch) {
+    cleanShippingAddress = rawShippingAddress.replace(coordMatch[0], '').replace(/[\s,–-]+$/, '').trim();
+    printCoordText = `Toạ độ: ${coordMatch[1]}, ${coordMatch[2]}`;
+  } else if (o.coordinates || o.coords || (o.lat && o.lng)) {
+    printCoordText = `Toạ độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`}`;
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="vi">
@@ -3251,8 +3287,8 @@ async function printOrderInvoice(id) {
     <div><strong>Số điện thoại:</strong> ${o.phone || '—'}</div>
     <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">Miễn phí giao hàng</span>' : 'Giao hàng tiêu chuẩn'}</div>
     <div><strong>Phương thức:</strong> Thanh toán khi nhận hàng (COD)</div>
-    <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${shippingAddress || 'Nhận tại cửa hàng'}
-      ${o.coordinates || o.coords || o.lat ? `<span style="font-size:12px;color:#555;margin-left:6px">(Tọa độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`})</span>` : ''}
+    <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${cleanShippingAddress || 'Nhận tại cửa hàng'}
+      ${printCoordText ? `<div style="font-size:12px;color:#444;margin-top:3px">${printCoordText}</div>` : ''}
     </div>
     ${o.note ? `<div style="grid-column: span 2"><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
   </div>

@@ -98,6 +98,58 @@ function getProductImageUrl(p) {
   return p.image + (p.updatedAt ? `?t=${p.updatedAt}` : '');
 }
 
+function formatOrderDateTimeDisplay(str) {
+  if (!str) return '—';
+  // Pattern 1: HH:mm[:ss] DD/MM/YYYY
+  const m1 = String(str).match(/(\d{1,2}:\d{2}(?::\d{2})?)[,\s]+(\d{1,2}\/\d{1,2}\/\d{4})/);
+  if (m1) {
+    return `${m1[2]} | ${m1[1]}`;
+  }
+  // Pattern 2: DD/MM/YYYY HH:mm[:ss]
+  const m2 = String(str).match(/(\d{1,2}\/\d{1,2}\/\d{4})[,\s]+(\d{1,2}:\d{2}(?::\d{2})?)/);
+  if (m2) {
+    return `${m2[1]} | ${m2[2]}`;
+  }
+  // Fallback: ISO string or date parse
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    const day = d.getDate();
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year} | ${hours}:${minutes}:${seconds}`;
+  }
+  return str;
+}
+
+function formatOrderAddressDisplay(addr) {
+  if (!addr) return '<span class="font-bold text-slate-700 dark:text-slate-100 leading-relaxed">—</span>';
+  const str = String(addr).trim();
+  const regex = /\(?\s*(?:To[ạa]\s*độ|T[ọo]a\s*độ|Coordinates?)\s*:\s*([-\d.]+)[,\s]+([-\d.]+)\s*\)?/i;
+  const m = str.match(regex);
+  if (!m) {
+    return `<span class="font-bold text-slate-700 dark:text-slate-100 leading-relaxed">${str}</span>`;
+  }
+  const mainAddr = str.replace(m[0], '').replace(/[\s,–-]+$/, '').trim();
+  const lat = m[1];
+  const lon = m[2];
+  const coordText = `Toạ độ: ${lat}, ${lon}`;
+
+  return `
+    <div class="leading-relaxed">
+      ${mainAddr ? `<div class="font-bold text-slate-700 dark:text-slate-100">${mainAddr}</div>` : ''}
+      <div class="mt-1 text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+        <i class="fa-solid fa-location-dot"></i>
+        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" rel="noopener noreferrer" class="hover:underline inline-flex items-center gap-1" title="Mở bản đồ Google Maps">
+          <span>${coordText}</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-75"></i>
+        </a>
+      </div>
+    </div>
+  `.trim();
+}
+
 // ==============================
 // THEME (DARK / LIGHT)
 // ==============================
@@ -370,7 +422,7 @@ function renderShop() {
             <span class="text-sm font-black text-blue-600 leading-none">${formatPriceMobile(p.gia)}</span>
             <span class="text-[9px] text-slate-400 font-medium mt-0.5">/${p.donvi || 'Cái'}</span>
           </div>
-          <button class="shrink-0 w-8 h-8 bg-slate-100 text-slate-600 group-hover:bg-amber-500 group-hover:text-slate-900 rounded-lg flex items-center justify-center transition-colors duration-300 active:scale-90 text-xs shadow-sm" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
+          <button class="btn-card-add shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs shadow-sm cursor-pointer" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
             <i class="fa-solid fa-cart-plus"></i>
           </button>
         </div>
@@ -399,7 +451,7 @@ function renderShop() {
             <span class="text-xl font-black text-slate-900 leading-none">${formatPrice(p.gia)}</span>
             ${p.donvi ? `<span class="text-xs text-slate-400 font-medium mb-0.5">/${p.donvi}</span>` : ''}
           </div>
-          <button class="shrink-0 px-4 py-2.5 bg-slate-100 text-slate-600 group-hover:bg-amber-500 group-hover:text-slate-900 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors duration-300 shadow-sm text-sm active:scale-[0.97]" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
+          <button class="btn-card-add shrink-0 px-4 py-2.5 font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm text-sm cursor-pointer" onclick="addToCart('${p.ma.replace(/'/g, "\\'")}')" title="Thêm vào giỏ">
             <i class="fa-solid fa-cart-plus"></i>
             <span>Thêm giỏ</span>
           </button>
@@ -1722,7 +1774,7 @@ function renderComboSection(mainProduct) {
       </div>
 
       <!-- Combo Flow Cards Container -->
-      <div class="bg-slate-50/80 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-3.5 overflow-hidden">
+      <div class="combo-flow-wrap rounded-2xl p-3 sm:p-3.5 overflow-hidden">
         <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 sm:gap-2.5 w-full">
           ${currentComboItems.map((item, idx) => `
             ${idx > 0 ? `
@@ -1738,13 +1790,13 @@ function renderComboSection(mainProduct) {
                 onchange="toggleComboCheckbox('${item.product.ma.replace(/'/g, "\\'")}', this.checked)"
                 class="w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-slate-300 dark:border-slate-600 accent-amber-500 cursor-pointer flex-shrink-0" />
               
-              <div class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 p-1 border border-slate-200/70 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs">
+              <div class="w-11 h-11 rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200/70 dark:border-slate-700/80 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs">
                 ${item.product.image ? `<img src="${getProductImageUrl(item.product)}" class="w-full h-full object-contain" />` : `<span class="text-lg opacity-80">${getIcon(item.product.ten)}</span>`}
               </div>
 
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1.5 mb-0.5">
-                  <span class="text-[9px] uppercase font-extrabold px-1.5 py-0.2 rounded ${item.isMain ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'}">
+                  <span class="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded ${item.isMain ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 dark:border dark:border-amber-700/60' : (item.isCustomUpsell ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border dark:border-emerald-700/60' : 'bg-blue-100 text-blue-800 dark:bg-blue-950/90 dark:text-blue-300 dark:border dark:border-blue-700/60')}">
                     ${item.isMain ? 'Sản phẩm này' : (item.isCustomUpsell ? 'Khuyên dùng' : 'Gợi ý kèm')}
                   </span>
                 </div>
@@ -1760,7 +1812,7 @@ function renderComboSection(mainProduct) {
         </div>
 
         <!-- Combo Summary Footer Bar -->
-        <div class="mt-3.5 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="combo-footer-bar mt-3.5 pt-3 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 text-xs">
             <div class="flex items-center gap-1 text-slate-600 dark:text-slate-300">
               <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
@@ -2355,8 +2407,8 @@ async function performOrderLookup() {
   }
 
   resultDiv.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 flex items-center justify-center">
-      <div class="flex items-center gap-3 text-slate-500">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 flex items-center justify-center">
+      <div class="flex items-center gap-3 text-slate-500 dark:text-slate-400">
         <i class="fa-solid fa-spinner fa-spin text-2xl text-amber-500"></i>
         <span class="font-bold text-sm">Đang tìm kiếm thông tin đơn hàng...</span>
       </div>
@@ -2370,12 +2422,12 @@ async function performOrderLookup() {
 
     if (!res.ok || !data.ok) {
       resultDiv.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
-          <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 text-center">
+          <div class="w-12 h-12 bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
-          <h4 class="font-bold text-slate-800 text-base mb-1">Không tìm thấy đơn hàng</h4>
-          <p class="text-xs text-slate-500">${data.message || 'Vui lòng kiểm tra lại mã đơn hàng.'}</p>
+          <h4 class="font-bold text-slate-800 dark:text-white text-base mb-1">Không tìm thấy đơn hàng</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400">${data.message || 'Vui lòng kiểm tra lại mã đơn hàng.'}</p>
         </div>
       `;
       return;
@@ -2384,22 +2436,22 @@ async function performOrderLookup() {
     const order = data.order;
 
     // Bản đồ màu sắc trạng thái
-    let statusClass = 'bg-amber-100 text-amber-800';
-    if (order.status === 'Đã xác nhận') statusClass = 'bg-emerald-100 text-emerald-800';
-    if (order.status === 'Đã huỷ') statusClass = 'bg-red-100 text-red-800';
+    let statusClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 dark:border dark:border-amber-700/60';
+    if (order.status === 'Đã xác nhận') statusClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border dark:border-emerald-700/60';
+    if (order.status === 'Đã huỷ') statusClass = 'bg-red-100 text-red-800 dark:bg-red-950/80 dark:text-red-300 dark:border dark:border-red-700/60';
 
     // HTML danh sách sản phẩm kèm ảnh
     const itemsHtml = order.items.map(item => `
-      <div class="flex gap-3 py-3 border-b border-slate-100 last:border-0 items-start">
-        <div class="w-14 h-14 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-          <img src="${item.image}" alt="${item.ten}" class="w-full h-full object-cover" onerror="this.src='/img/placeholder.png'">
+      <div class="flex gap-3 py-3 border-b border-slate-200/80 dark:border-slate-800/80 last:border-0 items-start">
+        <div class="w-14 h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 p-1 shadow-2xs">
+          <img src="${item.image}" alt="${item.ten}" class="w-full h-full object-contain" onerror="this.src='/img/placeholder.png'">
         </div>
         <div class="flex-1 min-w-0">
-          <h5 class="text-sm font-bold text-slate-700 truncate">${item.ten}</h5>
-          <span class="text-[11px] font-mono text-slate-400 block">${item.ma}</span>
-          <div class="flex items-center justify-between mt-1">
-            <span class="text-xs text-slate-500 font-semibold">${item.qty} ${item.donvi}</span>
-            <span class="text-xs font-bold text-blue-600">${formatPrice(item.gia)}</span>
+          <h5 class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">${item.ten}</h5>
+          <span class="text-[11px] font-mono text-slate-400 dark:text-slate-400 block mt-0.5">${item.ma}</span>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-xs text-slate-600 dark:text-slate-300 font-semibold bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 rounded-md">${item.qty} ${item.donvi}</span>
+            <span class="text-xs sm:text-sm font-extrabold text-blue-600 dark:text-amber-400 font-mono">${formatPrice(item.gia)}</span>
           </div>
         </div>
       </div>
@@ -2408,9 +2460,9 @@ async function performOrderLookup() {
     const isFreeShipping = Boolean(order.freeShipping || order.isFreeShipping || Number(order.total) >= 300000);
 
     resultDiv.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         <!-- Header thông tin chung -->
-        <div class="bg-slate-900 text-white p-4 sm:p-5 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3">
+        <div class="bg-slate-900 text-white p-4 sm:p-5 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3 border-b border-slate-800">
           <div>
             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Mã đơn hàng</span>
             <span class="text-lg font-black text-amber-400 font-mono">${order.id}</span>
@@ -2421,38 +2473,38 @@ async function performOrderLookup() {
         <!-- Body -->
         <div class="p-4 sm:p-6 space-y-5">
           <!-- Thông tin khách -->
-          <div class="border-b border-slate-100 pb-4">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Thông tin khách hàng</h4>
+          <div class="border-b border-slate-200/80 dark:border-slate-800 pb-4">
+            <h4 class="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2.5">Thông tin khách hàng</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
               <div>
-                <span class="text-slate-400 block">Họ và tên</span>
-                <span class="font-bold text-slate-700">${order.customer}</span>
+                <span class="text-slate-400 text-xs block mb-0.5">Họ và tên</span>
+                <span class="font-bold text-slate-700 dark:text-slate-100">${order.customer}</span>
               </div>
               <div>
-                <span class="text-slate-400 block">Số điện thoại</span>
-                <span class="font-bold text-slate-700">${order.phone}</span>
+                <span class="text-slate-400 text-xs block mb-0.5">Số điện thoại</span>
+                <span class="font-bold text-slate-700 dark:text-slate-100 font-mono">${order.phone}</span>
               </div>
               <div class="sm:col-span-2">
-                <span class="text-slate-400 block">Địa chỉ nhận hàng</span>
-                <span class="font-bold text-slate-700">${order.address}</span>
+                <span class="text-slate-400 text-xs block mb-0.5">Địa chỉ nhận hàng</span>
+                ${formatOrderAddressDisplay(order.address)}
               </div>
               ${order.note ? `
                 <div class="sm:col-span-2">
-                  <span class="text-slate-400 block">Ghi chú từ khách hàng</span>
-                  <span class="font-semibold text-amber-600">${order.note}</span>
+                  <span class="text-slate-400 text-xs block mb-0.5">Ghi chú từ khách hàng</span>
+                  <span class="font-semibold text-amber-600 dark:text-amber-400">${order.note}</span>
                 </div>
               ` : ''}
               <div>
-                <span class="text-slate-400 block">Thời gian đặt</span>
-                <span class="font-medium text-slate-600">${order.createdAt}</span>
+                <span class="text-slate-400 text-xs block mb-0.5">Thời gian đặt</span>
+                <span class="font-medium text-slate-600 dark:text-slate-300">${formatOrderDateTimeDisplay(order.createdAt)}</span>
               </div>
             </div>
           </div>
 
           <!-- Chi tiết sản phẩm -->
           <div>
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Sản phẩm đã đặt</h4>
-            <div class="border border-slate-100 rounded-xl px-4 py-2 bg-slate-50/50 max-h-[300px] overflow-y-auto">
+            <h4 class="text-xs font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Sản phẩm đã đặt</h4>
+            <div class="order-items-box rounded-xl px-4 py-2 max-h-[300px] overflow-y-auto">
               ${itemsHtml}
             </div>
           </div>
@@ -2479,21 +2531,24 @@ async function performOrderLookup() {
           </div>
 
           <!-- Tổng tiền -->
-          <div class="bg-amber-50/50 rounded-xl p-4 flex justify-between items-center border border-amber-100">
-            <span class="text-sm font-bold text-slate-600">Tổng thanh toán:</span>
-            <span class="text-lg sm:text-xl font-black text-amber-600">${formatPrice(order.total)}</span>
+          <div class="order-total-box rounded-xl p-4 flex justify-between items-center">
+            <span class="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-receipt text-amber-500"></i>
+              <span>Tổng thanh toán:</span>
+            </span>
+            <span class="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">${formatPrice(order.total)}</span>
           </div>
         </div>
       </div>
     `;
   } catch (err) {
     resultDiv.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
-        <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 text-center">
+        <div class="w-12 h-12 bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
           <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
-        <h4 class="font-bold text-slate-800 text-base mb-1">Lỗi kết nối</h4>
-        <p class="text-xs text-slate-500">Đã xảy ra sự cố khi kết nối tới máy chủ. Vui lòng thử lại sau.</p>
+        <h4 class="font-bold text-slate-800 dark:text-white text-base mb-1">Lỗi kết nối</h4>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Đã xảy ra sự cố khi kết nối tới máy chủ. Vui lòng thử lại sau.</p>
       </div>
     `;
   }
