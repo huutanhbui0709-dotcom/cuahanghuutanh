@@ -99,7 +99,12 @@ function parseFormattedFloat(val) {
 
 function getProductImageUrl(p) {
   if (!p || !p.image) return '';
-  return p.image + (p.updatedAt ? `?t=${p.updatedAt}` : '');
+  const updatedAt = p.updatedAt || '';
+  if (!updatedAt) return p.image;
+  // Làm sạch tham số t= cũ nếu có trong chuỗi URL
+  const cleanUrl = p.image.replace(/([?&])t=\d+(&?)/, (match, p1, p2) => (p2 ? p1 : ''));
+  const sep = cleanUrl.includes('?') ? '&' : '?';
+  return `${cleanUrl}${sep}t=${updatedAt}`;
 }
 
 function statusBadge(s) {
@@ -368,7 +373,11 @@ async function loadProducts() {
   let retries = 2;
   while (retries > 0) {
     try {
-      const res = await fetch('/api/products', { credentials: 'same-origin' });
+      let res = await adminFetch('/api/admin/products?t=' + Date.now(), { cache: 'no-store' });
+      if (res.status === 401) return;
+      if (!res.ok) {
+        res = await fetch('/api/products?t=' + Date.now(), { credentials: 'same-origin', cache: 'no-store' });
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       products = await res.json();
       return;
@@ -2343,6 +2352,8 @@ function openProductModal(ma) {
   renderSelectedUpsellBadges();
 
   // Image preview
+  const removeImgInput = document.getElementById('pf_removeImage');
+  if (removeImgInput) removeImgInput.value = '0';
   document.getElementById('pf_image').value = '';
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
@@ -2361,7 +2372,9 @@ function previewProductImage(event) {
   const file = event.target.files[0];
   const previewWrap = document.getElementById('pf_image_preview');
   const previewImg = document.getElementById('pf_image_img');
+  const removeImgInput = document.getElementById('pf_removeImage');
   if (file) {
+    if (removeImgInput) removeImgInput.value = '0';
     const reader = new FileReader();
     reader.onload = function (e) {
       previewImg.src = e.target.result;
@@ -2377,6 +2390,8 @@ function clearProductImage() {
   document.getElementById('pf_image').value = '';
   document.getElementById('pf_image_img').src = '';
   document.getElementById('pf_image_preview').style.display = 'none';
+  const removeImgInput = document.getElementById('pf_removeImage');
+  if (removeImgInput) removeImgInput.value = '1';
 }
 
 async function saveProductForm() {
@@ -2420,6 +2435,11 @@ async function saveProductForm() {
     formData.append('upsellCriteria', upsellCriteria);
     formData.append('upsellProducts', upsellProducts);
 
+    const removeImgInput = document.getElementById('pf_removeImage');
+    if (removeImgInput && removeImgInput.value === '1') {
+      formData.append('removeImage', '1');
+    }
+
     const imageFile = document.getElementById('pf_image').files[0];
     if (imageFile) {
       formData.append('image', imageFile);
@@ -2444,6 +2464,17 @@ async function saveProductForm() {
       return;
     }
     closeModal('productModal');
+
+    // Cập nhật ngay lập tức vào mảng products để UI phản hồi tức thì mà không bị trễ
+    if (data.product) {
+      const idx = products.findIndex(p => p.ma === originalMa || p.ma === data.product.ma);
+      if (idx !== -1) {
+        products[idx] = { ...products[idx], ...data.product };
+      } else {
+        products.unshift(data.product);
+      }
+    }
+
     await loadProducts();
     populateProductTypeFilter();
     renderAdminTable();
@@ -2473,6 +2504,8 @@ async function deleteProduct(ma) {
       showToast('<i class="fa-solid fa-xmark"></i> ' + (data.message || 'Lỗi xoá sản phẩm'), 'error');
       return;
     }
+    const idx = products.findIndex(p => p.ma === ma);
+    if (idx !== -1) products.splice(idx, 1);
     await loadProducts();
     populateProductTypeFilter();
     renderAdminTable();

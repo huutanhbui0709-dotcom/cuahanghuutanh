@@ -95,7 +95,12 @@ function formatPriceMobile(p) {
 
 function getProductImageUrl(p) {
   if (!p || !p.image) return '';
-  return p.image + (p.updatedAt ? `?t=${p.updatedAt}` : '');
+  const updatedAt = p.updatedAt || '';
+  if (!updatedAt) return p.image;
+  // Làm sạch tham số t= cũ nếu có trong chuỗi URL
+  const cleanUrl = p.image.replace(/([?&])t=\d+(&?)/, (match, p1, p2) => (p2 ? p1 : ''));
+  const sep = cleanUrl.includes('?') ? '&' : '?';
+  return `${cleanUrl}${sep}t=${updatedAt}`;
 }
 
 function formatOrderDateTimeDisplay(str) {

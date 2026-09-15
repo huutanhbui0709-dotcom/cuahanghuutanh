@@ -810,9 +810,12 @@ app.get('/api/products', (req, res) => {
   const expectedToken = crypto.createHmac('sha256', SESSION_SECRET).update('admin').digest('hex');
   const isAdmin = token === expectedToken;
 
+  res.setHeader('Vary', 'Cookie');
   if (isAdmin) {
     // Admin: trả đầy đủ data, không cache
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.json(products);
   } else {
     // Khách hàng: Browser cache 60s, Vercel Edge CDN cache 5 phút, stale-while-revalidate 24h
@@ -820,6 +823,24 @@ app.get('/api/products', (req, res) => {
     const publicProducts = products.map(({ cost_price, stock, stt, ...rest }) => rest);
     res.json(publicProducts);
   }
+});
+
+// Route chuyên dụng cho admin lấy danh sách sản phẩm (đọc fresh DB trên Vercel, tuyệt đối không cache)
+app.get('/api/admin/products', requireAdmin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  let productsList = products;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB trong GET /api/admin/products:', err);
+    }
+  }
+  res.json(productsList);
 });
 
 app.get('/api/settings', (req, res) => {
@@ -1872,7 +1893,18 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
 
   if (!cleanMa) return res.status(400).json({ ok: false, message: 'Vui lòng nhập mã sản phẩm.' });
   if (!cleanTen) return res.status(400).json({ ok: false, message: 'Vui lòng nhập tên sản phẩm.' });
-  if (products.some((p) => p.ma === cleanMa)) {
+
+  let productsList = products;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB trong POST /api/admin/products:', err);
+    }
+  }
+
+  if (productsList.some((p) => p.ma === cleanMa)) {
     return res.status(409).json({ ok: false, message: 'Mã sản phẩm đã tồn tại.' });
   }
 
@@ -1888,7 +1920,7 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
   if (!Array.isArray(parsedUpsellProducts)) parsedUpsellProducts = [];
 
   const product = {
-    stt: products.length + 1,
+    stt: productsList.length + 1,
     ma: cleanMa,
     ten: cleanTen,
     gia: parseInt(gia, 10) || 0,
@@ -1907,6 +1939,7 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
     const filename = safeCode + ext;
     try {
       product.image = await uploadImageFile({ ...req.file, filename }, 'products');
+      product.updatedAt = Date.now();
       console.log(`✅ Đã upload ảnh sản phẩm: ${filename}`);
     } catch (err) {
       console.error('Lỗi upload ảnh:', err);
@@ -1914,10 +1947,11 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
     }
   }
 
-  products.push(product);
+  productsList.push(product);
+  if (IS_VERCEL) products = productsList;
 
   try {
-    await saveProducts(products);
+    await saveProducts(productsList);
     await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
@@ -1928,10 +1962,21 @@ app.post('/api/admin/products', requireAdmin, upload.single('image'), async (req
 // Route chuyên dụng để sửa sản phẩm - đọc mã SP từ query param tránh vấn đề dấu / trong URL
 app.put('/api/admin/products/update', requireAdmin, upload.single('image'), async (req, res) => {
   const maParam = req.query.ma;
-  const product = products.find((p) => p.ma === maParam);
+
+  let productsList = products;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB trong PUT /api/admin/products/update:', err);
+    }
+  }
+
+  const product = productsList.find((p) => p.ma === maParam);
   if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
-  const { ten, gia, donvi, loai, trangthai, enableUpsell, upsellCriteria, upsellProducts } = req.body || {};
+  const { ten, gia, donvi, loai, trangthai, enableUpsell, upsellCriteria, upsellProducts, removeImage } = req.body || {};
   if (ten !== undefined) product.ten = String(ten).trim();
   if (gia !== undefined) product.gia = parseInt(gia, 10) || 0;
   if (donvi !== undefined) product.donvi = String(donvi).trim();
@@ -1954,6 +1999,16 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
   }
 
   product.updatedAt = Date.now();
+
+  // Xử lý xoá ảnh nếu người dùng chọn xoá
+  if (removeImage === '1' || removeImage === 'true') {
+    if (product.image) {
+      await deleteImageFile(product.image, 'products');
+    }
+    product.image = '';
+    product.updatedAt = Date.now();
+  }
+
   if (req.file) {
     const ext = path.extname(req.file.originalname).toLowerCase();
     const safeCode = product.ma.replace(/[\\\/:\ *?"<>|]/g, '_');
@@ -1965,6 +2020,7 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
         await deleteImageFile(product.image, 'products');
       }
       product.image = newImagePath;
+      product.updatedAt = Date.now();
       console.log(`✅ Đã cập nhật ảnh sản phẩm: ${filename}`);
     } catch (err) {
       console.error('Lỗi upload ảnh:', err);
@@ -1972,8 +2028,15 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
     }
   }
 
+  if (IS_VERCEL) {
+    products = productsList;
+  } else {
+    const ramProd = products.find(p => p.ma === maParam);
+    if (ramProd) Object.assign(ramProd, product);
+  }
+
   try {
-    await saveProducts(products);
+    await saveProducts(productsList);
     await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
@@ -1984,10 +2047,21 @@ app.put('/api/admin/products/update', requireAdmin, upload.single('image'), asyn
 // Giữ nguyên route cũ để tương thích ngược
 app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async (req, res) => {
   const maParam = req.params.ma || req.query.ma;
-  const product = products.find((p) => p.ma === maParam);
+
+  let productsList = products;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB trong PUT /api/admin/products/:ma?:', err);
+    }
+  }
+
+  const product = productsList.find((p) => p.ma === maParam);
   if (!product) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
-  const { ten, gia, donvi, loai, trangthai, enableUpsell, upsellCriteria, upsellProducts } = req.body || {};
+  const { ten, gia, donvi, loai, trangthai, enableUpsell, upsellCriteria, upsellProducts, removeImage } = req.body || {};
   if (ten !== undefined) product.ten = String(ten).trim();
   if (gia !== undefined) product.gia = parseInt(gia, 10) || 0;
   if (donvi !== undefined) product.donvi = String(donvi).trim();
@@ -2010,6 +2084,15 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
   }
 
   product.updatedAt = Date.now();
+
+  if (removeImage === '1' || removeImage === 'true') {
+    if (product.image) {
+      await deleteImageFile(product.image, 'products');
+    }
+    product.image = '';
+    product.updatedAt = Date.now();
+  }
+
   if (req.file) {
     const ext = path.extname(req.file.originalname).toLowerCase();
     const safeCode = product.ma.replace(/[\\\/:\ *?"<>|]/g, '_');
@@ -2020,13 +2103,21 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
         await deleteImageFile(product.image, 'products');
       }
       product.image = newImagePath;
+      product.updatedAt = Date.now();
     } catch (err) {
       return res.status(500).json({ ok: false, message: 'Lỗi upload ảnh: ' + err.message });
     }
   }
 
+  if (IS_VERCEL) {
+    products = productsList;
+  } else {
+    const ramProd = products.find(p => p.ma === maParam);
+    if (ramProd) Object.assign(ramProd, product);
+  }
+
   try {
-    await saveProducts(products);
+    await saveProducts(productsList);
     await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
@@ -2037,17 +2128,30 @@ app.put('/api/admin/products/:ma?', requireAdmin, upload.single('image'), async 
 // Route chuyên dụng để xóa sản phẩm - đọc mã SP từ query param tránh vấn đề dấu / trong URL
 app.delete('/api/admin/products/remove', requireAdmin, async (req, res) => {
   const maParam = req.query.ma;
-  const idx = products.findIndex((p) => p.ma === maParam);
+
+  let productsList = products;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB trong DELETE /api/admin/products/remove:', err);
+    }
+  }
+
+  const idx = productsList.findIndex((p) => p.ma === maParam);
   if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
-  const product = products[idx];
+  const product = productsList[idx];
   if (product.image) {
     await deleteImageFile(product.image, 'products');
   }
 
-  products.splice(idx, 1);
+  productsList.splice(idx, 1);
+  if (IS_VERCEL) products = productsList;
+
   try {
-    await saveProducts(products);
+    await saveProducts(productsList);
     await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
@@ -2058,17 +2162,30 @@ app.delete('/api/admin/products/remove', requireAdmin, async (req, res) => {
 // Giữ nguyên route cũ để tương thích ngược
 app.delete('/api/admin/products/:ma?', requireAdmin, async (req, res) => {
   const maParam = req.params.ma || req.query.ma;
-  const idx = products.findIndex((p) => p.ma === maParam);
+
+  let productsList = products;
+  if (IS_VERCEL) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'products'`;
+      if (rows.length > 0) productsList = JSON.parse(rows[0].value);
+    } catch (err) {
+      console.error('Lỗi đọc products từ DB trong DELETE /api/admin/products/:ma?:', err);
+    }
+  }
+
+  const idx = productsList.findIndex((p) => p.ma === maParam);
   if (idx === -1) return res.status(404).json({ ok: false, message: 'Không tìm thấy sản phẩm.' });
 
-  const product = products[idx];
+  const product = productsList[idx];
   if (product.image) {
     await deleteImageFile(product.image, 'products');
   }
 
-  products.splice(idx, 1);
+  productsList.splice(idx, 1);
+  if (IS_VERCEL) products = productsList;
+
   try {
-    await saveProducts(products);
+    await saveProducts(productsList);
     await broadcastUpdate('products_updated');
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Lỗi lưu dữ liệu.' });
