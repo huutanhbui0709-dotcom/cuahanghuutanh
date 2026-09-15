@@ -2409,6 +2409,15 @@ async function saveProductForm() {
   if (!donvi) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập hoặc chọn đơn vị tính', 'error'); return; }
   if (!loai) { showToast('<i class="fa-solid fa-triangle-exclamation"></i> Vui lòng nhập hoặc chọn loại hàng hóa', 'error'); return; }
 
+  const saveBtn = document.getElementById('btnSaveProduct');
+  const originalBtnHtml = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    saveBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-slate-950"></i> Đang lưu...';
+  }
+  showToast('<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu sản phẩm và đồng bộ dữ liệu...', 'info');
+
   try {
     const formData = new FormData();
     formData.append('ma', ma);
@@ -2483,6 +2492,12 @@ async function saveProductForm() {
     showToast(isEdit ? '<i class="fa-solid fa-circle-check"></i> Đã cập nhật sản phẩm' : '<i class="fa-solid fa-circle-check"></i> Đã thêm sản phẩm', 'success');
   } catch (err) {
     showToast('<i class="fa-solid fa-xmark"></i> Lỗi kết nối tới server', 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+      saveBtn.innerHTML = originalBtnHtml || '<i class="fa-solid fa-floppy-disk text-slate-950"></i> Lưu sản phẩm';
+    }
   }
 }
 
