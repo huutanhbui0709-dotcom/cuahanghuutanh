@@ -3279,6 +3279,8 @@ async function printOrderInvoice(id) {
     printCoordText = `Toạ độ: ${o.coordinates || o.coords || `${o.lat}, ${o.lng}`}`;
   }
 
+  const logoUrl = `${window.location.origin}/img/logo.png`;
+
   const html = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -3287,21 +3289,27 @@ async function printOrderInvoice(id) {
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
-    .store-name { font-size: 18px; font-weight: bold; color: #000; text-transform: uppercase; }
+    body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; position: relative; }
+    .watermark-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 0; }
+    .watermark { width: 400px; height: 400px; opacity: 0.08; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .invoice-content { position: relative; z-index: 1; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
+    .store-brand { display: flex; align-items: center; gap: 14px; }
+    .store-logo { width: 58px; height: 58px; object-fit: contain; border-radius: 50%; border: 1.5px solid #d97706; flex-shrink: 0; }
+    .store-info { display: flex; flex-direction: column; }
+    .store-name { font-size: 17.5px; font-weight: bold; color: #000; text-transform: uppercase; line-height: 1.25; }
     .store-sub { font-size: 13px; color: #333; margin-top: 2px; }
-    .slip-meta { text-align: right; }
+    .slip-meta { text-align: right; flex-shrink: 0; }
     .slip-code { font-weight: bold; font-size: 16px; color: #000; }
     .title { text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; color: #000; }
     .sub-title { text-align: center; font-size: 13px; color: #333; margin-bottom: 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fff; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
-    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; background: #fff; }
-    th { background: #fff; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.85); padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: transparent; }
+    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; background: transparent; }
+    th { background: rgba(0, 0, 0, 0.02); font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: bold; font-size: 13.5px; background: #fff; }
+    .total-row { font-weight: bold; font-size: 13.5px; background: transparent; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
     .sig-block { font-size: 13px; }
     .sig-role { font-weight: bold; color: #000; }
@@ -3315,118 +3323,147 @@ async function printOrderInvoice(id) {
   </style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="store-name">${shopName}</div>
-      ${shopAddress ? `<div class="store-sub">${shopAddress}</div>` : ''}
-      ${shopPhone ? `<div class="store-sub" style="white-space:nowrap">Hotline: ${shopPhone}</div>` : ''}
-    </div>
-    <div class="slip-meta">
-      <div class="slip-code">#${o.id}</div>
-      <div style="color:#555;font-size:12px;margin-top:2px">Ngày in: ${printDate}</div>
-    </div>
+  <!-- Watermark logo -->
+  <div class="watermark-container">
+    <img src="${logoUrl}" alt="Watermark" class="watermark" />
   </div>
 
-  <div class="title">HÓA ĐƠN BÁN HÀNG</div>
-  <div class="sub-title">(Ngày đặt hàng: <strong style="color:#000">${formatOrderDateOnly(o.createdAt)}</strong>)</div>
-
-  <div class="info-grid">
-    <div><strong>Khách hàng:</strong> ${customerName}</div>
-    <div><strong>Số điện thoại:</strong> ${o.phone || '—'}</div>
-    <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">Miễn phí giao hàng</span>' : 'Giao hàng tiêu chuẩn'}</div>
-    <div><strong>Phương thức:</strong> Thanh toán khi nhận hàng (COD)</div>
-    <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${cleanShippingAddress || 'Nhận tại cửa hàng'}
-      ${printCoordText ? `<div style="font-size:12px;color:#444;margin-top:3px">${printCoordText}</div>` : ''}
+  <div class="invoice-content">
+    <div class="header">
+      <div class="store-brand">
+        <img src="${logoUrl}" alt="Logo" class="store-logo" />
+        <div class="store-info">
+          <div class="store-name">${shopName}</div>
+          ${shopAddress ? `<div class="store-sub">${shopAddress}</div>` : ''}
+          ${shopPhone ? `<div class="store-sub" style="white-space:nowrap">Hotline: ${shopPhone}</div>` : ''}
+        </div>
+      </div>
+      <div class="slip-meta">
+        <div class="slip-code">#${o.id}</div>
+        <div style="color:#555;font-size:12px;margin-top:2px">Ngày in: ${printDate}</div>
+      </div>
     </div>
-    ${o.note ? `<div style="grid-column: span 2"><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
-  </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width:38px;text-align:center;white-space:nowrap">STT</th>
-        <th style="width:120px;text-align:center;white-space:nowrap">Mã SP</th>
-        <th style="min-width:150px;text-align:center">Tên sản phẩm</th>
-        <th style="width:55px;text-align:center;white-space:nowrap">ĐVT</th>
-        <th style="width:90px;text-align:center;white-space:nowrap">Đơn giá</th>
-        <th style="width:75px;text-align:center;white-space:nowrap">Số lượng</th>
-        <th style="width:105px;text-align:center;white-space:nowrap">Thành tiền</th>
-        <th style="width:80px;text-align:center;white-space:nowrap">Ghi chú</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${(o.items || []).map((item, idx) => `
+    <div class="title">HÓA ĐƠN BÁN HÀNG</div>
+    <div class="sub-title">(Ngày đặt hàng: <strong style="color:#000">${formatOrderDateOnly(o.createdAt)}</strong>)</div>
+
+    <div class="info-grid">
+      <div><strong>Khách hàng:</strong> ${customerName}</div>
+      <div><strong>Số điện thoại:</strong> ${o.phone || '—'}</div>
+      <div><strong>Vận chuyển:</strong> ${isFreeShipping ? '<span style="color:#16a34a;font-weight:bold">Miễn phí giao hàng</span>' : 'Giao hàng tiêu chuẩn'}</div>
+      <div><strong>Phương thức:</strong> Thanh toán khi nhận hàng (COD)</div>
+      <div style="grid-column: span 2"><strong>Địa chỉ giao hàng:</strong> ${cleanShippingAddress || 'Nhận tại cửa hàng'}
+        ${printCoordText ? `<div style="font-size:12px;color:#444;margin-top:3px">${printCoordText}</div>` : ''}
+      </div>
+      ${o.note ? `<div style="grid-column: span 2"><strong>Ghi chú:</strong> ${o.note}</div>` : ''}
+    </div>
+
+    <table>
+      <thead>
         <tr>
-          <td class="text-center">${idx + 1}</td>
-          <td style="font-weight:600;white-space:nowrap">${item.ma || '—'}</td>
-          <td>${item.ten || ''}</td>
-          <td class="text-center" style="white-space:nowrap">${item.donvi || 'Cái'}</td>
-          <td class="text-right" style="white-space:nowrap">${item.gia ? item.gia.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}</td>
-          <td class="text-center" style="font-weight:700;white-space:nowrap">${item.qty}</td>
-          <td class="text-right" style="font-weight:700;white-space:nowrap">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') + '₫' : '—'}</td>
-          <td style="font-size:11px;color:#64748b">${item.note || ''}</td>
+          <th style="width:38px;text-align:center;white-space:nowrap">STT</th>
+          <th style="width:120px;text-align:center;white-space:nowrap">Mã SP</th>
+          <th style="min-width:150px;text-align:center">Tên sản phẩm</th>
+          <th style="width:55px;text-align:center;white-space:nowrap">ĐVT</th>
+          <th style="width:90px;text-align:center;white-space:nowrap">Đơn giá</th>
+          <th style="width:75px;text-align:center;white-space:nowrap">Số lượng</th>
+          <th style="width:105px;text-align:center;white-space:nowrap">Thành tiền</th>
+          <th style="width:80px;text-align:center;white-space:nowrap">Ghi chú</th>
         </tr>
-      `).join('')}
-    </tbody>
-    <tfoot>
-      <tr class="total-row">
-        <td colspan="5" class="text-right">Tổng tiền hàng:</td>
-        <td class="text-center" style="font-weight:700;white-space:nowrap">${totalQty}</td>
-        <td class="text-right" style="font-weight:700;white-space:nowrap">${subtotal.toLocaleString('vi-VN')}₫</td>
-        <td></td>
-      </tr>
-      ${discount > 0 ? `
+      </thead>
+      <tbody>
+        ${(o.items || []).map((item, idx) => `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td style="font-weight:600;white-space:nowrap">${item.ma || '—'}</td>
+            <td>${item.ten || ''}</td>
+            <td class="text-center" style="white-space:nowrap">${item.donvi || 'Cái'}</td>
+            <td class="text-right" style="white-space:nowrap">${item.gia ? item.gia.toLocaleString('vi-VN') + '₫' : 'Liên hệ'}</td>
+            <td class="text-center" style="font-weight:700;white-space:nowrap">${item.qty}</td>
+            <td class="text-right" style="font-weight:700;white-space:nowrap">${item.gia ? (item.gia * item.qty).toLocaleString('vi-VN') + '₫' : '—'}</td>
+            <td style="font-size:11px;color:#64748b">${item.note || ''}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+      <tfoot>
         <tr class="total-row">
-          <td colspan="6" class="text-right">Giảm giá chiết khấu:</td>
-          <td class="text-right" style="font-weight:700;color:#16a34a;white-space:nowrap">-${discount.toLocaleString('vi-VN')}₫</td>
+          <td colspan="5" class="text-right">Tổng tiền hàng:</td>
+          <td class="text-center" style="font-weight:700;white-space:nowrap">${totalQty}</td>
+          <td class="text-right" style="font-weight:700;white-space:nowrap">${subtotal.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
-      ` : ''}
-      ${isFreeShipping ? `
-        <tr class="total-row">
-          <td colspan="6" class="text-right" style="color:#16a34a;font-weight:700">Phí vận chuyển (Miễn phí giao hàng KV Thốt Nốt):</td>
-          <td class="text-right" style="font-weight:700;color:#16a34a;white-space:nowrap">0₫</td>
+        ${discount > 0 ? `
+          <tr class="total-row">
+            <td colspan="6" class="text-right">Giảm giá chiết khấu:</td>
+            <td class="text-right" style="font-weight:700;color:#16a34a;white-space:nowrap">-${discount.toLocaleString('vi-VN')}₫</td>
+            <td></td>
+          </tr>
+        ` : ''}
+        ${isFreeShipping ? `
+          <tr class="total-row">
+            <td colspan="6" class="text-right" style="color:#16a34a;font-weight:700">Phí vận chuyển (Miễn phí giao hàng KV Thốt Nốt):</td>
+            <td class="text-right" style="font-weight:700;color:#16a34a;white-space:nowrap">0₫</td>
+            <td></td>
+          </tr>
+        ` : (shipping > 0 ? `
+          <tr class="total-row">
+            <td colspan="6" class="text-right">Phí vận chuyển:</td>
+            <td class="text-right" style="font-weight:700;white-space:nowrap">+${shipping.toLocaleString('vi-VN')}₫</td>
+            <td></td>
+          </tr>
+        ` : '')}
+        <tr class="total-row" style="background:transparent;font-size:13.5px;border-top:2px solid #000">
+          <td colspan="6" class="text-right" style="font-weight:bold">TỔNG CỘNG THANH TOÁN:</td>
+          <td class="text-right" style="color:#b91c1c;font-weight:bold;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
           <td></td>
         </tr>
-      ` : (shipping > 0 ? `
-        <tr class="total-row">
-          <td colspan="6" class="text-right">Phí vận chuyển:</td>
-          <td class="text-right" style="font-weight:700;white-space:nowrap">+${shipping.toLocaleString('vi-VN')}₫</td>
-          <td></td>
-        </tr>
-      ` : '')}
-      <tr class="total-row" style="background:#fff;font-size:13.5px;border-top:2px solid #000">
-        <td colspan="6" class="text-right" style="font-weight:bold">TỔNG CỘNG THANH TOÁN:</td>
-        <td class="text-right" style="color:#b91c1c;font-weight:bold;font-size:14px;white-space:nowrap">${grandTotal.toLocaleString('vi-VN')}₫</td>
-        <td></td>
-      </tr>
-    </tfoot>
-  </table>
+      </tfoot>
+    </table>
 
-  <div class="signatures">
-    <div class="sig-block">
-      <div class="sig-role">Người mua hàng</div>
-      <div class="sig-sub">(Ký & ghi rõ họ tên)</div>
-      <div class="sig-space"></div>
+    <div class="signatures">
+      <div class="sig-block">
+        <div class="sig-role">Người mua hàng</div>
+        <div class="sig-sub">(Ký & ghi rõ họ tên)</div>
+        <div class="sig-space"></div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-role">Người giao hàng</div>
+        <div class="sig-sub">(Ký & ghi rõ họ tên)</div>
+        <div class="sig-space"></div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-role">Người lập hóa đơn</div>
+        <div class="sig-sub">(Ký & ghi rõ họ tên)</div>
+        <div class="sig-space"></div>
+      </div>
     </div>
-    <div class="sig-block">
-      <div class="sig-role">Người giao hàng</div>
-      <div class="sig-sub">(Ký & ghi rõ họ tên)</div>
-      <div class="sig-space"></div>
-    </div>
-    <div class="sig-block">
-      <div class="sig-role">Người lập hóa đơn</div>
-      <div class="sig-sub">(Ký & ghi rõ họ tên)</div>
-      <div class="sig-space"></div>
+
+    <div class="footer-note">
+      <strong>Cảm ơn quý khách đã tin tưởng và mua hàng tại ${shopName}!</strong><br>
+      Vui lòng giữ hóa đơn để đối chiếu và đổi/trả hàng trong vòng 7 ngày kể từ ngày mua.
     </div>
   </div>
 
-  <div class="footer-note">
-    <strong>Cảm ơn quý khách đã tin tưởng và mua hàng tại ${shopName}!</strong><br>
-    Vui lòng giữ hóa đơn để đối chiếu và đổi/trả hàng trong vòng 7 ngày kể từ ngày mua.
-  </div>
-
-  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+  <script>
+    function triggerPrint() {
+      const imgs = Array.from(document.images);
+      const promises = imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      Promise.all(promises).then(() => {
+        setTimeout(() => {
+          window.print();
+          window.onafterprint = () => window.close();
+        }, 150);
+      });
+    }
+    if (document.readyState === 'complete') triggerPrint();
+    else window.addEventListener('load', triggerPrint);
+  <\/script>
 </body>
 </html>`;
 
@@ -8525,6 +8562,7 @@ async function printReturnSlip(returnId) {
   const totalRefundInWords = numberToVietnameseWords(ret.totalRefund || 0);
   const customerName = ret.customer || 'Khách lẻ';
   const returnAddress = ret.address || '—';
+  const logoUrl = `${window.location.origin}/img/logo.png`;
 
   const html = `<!DOCTYPE html>
 <html lang="vi">
@@ -8534,21 +8572,27 @@ async function printReturnSlip(returnId) {
   <style>
     @page { size: A4 portrait; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
-    .store-name { font-size: 18px; font-weight: bold; color: #000; text-transform: uppercase; }
+    body { font-family: "Times New Roman", Times, serif; padding: 14mm 15mm; color: #000; line-height: 1.45; font-size: 14px; position: relative; }
+    .watermark-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 0; }
+    .watermark { width: 400px; height: 400px; opacity: 0.08; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .invoice-content { position: relative; z-index: 1; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
+    .store-brand { display: flex; align-items: center; gap: 14px; }
+    .store-logo { width: 58px; height: 58px; object-fit: contain; border-radius: 50%; border: 1.5px solid #d97706; flex-shrink: 0; }
+    .store-info { display: flex; flex-direction: column; }
+    .store-name { font-size: 17.5px; font-weight: bold; color: #000; text-transform: uppercase; line-height: 1.25; }
     .store-sub { font-size: 13px; color: #333; margin-top: 2px; }
-    .slip-meta { text-align: right; }
+    .slip-meta { text-align: right; flex-shrink: 0; }
     .slip-code { font-weight: bold; font-size: 16px; color: #000; }
     .title { text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; color: #000; }
     .sub-title { text-align: center; font-size: 13px; color: #333; margin-bottom: 20px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: #fff; padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
-    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; background: #fff; }
-    th { background: #fff; font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.85); padding: 14px 18px; border-radius: 8px; border: 1px solid #ccc; font-size: 13.5px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: transparent; }
+    th, td { border: 1px solid #555; padding: 7px 8px; font-size: 13px; background: transparent; }
+    th { background: rgba(0, 0, 0, 0.02); font-weight: bold; text-align: center; font-size: 13px; white-space: nowrap; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
-    .total-row { font-weight: bold; font-size: 13.5px; background: #fff; }
+    .total-row { font-weight: bold; font-size: 13.5px; background: transparent; }
     .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 36px; padding-top: 10px; }
     .sig-block { font-size: 13px; }
     .sig-role { font-weight: bold; color: #000; }
@@ -8563,17 +8607,26 @@ async function printReturnSlip(returnId) {
   </style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="store-name">${shopName}</div>
-      ${shopAddress ? `<div class="store-sub">${shopAddress}</div>` : ''}
-      ${shopPhone ? `<div class="store-sub" style="white-space:nowrap">Hotline: ${shopPhone}</div>` : ''}
-    </div>
-    <div class="slip-meta">
-      <div class="slip-code">${ret.id}</div>
-      <div style="color:#555;font-size:12px;margin-top:2px">Ngày in: ${printDate}</div>
-    </div>
+  <!-- Watermark logo -->
+  <div class="watermark-container">
+    <img src="${logoUrl}" alt="Watermark" class="watermark" />
   </div>
+
+  <div class="invoice-content">
+    <div class="header">
+      <div class="store-brand">
+        <img src="${logoUrl}" alt="Logo" class="store-logo" />
+        <div class="store-info">
+          <div class="store-name">${shopName}</div>
+          ${shopAddress ? `<div class="store-sub">${shopAddress}</div>` : ''}
+          ${shopPhone ? `<div class="store-sub" style="white-space:nowrap">Hotline: ${shopPhone}</div>` : ''}
+        </div>
+      </div>
+      <div class="slip-meta">
+        <div class="slip-code">${ret.id}</div>
+        <div style="color:#555;font-size:12px;margin-top:2px">Ngày in: ${printDate}</div>
+      </div>
+    </div>
 
   <div class="title">PHIẾU TRẢ HÀNG & HOÀN TIỀN</div>
   <div class="sub-title">(Kèm theo đơn hàng gốc: <strong style="color:#000">#${ret.orderId}</strong> - Ngày lập: <strong style="color:#000">${formatOrderDateOnly(ret.createdAt) || printDate}</strong>)</div>
@@ -8650,8 +8703,28 @@ async function printReturnSlip(returnId) {
     <strong>Cửa hàng Hữu Tánh xác nhận đã hoàn tất thủ tục nhận trả hàng và hoàn tiền!</strong><br>
     Chứng từ này được lập thành 03 bản có giá trị như nhau: Khách hàng giữ 01 bản, Kế toán lưu 01 bản, Thủ kho lưu 01 bản.
   </div>
+  </div>
 
-  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+  <script>
+    function triggerPrint() {
+      const imgs = Array.from(document.images);
+      const promises = imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      Promise.all(promises).then(() => {
+        setTimeout(() => {
+          window.print();
+          window.onafterprint = () => window.close();
+        }, 150);
+      });
+    }
+    if (document.readyState === 'complete') triggerPrint();
+    else window.addEventListener('load', triggerPrint);
+  <\/script>
 </body>
 </html>`;
 
