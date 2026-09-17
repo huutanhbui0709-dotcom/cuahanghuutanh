@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <!-- Gold gradient -->
+    <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+
+    <!-- Lightning gradient -->
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+
+    <!-- Water gradient -->
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+
+    <!-- Curved text paths -->
+    <!-- Top Arc Path: left to right over top -->
+    <path id="topTextArc" d="M 95 300 A 205 205 0 0 1 505 300" fill="none"/>
+    <!-- Bottom Arc Path: left to right under bottom -->
+    <path id="bottomTextArc" d="M 105 300 A 195 195 0 0 0 495 300" fill="none"/>
+  </defs>
+
+  <!-- Outer Shadow & Gold Border -->
+  <circle cx="300" cy="300" r="290" fill="#0F172A" stroke="url(#goldRim)" stroke-width="12" filter="url(#shadowFilter)"/>
+  <circle cx="300" cy="300" r="278" fill="#0F172A" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="8 6" opacity="0.4"/>
+
+  <!-- Inner White Circle -->
+  <circle cx="300" cy="300" r="185" fill="#FFFFFF" stroke="url(#goldRim)" stroke-width="6"/>
+
+  <!-- Golden Accent Stars on Left & Right -->
+  <!-- Left Star -->
+  <polygon points="62,300 66,310 77,311 69,318 71,329 62,323 53,329 55,318 47,311 58,310" fill="url(#goldRim)"/>
+  <!-- Right Star -->
+  <polygon points="538,300 542,310 553,311 545,318 547,329 538,323 529,329 531,318 523,311 534,310" fill="url(#goldRim)"/>
+
+  <!-- Circular White Text (Variant B) -->
+  <!-- Top Arc: CỬA HÀNG HỮU TÁNH -->
+  <text fill="#FFFFFF" font-family="'Plus Jakarta Sans', Arial, Helvetica, sans-serif" font-weight="900" font-size="34" letter-spacing="6">
+    <textPath href="#topTextArc" startOffset="50%" text-anchor="middle">
+      CỬA HÀNG HỮU TÁNH
+    </textPath>
+  </text>
+
+  <!-- Bottom Arc: ĐIỆN NƯỚC & VẬT TƯ -->
+  <text fill="#FFFFFF" font-family="'Plus Jakarta Sans', Arial, Helvetica, sans-serif" font-weight="900" font-size="36" letter-spacing="8">
+    <textPath href="#bottomTextArc" startOffset="50%" text-anchor="middle">
+      ĐIỆN NƯỚC &amp; VẬT TƯ
+    </textPath>
+  </text>
+
+  <!-- Center Artwork (Monogram HT + Lightning Bolt + Water Wave) -->
+  <g id="center-monogram" transform="translate(0, 0)">
+    <!-- Letter H (Navy Blue) -->
+    <rect x="180" y="215" width="28" height="150" rx="8" fill="#0F172A"/>
+    <rect x="238" y="215" width="28" height="150" rx="8" fill="#0F172A"/>
+    <rect x="195" y="275" width="60" height="26" rx="5" fill="#0F172A"/>
+
+    <!-- Letter T (Navy Blue) -->
+    <rect x="290" y="215" width="130" height="28" rx="8" fill="#0F172A"/>
+    <rect x="341" y="215" width="28" height="150" rx="8" fill="#0F172A"/>
+
+    <!-- Water Wave Flow across the base of HT -->
+    <path d="M 165 345 Q 230 315, 300 340 T 435 330 C 420 365, 360 375, 300 370 C 240 365, 185 365, 165 345 Z" fill="url(#waterGrad)"/>
+    
+    <!-- Water Droplet on right of T -->
+    <path d="M 395 285 C 395 285 415 315 415 328 A 15 15 0 0 1 385 328 C 385 315 395 285 395 285 Z" fill="url(#waterGrad)"/>
+    <circle cx="392" cy="324" r="3.5" fill="#FFFFFF" opacity="0.8"/>
+
+    <!-- Dynamic Lightning Bolt (Center Angle) -->
+    <polygon points="297,177 247,282 287,282 257,362 337,257 297,257 327,177" fill="#000000" opacity="0.15" transform="translate(3, 4)"/>
+    <polygon points="297,177 247,282 287,282 257,362 337,257 297,257 327,177" fill="url(#boltGrad)" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round"/>
+  </g>
+</svg>
