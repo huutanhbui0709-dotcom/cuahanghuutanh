@@ -603,7 +603,161 @@ let _currentDashboardFilter = {
   quarter: Math.floor(new Date().getMonth() / 3) + 1 // 1..4 or 'year'
 };
 
+let _quarterSectionTab = 'revenue'; // 'revenue' | 'inventory' | 'comparison'
+let _quarterViewMode = 'quarter'; // 'quarter' | 'year'
+let _dashLineMetric = 'revenue'; // 'revenue' | 'inventory' | 'both'
+
+function setQuarterSectionTab(tab) {
+  _quarterSectionTab = tab;
+  _updateQuarterSectionTabUI();
+  renderQuarterSection();
+}
+
+function _updateQuarterSectionTabUI() {
+  const tabs = [
+    { id: 'quarterTabBtn-revenue', key: 'revenue', activeClass: 'text-emerald-600 dark:text-emerald-400' },
+    { id: 'quarterTabBtn-inventory', key: 'inventory', activeClass: 'text-indigo-600 dark:text-indigo-400' },
+    { id: 'quarterTabBtn-comparison', key: 'comparison', activeClass: 'text-amber-600 dark:text-amber-400' }
+  ];
+
+  tabs.forEach(t => {
+    const btn = document.getElementById(t.id);
+    if (!btn) return;
+    const isActive = _quarterSectionTab === t.key;
+    if (isActive) {
+      btn.className = `px-3 py-1.5 rounded-lg text-xs font-black bg-white dark:bg-slate-900 ${t.activeClass} shadow-2xs flex items-center gap-1.5 transition cursor-pointer shrink-0`;
+    } else {
+      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer shrink-0';
+    }
+  });
+
+  const iconBox = document.getElementById('quarterSectionIconBox');
+  const icon = document.getElementById('quarterSectionIcon');
+  const badge = document.getElementById('quarterYearBadge');
+  const chartIcon = document.getElementById('quarterChartIcon');
+
+  if (_quarterSectionTab === 'revenue') {
+    if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0 transition-colors';
+    if (icon) icon.className = 'fa-solid fa-hand-holding-dollar text-lg';
+    if (badge) badge.className = 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 transition-colors';
+    if (chartIcon) chartIcon.className = 'fa-solid fa-chart-simple text-emerald-600 dark:text-emerald-400';
+  } else if (_quarterSectionTab === 'inventory') {
+    if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0 transition-colors';
+    if (icon) icon.className = 'fa-solid fa-boxes-packing text-lg';
+    if (badge) badge.className = 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 transition-colors';
+    if (chartIcon) chartIcon.className = 'fa-solid fa-chart-simple text-indigo-600 dark:text-indigo-400';
+  } else {
+    if (iconBox) iconBox.className = 'w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0 transition-colors';
+    if (icon) icon.className = 'fa-solid fa-scale-balanced text-lg';
+    if (badge) badge.className = 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 transition-colors';
+    if (chartIcon) chartIcon.className = 'fa-solid fa-chart-simple text-amber-600 dark:text-amber-400';
+  }
+}
+
+function setQuarterViewMode(mode) {
+  _quarterViewMode = mode;
+  _updateQuarterViewModeUI();
+  renderQuarterSection();
+}
+
+function _updateQuarterViewModeUI() {
+  const btnQuarter = document.getElementById('quarterModeBtn-quarter');
+  const btnYear = document.getElementById('quarterModeBtn-year');
+  const yearControls = document.getElementById('quarterYearControls');
+
+  if (btnQuarter) {
+    btnQuarter.className = _quarterViewMode === 'quarter'
+      ? 'px-2.5 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xs flex items-center gap-1.5 transition cursor-pointer'
+      : 'px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer';
+  }
+  if (btnYear) {
+    btnYear.className = _quarterViewMode === 'year'
+      ? 'px-2.5 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xs flex items-center gap-1.5 transition cursor-pointer'
+      : 'px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer';
+  }
+  if (yearControls) {
+    yearControls.style.display = _quarterViewMode === 'year' ? 'none' : 'flex';
+  }
+}
+
+function setDashboardLineMetric(metric) {
+  _dashLineMetric = metric;
+  _updateDashboardLineMetricUI();
+  _renderDashboardCharts();
+}
+
+function _updateDashboardLineMetricUI() {
+  const metrics = [
+    { id: 'dashLineBtn-revenue', key: 'revenue', activeColor: 'text-emerald-600 dark:text-emerald-400' },
+    { id: 'dashLineBtn-inventory', key: 'inventory', activeColor: 'text-blue-600 dark:text-blue-400' },
+    { id: 'dashLineBtn-both', key: 'both', activeColor: 'text-indigo-600 dark:text-indigo-400' }
+  ];
+  metrics.forEach(m => {
+    const btn = document.getElementById(m.id);
+    if (!btn) return;
+    if (_dashLineMetric === m.key) {
+      btn.className = `px-2.5 py-0.5 rounded-md font-black bg-white dark:bg-slate-900 ${m.activeColor} shadow-2xs transition cursor-pointer`;
+    } else {
+      btn.className = 'px-2.5 py-0.5 rounded-md font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer';
+    }
+  });
+}
+
 const _customYearsSet = new Set();
+
+function _parseOrderDate(order) {
+  if (!order) return null;
+  const raw = order.createdAt || order.created_at;
+  if (!raw) return null;
+  if (raw instanceof Date && !isNaN(raw.getTime())) return raw;
+
+  const rawStr = String(raw).trim();
+  // Pattern 1: HH:mm:ss DD/MM/YYYY or HH:mm DD/MM/YYYY
+  const m1 = rawStr.match(/(?:(\d{1,2}):(\d{2})(?::(\d{2}))?\s+)?(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m1) {
+    const h = m1[1] ? parseInt(m1[1], 10) : 0;
+    const min = m1[2] ? parseInt(m1[2], 10) : 0;
+    const sec = m1[3] ? parseInt(m1[3], 10) : 0;
+    const d = parseInt(m1[4], 10);
+    const mo = parseInt(m1[5], 10) - 1;
+    const y = parseInt(m1[6], 10);
+    const date = new Date(y, mo, d, h, min, sec);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  // Pattern 2: YYYY-MM-DD
+  const m2 = rawStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m2) {
+    const y = parseInt(m2[1], 10);
+    const mo = parseInt(m2[2], 10) - 1;
+    const d = parseInt(m2[3], 10);
+    const h = m2[4] ? parseInt(m2[4], 10) : 0;
+    const min = m2[5] ? parseInt(m2[5], 10) : 0;
+    const sec = m2[6] ? parseInt(m2[6], 10) : 0;
+    const date = new Date(y, mo, d, h, min, sec);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  const fallback = new Date(rawStr);
+  return (!isNaN(fallback.getTime()) && fallback.getTime() > 0) ? fallback : null;
+}
+
+function _getDashboardFilteredOrders() {
+  if (!orders || orders.length === 0) return [];
+  const filter = _getDashboardTimeFilterRange();
+  // Only valid, non-cancelled orders for revenue
+  const validOrders = orders.filter(o => o && o.status !== 'Đã huỷ');
+
+  if (filter.type === 'all') return validOrders;
+
+  return validOrders.filter(o => {
+    const d = _parseOrderDate(o);
+    if (!d) return false;
+    if (filter.startDate && d < filter.startDate) return false;
+    if (filter.endDate && d > filter.endDate) return false;
+    return true;
+  });
+}
 
 function _getAllAvailableYears(selectedYear) {
   const now = new Date();
@@ -621,7 +775,13 @@ function _getAllAvailableYears(selectedYear) {
     if (d) yearSet.add(d.getFullYear());
   });
 
-  // 3. Any custom years entered by user
+  // 3. All years found in orders
+  (orders || []).forEach(o => {
+    const d = _parseOrderDate(o);
+    if (d) yearSet.add(d.getFullYear());
+  });
+
+  // 4. Any custom years entered by user
   _customYearsSet.forEach(y => yearSet.add(y));
   if (selectedYear && !isNaN(Number(selectedYear))) {
     yearSet.add(Number(selectedYear));
@@ -647,7 +807,8 @@ function initDashboardFilterBar(isLoading = false) {
 function _updateDashboardFilterUI(isLoading = false) {
   const filter = _getDashboardTimeFilterRange();
   const receipts = _getDashboardFilteredReceipts();
-  const hasData = receipts.length > 0;
+  const filteredOrders = _getDashboardFilteredOrders();
+  const hasData = receipts.length > 0 || filteredOrders.length > 0;
 
   // 1. Update active text label
   const labelEl = document.getElementById('dashFilterActiveLabel');
@@ -933,7 +1094,7 @@ function _renderDashboardKpis(isLoading = false) {
   const grid = document.getElementById('dashboardKpiGrid');
   if (!grid) return;
 
-  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0) && (!orders || orders.length === 0)) {
     grid.innerHTML = Array.from({ length: 6 }).map(() => `
       <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
         <div class="flex justify-between items-center mb-3">
@@ -947,7 +1108,12 @@ function _renderDashboardKpis(isLoading = false) {
     return;
   }
 
+  const filter = _getDashboardTimeFilterRange();
   const receipts = _getDashboardFilteredReceipts();
+  const filteredOrders = _getDashboardFilteredOrders();
+
+  const totalOrderRevenue = filteredOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const totalOrdersCount = filteredOrders.length;
   const totalReceipts = receipts.length;
   const totalQty = receipts.reduce((s, r) => s + (Number(r.total_quantity) || Number(r.item_count) || 0), 0);
   const totalValue = receipts.reduce((s, r) => s + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
@@ -959,41 +1125,52 @@ function _renderDashboardKpis(isLoading = false) {
     ? sk_filteredList.filter(p => (p.stock !== undefined && p.stock <= 5 && p.status !== 'Ngừng theo dõi')).length
     : products.filter(p => (p.ton !== undefined && p.ton <= 5 && p.trangthai !== 'Ngừng theo dõi')).length;
 
+  const revFmt = totalOrderRevenue >= 1e9
+    ? (totalOrderRevenue / 1e9).toFixed(2) + ' tỷ'
+    : totalOrderRevenue >= 1e6
+      ? (totalOrderRevenue / 1e6).toFixed(1) + ' tr'
+      : totalOrderRevenue.toLocaleString('vi-VN') + '₫';
+
+  const costFmt = totalValue >= 1e9
+    ? (totalValue / 1e9).toFixed(2) + ' tỷ'
+    : totalValue >= 1e6
+      ? (totalValue / 1e6).toFixed(1) + ' tr'
+      : totalValue.toLocaleString('vi-VN') + '₫';
+
   const kpiDefs = [
     {
-      icon: 'fa-building', iconBg: '#eff6ff', iconColor: '#2563eb',
-      label: 'Nhà cung cấp', value: suppCount.toLocaleString('vi-VN'),
-      sub: 'Đang hợp tác', subColor: '#64748b',
-      onclick: "adminTab('suppliers',null)"
+      icon: 'fa-hand-holding-dollar', iconBg: '#ecfdf5', iconColor: '#059669',
+      label: 'Doanh thu đơn hàng', value: revFmt,
+      sub: totalOrderRevenue >= 1e6 ? totalOrderRevenue.toLocaleString('vi-VN') + '₫' : ('Kỳ: ' + filter.shortLabel),
+      subColor: '#059669',
+      onclick: "adminTab('orders',null)"
     },
     {
-      icon: 'fa-file-invoice', iconBg: '#f0fdf4', iconColor: '#16a34a',
-      label: 'Số phiếu nhập kho', value: totalReceipts.toLocaleString('vi-VN'),
-      sub: 'Kỳ: ' + _getDashboardTimeFilterRange().shortLabel, subColor: '#64748b',
-      onclick: "adminTab('inventory',null)"
-    },
-    {
-      icon: 'fa-boxes-stacked', iconBg: '#fdf4ff', iconColor: '#9333ea',
-      label: 'Số lượng nhập', value: totalQty.toLocaleString('vi-VN'),
-      sub: 'Tổng số lượng', subColor: '#64748b',
-      onclick: ''
+      icon: 'fa-clipboard-check', iconBg: '#f0fdf4', iconColor: '#16a34a',
+      label: 'Đơn hàng', value: totalOrdersCount.toLocaleString('vi-VN'),
+      sub: pendingOrders > 0 ? `${pendingOrders} đơn chờ xác nhận` : `${totalOrdersCount} đơn trong kỳ`,
+      subColor: pendingOrders > 0 ? '#dc2626' : '#16a34a',
+      onclick: "adminTab('orders',null)"
     },
     {
       icon: 'fa-sack-dollar', iconBg: '#fff7ed', iconColor: '#ea580c',
-      label: 'Số tiền nhập kho', value: totalValue >= 1e9
-        ? (totalValue / 1e9).toFixed(2) + ' tỷ'
-        : totalValue >= 1e6
-          ? (totalValue / 1e6).toFixed(1) + ' tr'
-          : totalValue.toLocaleString('vi-VN') + '₫',
-      sub: totalValue >= 1e6 ? totalValue.toLocaleString('vi-VN') + '₫' : '',
+      label: 'Chi phí nhập kho', value: costFmt,
+      sub: totalValue >= 1e6 ? totalValue.toLocaleString('vi-VN') + '₫' : ('Kỳ: ' + filter.shortLabel),
       subColor: '#64748b',
-      onclick: ''
+      onclick: "adminTab('inventory',null)"
     },
     {
-      icon: 'fa-clipboard-list', iconBg: '#fefce8', iconColor: '#ca8a04',
-      label: 'Đơn hàng mới', value: pendingOrders.toLocaleString('vi-VN'),
-      sub: 'Chờ xác nhận', subColor: pendingOrders > 0 ? '#dc2626' : '#64748b',
-      onclick: "adminTab('orders',null)"
+      icon: 'fa-file-invoice', iconBg: '#eff6ff', iconColor: '#2563eb',
+      label: 'Phiếu nhập kho', value: totalReceipts.toLocaleString('vi-VN'),
+      sub: totalQty > 0 ? `${totalQty.toLocaleString('vi-VN')} SP nhập` : '0 SP nhập',
+      subColor: '#64748b',
+      onclick: "adminTab('inventory',null)"
+    },
+    {
+      icon: 'fa-building', iconBg: '#faf5ff', iconColor: '#9333ea',
+      label: 'Nhà cung cấp', value: suppCount.toLocaleString('vi-VN'),
+      sub: 'Đang hợp tác', subColor: '#64748b',
+      onclick: "adminTab('suppliers',null)"
     },
     {
       icon: 'fa-triangle-exclamation', iconBg: '#fef2f2', iconColor: '#dc2626',
@@ -1021,19 +1198,29 @@ function _renderDashboardKpis(isLoading = false) {
 
 function _renderDashboardCharts(isLoading = false) {
   const receipts = _getDashboardFilteredReceipts();
+  const filteredOrders = _getDashboardFilteredOrders();
   const filter = _getDashboardTimeFilterRange();
+
+  _updateDashboardLineMetricUI();
 
   const lineTitleEl = document.getElementById('dashLineChartTitle');
   if (lineTitleEl) {
-    lineTitleEl.textContent = `Giá trị nhập kho (${filter.shortLabel})`;
+    if (_dashLineMetric === 'revenue') {
+      lineTitleEl.textContent = `Doanh thu đơn hàng theo ngày (${filter.shortLabel})`;
+    } else if (_dashLineMetric === 'inventory') {
+      lineTitleEl.textContent = `Giá trị nhập kho theo ngày (${filter.shortLabel})`;
+    } else {
+      lineTitleEl.textContent = `Doanh thu & Chi phí theo ngày (${filter.shortLabel})`;
+    }
   }
+
   const donutTitleEl = document.getElementById('dashDonutChartTitle');
   if (donutTitleEl) {
     donutTitleEl.textContent = `Cơ cấu giá trị theo NCC (${filter.shortLabel})`;
   }
 
-  // Nếu đang loading và chưa có data receipts thì hiển thị placeholder nhẹ nhàng
-  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
+  // Nếu đang loading và chưa có data
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0) && (!orders || orders.length === 0)) {
     const lineEmptyEl = document.getElementById('dashboardLineEmptyState');
     const lineEmptyText = document.getElementById('dashboardLineEmptyText');
     if (lineEmptyEl) {
@@ -1047,32 +1234,59 @@ function _renderDashboardCharts(isLoading = false) {
     return;
   }
 
-  // ─── Line Chart ───────────────────────────────────────────────────────
-  const dailyMap = {};
+  // ─── Line Chart Aggregations ──────────────────────────────────────────
+  const receiptDailyMap = {};
   receipts.forEach(r => {
     const d = _parseReceiptDate(r);
     if (d) {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const amount = Number(r.total_amount) || Number(r.total_cost) || 0;
-      dailyMap[key] = (dailyMap[key] || 0) + amount;
+      receiptDailyMap[key] = (receiptDailyMap[key] || 0) + amount;
     }
   });
 
-  const sortedDays = Object.keys(dailyMap).sort();
+  const orderDailyMap = {};
+  filteredOrders.forEach(o => {
+    const d = _parseOrderDate(o);
+    if (d) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const amount = Number(o.total) || 0;
+      orderDailyMap[key] = (orderDailyMap[key] || 0) + amount;
+    }
+  });
+
+  // Collect all active dates based on selected metric
+  const allDaysSet = new Set();
+  if (_dashLineMetric === 'revenue' || _dashLineMetric === 'both') {
+    Object.keys(orderDailyMap).forEach(k => allDaysSet.add(k));
+  }
+  if (_dashLineMetric === 'inventory' || _dashLineMetric === 'both') {
+    Object.keys(receiptDailyMap).forEach(k => allDaysSet.add(k));
+  }
+
+  const sortedDays = Array.from(allDaysSet).sort();
   const lineLabels = sortedDays.map(d => {
     const [y, m, day] = d.split('-');
     return `${day}/${m}`;
   });
-  const lineData = sortedDays.map(d => dailyMap[d]);
+
+  const revLineData = sortedDays.map(d => orderDailyMap[d] || 0);
+  const invLineData = sortedDays.map(d => receiptDailyMap[d] || 0);
 
   const lineCtx = document.getElementById('dashboardLineChart');
   const lineEmptyEl = document.getElementById('dashboardLineEmptyState');
   const lineEmptyText = document.getElementById('dashboardLineEmptyText');
 
-  if (lineData.length === 0) {
+  const hasChartData = sortedDays.length > 0 && (
+    (_dashLineMetric === 'revenue' && revLineData.some(v => v > 0)) ||
+    (_dashLineMetric === 'inventory' && invLineData.some(v => v > 0)) ||
+    (_dashLineMetric === 'both' && (revLineData.some(v => v > 0) || invLineData.some(v => v > 0)))
+  );
+
+  if (!hasChartData) {
     if (_dashLineChart) { _dashLineChart.destroy(); _dashLineChart = null; }
     if (lineEmptyEl) {
-      if (lineEmptyText) lineEmptyText.textContent = `Không có dữ liệu nhập kho trong ${filter.shortLabel}`;
+      if (lineEmptyText) lineEmptyText.textContent = `Không có dữ liệu trong ${filter.shortLabel}`;
       lineEmptyEl.classList.remove('hidden');
     }
   } else {
@@ -1085,31 +1299,53 @@ function _renderDashboardCharts(isLoading = false) {
           const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
           const textColor = isDark ? '#94a3b8' : '#64748b';
 
+          const datasets = [];
+          if (_dashLineMetric === 'revenue' || _dashLineMetric === 'both') {
+            datasets.push({
+              label: 'Doanh thu đơn hàng (₫)',
+              data: revLineData,
+              borderColor: '#059669',
+              backgroundColor: isDark ? 'rgba(5,150,105,0.15)' : 'rgba(5,150,105,0.08)',
+              borderWidth: 2.2,
+              pointRadius: sortedDays.length <= 30 ? 3 : 0,
+              pointHoverRadius: 5,
+              tension: 0.35,
+              fill: _dashLineMetric === 'revenue'
+            });
+          }
+          if (_dashLineMetric === 'inventory' || _dashLineMetric === 'both') {
+            datasets.push({
+              label: 'Chi phí nhập kho (₫)',
+              data: invLineData,
+              borderColor: '#2563eb',
+              backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
+              borderWidth: 2,
+              pointRadius: sortedDays.length <= 30 ? 3 : 0,
+              pointHoverRadius: 5,
+              tension: 0.35,
+              fill: _dashLineMetric === 'inventory'
+            });
+          }
+
           _dashLineChart = new Chart(lineCtx, {
             type: 'line',
             data: {
               labels: lineLabels,
-              datasets: [{
-                label: 'Giá trị nhập (₫)',
-                data: lineData,
-                borderColor: '#2563eb',
-                backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.08)',
-                borderWidth: 2,
-                pointRadius: lineData.length <= 30 ? 3 : 0,
-                pointHoverRadius: 5,
-                tension: 0.35,
-                fill: true,
-              }]
+              datasets
             },
             options: {
               responsive: true, maintainAspectRatio: false,
               animation: { duration: 300 },
               interaction: { mode: 'index', intersect: false },
               plugins: {
-                legend: { display: false },
+                legend: {
+                  display: _dashLineMetric === 'both',
+                  position: 'top',
+                  labels: { color: textColor, font: { size: 10, weight: '600' }, boxWidth: 10 }
+                },
                 tooltip: {
                   callbacks: {
-                    label: ctx => ' ' + Number(ctx.raw).toLocaleString('vi-VN') + '₫'
+                    label: ctx => ` ${ctx.dataset.label}: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`
                   }
                 }
               },
@@ -1250,6 +1486,9 @@ function renderQuarterSection(isLoading = false) {
   const container = document.getElementById('dashboardQuarterSection');
   if (!container) return;
 
+  _updateQuarterSectionTabUI();
+  _updateQuarterViewModeUI();
+
   const yearSelect = document.getElementById('quarterYearSelect');
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -1266,13 +1505,37 @@ function renderQuarterSection(isLoading = false) {
   }
 
   const yearBadge = document.getElementById('quarterYearBadge');
-  if (yearBadge) yearBadge.textContent = `Năm ${selectedYear}`;
+  if (yearBadge) {
+    yearBadge.textContent = _quarterViewMode === 'year' ? 'So sánh các năm' : `Năm ${selectedYear}`;
+  }
 
-  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0)) {
-    const cardsGrid = document.getElementById('quarterCardsGrid');
+  const titleEl = document.getElementById('quarterSectionTitle');
+  const subtitleEl = document.getElementById('quarterSectionSubtitle');
+  const chartTitleEl = document.getElementById('quarterChartTitle');
+  const chartSubtext = document.getElementById('quarterChartSubtext');
+  const chartCanvas = document.getElementById('quarterComparisonChart');
+  const chartEmptyEl = document.getElementById('quarterChartEmptyState');
+  const chartEmptyText = document.getElementById('quarterChartEmptyText');
+  const cardsGrid = document.getElementById('quarterCardsGrid');
+  const insightsContainer = document.getElementById('quarterInsightsContainer');
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+
+  // Format currency helper
+  const fmtMoney = (val) => {
+    if (!val || isNaN(val) || val === 0) return '0₫';
+    if (Math.abs(val) >= 1e9) return (val / 1e9).toFixed(2) + ' tỷ';
+    if (Math.abs(val) >= 1e6) return (val / 1e6).toFixed(1) + ' tr';
+    return Number(val).toLocaleString('vi-VN') + '₫';
+  };
+
+  // Skeletons when loading
+  if (isLoading && (!allInventoryReceipts || allInventoryReceipts.length === 0) && (!orders || orders.length === 0)) {
     if (cardsGrid) {
       cardsGrid.innerHTML = [1, 2, 3, 4].map(() => `
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[180px]">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[185px]">
           <div>
             <div class="flex items-center justify-between gap-2 mb-3">
               <div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
@@ -1286,28 +1549,324 @@ function renderQuarterSection(isLoading = false) {
         </div>
       `).join('');
     }
-    const chartSubtext = document.getElementById('quarterChartSubtext');
-    if (chartSubtext) chartSubtext.innerHTML = `<span class="text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải dữ liệu năm ${selectedYear}...</span>`;
+    if (chartSubtext) chartSubtext.innerHTML = `<span class="text-slate-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang tải dữ liệu...</span>`;
     return;
   }
 
-  // 2. Compute metrics for each quarter of selectedYear
+  // =========================================================================
+  // VIEW MODE: SO SÁNH THEO CÁC NĂM (YEAR-OVER-YEAR)
+  // =========================================================================
+  if (_quarterViewMode === 'year') {
+    if (titleEl) titleEl.textContent = 'So sánh hiệu quả kinh doanh qua các năm';
+    if (subtitleEl) subtitleEl.textContent = 'Phân tích tổng doanh thu đơn hàng, chi phí nhập kho và mức tăng trưởng giữa các năm';
+
+    // Lấy danh sách các năm có phát sinh dữ liệu (hoặc 4 năm gần nhất)
+    const availableYears = _getAllAvailableYears(selectedYear);
+    const activeYears = availableYears.filter(y => {
+      const hasReceipts = (allInventoryReceipts || []).some(r => {
+        const d = _parseReceiptDate(r);
+        return d && d.getFullYear() === y;
+      });
+      const hasOrders = (orders || []).some(o => {
+        if (!o || o.status === 'Đã huỷ') return false;
+        const d = _parseOrderDate(o);
+        return d && d.getFullYear() === y;
+      });
+      return hasReceipts || hasOrders;
+    });
+
+    const displayYears = (activeYears.length > 0 ? activeYears : [currentYear, currentYear - 1, currentYear - 2]).slice(0, 4);
+
+    const yearDataList = displayYears.map((y, idx) => {
+      const yOrders = (orders || []).filter(o => {
+        if (!o || o.status === 'Đã huỷ') return false;
+        const d = _parseOrderDate(o);
+        return d && d.getFullYear() === y;
+      });
+      const rev = yOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const ordersCount = yOrders.length;
+      const itemsCount = yOrders.reduce((sum, o) => {
+        const itms = Array.isArray(o.items) ? o.items : [];
+        return sum + itms.reduce((s, it) => s + (Number(it.qty) || Number(it.soluong) || 1), 0);
+      }, 0);
+
+      const yReceipts = (allInventoryReceipts || []).filter(r => {
+        const d = _parseReceiptDate(r);
+        return d && d.getFullYear() === y;
+      });
+      const cost = yReceipts.reduce((sum, r) => sum + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
+      const receiptsCount = yReceipts.length;
+
+      // So sánh với năm trước đó (y - 1)
+      const prevYOrders = (orders || []).filter(o => {
+        if (!o || o.status === 'Đã huỷ') return false;
+        const d = _parseOrderDate(o);
+        return d && d.getFullYear() === (y - 1);
+      });
+      const prevRev = prevYOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+      let growthText = 'Năm đầu tiên';
+      let growthColor = 'text-slate-400';
+      let growthIcon = 'fa-minus';
+      if (prevRev > 0 && rev > 0) {
+        const rate = ((rev - prevRev) / prevRev) * 100;
+        growthText = (rate >= 0 ? `+${rate.toFixed(1)}%` : `${rate.toFixed(1)}%`) + ' so với năm trước';
+        growthColor = rate > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+        growthIcon = rate > 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+      } else if (rev > 0 && prevRev === 0) {
+        growthText = '+100% tăng trưởng';
+        growthColor = 'text-emerald-600 dark:text-emerald-400';
+        growthIcon = 'fa-arrow-trend-up';
+      }
+
+      return {
+        year: y,
+        revenue: rev,
+        ordersCount,
+        itemsCount,
+        cost,
+        receiptsCount,
+        grossProfit: rev - cost,
+        growthText,
+        growthColor,
+        growthIcon
+      };
+    });
+
+    // Render Cards Grid theo Năm
+    if (cardsGrid) {
+      cardsGrid.innerHTML = yearDataList.map(item => {
+        const isCurrentActive = item.year === selectedYear;
+        return `
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border ${isCurrentActive ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-slate-200/80 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/60'} transition-all shadow-xs flex flex-col justify-between group">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black shrink-0">
+                    <i class="fa-solid fa-calendar"></i>
+                  </span>
+                  <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Năm ${item.year}</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${item.year === currentYear ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-extrabold border border-emerald-200 dark:border-emerald-800/60' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60'} shrink-0">
+                  ${item.year === currentYear ? 'Năm hiện tại' : 'Đã qua'}
+                </span>
+              </div>
+
+              <div class="mt-2.5">
+                <div class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Doanh thu bán</div>
+                <div class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-tight tracking-tight">${fmtMoney(item.revenue)}</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  ${item.ordersCount > 0 ? `${item.ordersCount.toLocaleString('vi-VN')} đơn · ${item.itemsCount.toLocaleString('vi-VN')} sản phẩm` : 'Chưa có đơn hàng'}
+                </div>
+              </div>
+
+              <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500 dark:text-slate-400">Chi phí nhập:</span>
+                  <span class="font-bold text-slate-800 dark:text-slate-200">${fmtMoney(item.cost)}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs mt-1">
+                  <span class="text-slate-500 dark:text-slate-400">Chênh lệch Thu-Chi:</span>
+                  <span class="font-bold ${item.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${item.grossProfit >= 0 ? '+' : ''}${fmtMoney(item.grossProfit)}</span>
+                </div>
+              </div>
+
+              <div class="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold ${item.growthColor}">
+                <i class="fa-solid ${item.growthIcon} text-[10px]"></i>
+                <span class="truncate">${item.growthText}</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              <button type="button" onclick="setQuarterViewMode('quarter'); _currentDashboardFilter.year = ${item.year}; initDashboardFilterBar(); renderQuarterSection();"
+                class="w-full py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                <i class="fa-solid fa-chart-pie text-[11px]"></i>
+                <span>Xem 4 Quý năm ${item.year}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Chart so sánh theo Năm
+    if (chartTitleEl) chartTitleEl.textContent = 'Biểu đồ tăng trưởng Doanh thu & Chi phí theo Năm';
+    if (chartSubtext) chartSubtext.textContent = `Tổng hợp dữ liệu ${yearDataList.length} năm hoạt động`;
+
+    if (chartCanvas && typeof Chart !== 'undefined') {
+      if (_dashQuarterChart) { _dashQuarterChart.destroy(); _dashQuarterChart = null; }
+      if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
+
+      const sortedForChart = [...yearDataList].sort((a, b) => a.year - b.year);
+      try {
+        _dashQuarterChart = new Chart(chartCanvas, {
+          data: {
+            labels: sortedForChart.map(it => `Năm ${it.year}`),
+            datasets: [
+              {
+                type: 'bar',
+                label: 'Doanh thu đơn hàng (₫)',
+                data: sortedForChart.map(it => it.revenue),
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderRadius: 8,
+                yAxisID: 'y',
+                order: 2
+              },
+              {
+                type: 'bar',
+                label: 'Chi phí nhập kho (₫)',
+                data: sortedForChart.map(it => it.cost),
+                backgroundColor: 'rgba(79, 70, 229, 0.75)',
+                borderRadius: 8,
+                yAxisID: 'y',
+                order: 2
+              },
+              {
+                type: 'line',
+                label: 'Số lượng đơn hàng',
+                data: sortedForChart.map(it => it.ordersCount),
+                borderColor: '#ea580c',
+                backgroundColor: '#ea580c',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                tension: 0.25,
+                yAxisID: 'y1',
+                order: 1
+              }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                display: true, position: 'top',
+                labels: { boxWidth: 12, font: { size: 10, weight: 'bold' }, color: textColor }
+              },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (ctx.dataset.yAxisID === 'y') return ` ${ctx.dataset.label}: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`;
+                    return ` ${ctx.dataset.label}: ${ctx.raw} đơn`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '600' } } },
+              y: {
+                position: 'left', grid: { color: gridColor },
+                ticks: {
+                  color: textColor, font: { size: 10 },
+                  callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+                }
+              },
+              y1: {
+                position: 'right', grid: { display: false },
+                ticks: { color: '#ea580c', font: { size: 10 }, stepSize: 1, callback: v => v + ' đơn' }
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('Lỗi vẽ biểu đồ so sánh năm:', err);
+      }
+    }
+
+    // Insights cho So sánh Năm
+    if (insightsContainer) {
+      const bestYear = [...yearDataList].sort((a, b) => b.revenue - a.revenue)[0] || { year: selectedYear, revenue: 0, ordersCount: 0 };
+      const allTimeRev = yearDataList.reduce((s, it) => s + it.revenue, 0);
+      const allTimeOrders = yearDataList.reduce((s, it) => s + it.ordersCount, 0);
+
+      insightsContainer.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-lightbulb text-amber-500"></i> Đánh giá xu hướng các năm
+            </span>
+          </div>
+          <div class="space-y-3 text-xs">
+            <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-trophy text-amber-500 text-[10px]"></i> Năm doanh thu cao nhất
+                </span>
+                <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Năm ${bestYear.year}</span>
+              </div>
+              <div class="text-sm font-black text-slate-900 dark:text-white">${fmtMoney(bestYear.revenue)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${bestYear.ordersCount} đơn hàng ghi nhận</div>
+            </div>
+
+            <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-calculator text-blue-500 text-[10px]"></i> Tổng doanh thu lũy kế
+                </span>
+              </div>
+              <div class="text-sm font-black text-slate-900 dark:text-white">${fmtMoney(allTimeRev)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Tổng cộng ${allTimeOrders} đơn đặt hàng</div>
+            </div>
+
+            <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+              <div class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mb-1">
+                <i class="fa-solid fa-arrows-split-up-and-left text-indigo-500 text-[10px]"></i> Tùy chọn xem chi tiết
+              </div>
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Chuyển về xem 4 Quý năm ${selectedYear}
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Phân tích sâu theo từng quý trong năm</div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
+          <button type="button" onclick="setQuarterViewMode('quarter'); renderQuarterSection();"
+            class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+            <i class="fa-solid fa-chart-column text-xs"></i> Xem chi tiết 4 Quý năm ${selectedYear}
+          </button>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  // =========================================================================
+  // VIEW MODE: 4 QUÝ TRONG NĂM (QUARTERLY VIEW)
+  // =========================================================================
+
+  // 1. Tính toán dữ liệu 4 Quý cho Đơn hàng & Nhập kho
   const quarterData = [1, 2, 3, 4].map(q => {
     const start = new Date(selectedYear, (q - 1) * 3, 1, 0, 0, 0, 0);
     const end = new Date(selectedYear, q * 3, 0, 23, 59, 59, 999);
 
+    // Đơn hàng
+    const qOrders = (orders || []).filter(o => {
+      if (!o || o.status === 'Đã huỷ') return false;
+      const d = _parseOrderDate(o);
+      return d && d >= start && d <= end;
+    });
+    const orderRevenue = qOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    const orderCount = qOrders.length;
+    const orderItems = qOrders.reduce((sum, o) => {
+      const itms = Array.isArray(o.items) ? o.items : [];
+      return sum + itms.reduce((s, it) => s + (Number(it.qty) || Number(it.soluong) || 1), 0);
+    }, 0);
+
+    // Nhập kho
     const qReceipts = (allInventoryReceipts || []).filter(r => {
       const d = _parseReceiptDate(r);
       return d && d >= start && d <= end;
     });
-
-    const totalAmount = qReceipts.reduce((sum, r) => sum + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
-    const totalQuantity = qReceipts.reduce((sum, r) => sum + (Number(r.total_quantity) || Number(r.item_count) || 0), 0);
+    const receiptCost = qReceipts.reduce((sum, r) => sum + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
     const receiptCount = qReceipts.length;
+    const receiptQty = qReceipts.reduce((sum, r) => sum + (Number(r.total_quantity) || Number(r.item_count) || 0), 0);
 
+    // Trạng thái Quý
     let statusText = 'Đã kết thúc';
     let statusClass = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60';
-    if (receiptCount === 0) {
+    const hasDataThisQ = _quarterSectionTab === 'inventory' ? (receiptCount > 0) : (orderCount > 0);
+
+    if (!hasDataThisQ) {
       statusText = (selectedYear > currentYear || (selectedYear === currentYear && q > currentQuarter))
         ? 'Chưa tới'
         : 'Chưa có dữ liệu';
@@ -1315,7 +1874,8 @@ function renderQuarterSection(isLoading = false) {
     } else if (selectedYear === currentYear) {
       if (q === currentQuarter) {
         statusText = 'Đang diễn ra';
-        statusClass = 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 font-extrabold';
+        const activeTheme = _quarterSectionTab === 'inventory' ? 'indigo' : 'emerald';
+        statusClass = `bg-${activeTheme}-50 dark:bg-${activeTheme}-950/50 text-${activeTheme}-600 dark:text-${activeTheme}-400 border border-${activeTheme}-200 dark:border-${activeTheme}-800/60 font-extrabold`;
       } else if (q > currentQuarter) {
         statusText = 'Chưa tới';
         statusClass = 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200/40 dark:border-slate-800';
@@ -1328,293 +1888,723 @@ function renderQuarterSection(isLoading = false) {
     return {
       quarter: q,
       monthsShort: q === 1 ? 'Tháng 1 - 3' : q === 2 ? 'Tháng 4 - 6' : q === 3 ? 'Tháng 7 - 9' : 'Tháng 10 - 12',
+      orderRevenue,
+      orderCount,
+      orderItems,
+      receiptCost,
       receiptCount,
-      totalAmount,
-      totalQuantity,
+      receiptQty,
+      grossProfit: orderRevenue - receiptCost,
       statusText,
       statusClass
     };
   });
 
-  const yearTotalAmount = quarterData.reduce((sum, q) => sum + q.totalAmount, 0);
+  const yearTotalRevenue = quarterData.reduce((sum, q) => sum + q.orderRevenue, 0);
+  const yearTotalOrders = quarterData.reduce((sum, q) => sum + q.orderCount, 0);
   const yearTotalReceipts = quarterData.reduce((sum, q) => sum + q.receiptCount, 0);
+  const yearTotalCost = quarterData.reduce((sum, q) => sum + q.receiptCost, 0);
 
-  // QoQ Growth compared to preceding quarter
+  // QoQ Growth calculations
   const prevYearQ4Start = new Date(selectedYear - 1, 9, 1, 0, 0, 0, 0);
   const prevYearQ4End = new Date(selectedYear - 1, 12, 0, 23, 59, 59, 999);
+
+  const prevYearQ4Orders = (orders || []).filter(o => {
+    if (!o || o.status === 'Đã huỷ') return false;
+    const d = _parseOrderDate(o);
+    return d && d >= prevYearQ4Start && d <= prevYearQ4End;
+  });
+  const prevYearQ4Rev = prevYearQ4Orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
   const prevYearQ4Receipts = (allInventoryReceipts || []).filter(r => {
     const d = _parseReceiptDate(r);
     return d && d >= prevYearQ4Start && d <= prevYearQ4End;
   });
-  const prevYearQ4Amount = prevYearQ4Receipts.reduce((sum, r) => sum + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
+  const prevYearQ4Cost = prevYearQ4Receipts.reduce((sum, r) => sum + (Number(r.total_amount) || Number(r.total_cost) || 0), 0);
 
   quarterData.forEach((qObj, index) => {
-    const prevAmount = index === 0 ? prevYearQ4Amount : quarterData[index - 1].totalAmount;
-    if (qObj.receiptCount === 0) {
-      qObj.growthRate = 0;
-      qObj.growthText = 'Chưa có dữ liệu';
-      qObj.growthColor = 'text-slate-400 dark:text-slate-500';
-      qObj.growthIcon = 'fa-minus';
-    } else if (prevAmount > 0) {
-      const rate = ((qObj.totalAmount - prevAmount) / prevAmount) * 100;
-      qObj.growthRate = rate;
-      qObj.growthText = (rate >= 0 ? `+${rate.toFixed(1)}%` : `${rate.toFixed(1)}%`) + ' so với quý trước';
-      qObj.growthColor = rate > 0 ? 'text-emerald-600 dark:text-emerald-400' : rate < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400';
-      qObj.growthIcon = rate > 0 ? 'fa-arrow-trend-up' : rate < 0 ? 'fa-arrow-trend-down' : 'fa-minus';
-    } else if (qObj.totalAmount > 0) {
-      qObj.growthRate = 100;
-      qObj.growthText = '+100% tăng trưởng';
-      qObj.growthColor = 'text-emerald-600 dark:text-emerald-400';
-      qObj.growthIcon = 'fa-arrow-trend-up';
+    if (_quarterSectionTab === 'revenue') {
+      const prevRev = index === 0 ? prevYearQ4Rev : quarterData[index - 1].orderRevenue;
+      if (qObj.orderCount === 0) {
+        qObj.growthText = 'Chưa có dữ liệu';
+        qObj.growthColor = 'text-slate-400 dark:text-slate-500';
+        qObj.growthIcon = 'fa-minus';
+      } else if (prevRev > 0) {
+        const rate = ((qObj.orderRevenue - prevRev) / prevRev) * 100;
+        qObj.growthText = (rate >= 0 ? `+${rate.toFixed(1)}%` : `${rate.toFixed(1)}%`) + ' so với quý trước';
+        qObj.growthColor = rate > 0 ? 'text-emerald-600 dark:text-emerald-400' : rate < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400';
+        qObj.growthIcon = rate > 0 ? 'fa-arrow-trend-up' : rate < 0 ? 'fa-arrow-trend-down' : 'fa-minus';
+      } else if (qObj.orderRevenue > 0) {
+        qObj.growthText = '+100% tăng trưởng';
+        qObj.growthColor = 'text-emerald-600 dark:text-emerald-400';
+        qObj.growthIcon = 'fa-arrow-trend-up';
+      } else {
+        qObj.growthText = index === 0 ? 'Quý khởi đầu năm' : 'Không đổi';
+        qObj.growthColor = 'text-slate-400 dark:text-slate-500';
+        qObj.growthIcon = 'fa-minus';
+      }
+      qObj.percentage = yearTotalRevenue > 0 ? Math.round((qObj.orderRevenue / yearTotalRevenue) * 100) : 0;
     } else {
-      qObj.growthRate = 0;
-      qObj.growthText = index === 0 ? 'Quý khởi đầu năm' : 'Không đổi';
-      qObj.growthColor = 'text-slate-400 dark:text-slate-500';
-      qObj.growthIcon = 'fa-minus';
+      const prevCost = index === 0 ? prevYearQ4Cost : quarterData[index - 1].receiptCost;
+      if (qObj.receiptCount === 0) {
+        qObj.growthText = 'Chưa có dữ liệu';
+        qObj.growthColor = 'text-slate-400 dark:text-slate-500';
+        qObj.growthIcon = 'fa-minus';
+      } else if (prevCost > 0) {
+        const rate = ((qObj.receiptCost - prevCost) / prevCost) * 100;
+        qObj.growthText = (rate >= 0 ? `+${rate.toFixed(1)}%` : `${rate.toFixed(1)}%`) + ' so với quý trước';
+        qObj.growthColor = rate > 0 ? 'text-indigo-600 dark:text-indigo-400' : rate < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400';
+        qObj.growthIcon = rate > 0 ? 'fa-arrow-trend-up' : rate < 0 ? 'fa-arrow-trend-down' : 'fa-minus';
+      } else if (qObj.receiptCost > 0) {
+        qObj.growthText = '+100% chi phí';
+        qObj.growthColor = 'text-indigo-600 dark:text-indigo-400';
+        qObj.growthIcon = 'fa-arrow-trend-up';
+      } else {
+        qObj.growthText = index === 0 ? 'Quý khởi đầu năm' : 'Không đổi';
+        qObj.growthColor = 'text-slate-400 dark:text-slate-500';
+        qObj.growthIcon = 'fa-minus';
+      }
+      qObj.percentage = yearTotalCost > 0 ? Math.round((qObj.receiptCost / yearTotalCost) * 100) : 0;
     }
-    qObj.percentage = yearTotalAmount > 0 ? Math.round((qObj.totalAmount / yearTotalAmount) * 100) : 0;
   });
 
-  // 3. Render 4 Quarter Cards
-  const cardsGrid = document.getElementById('quarterCardsGrid');
-  if (cardsGrid) {
-    cardsGrid.innerHTML = quarterData.map(q => {
-      const isFilterActive = (_currentDashboardFilter.mode === 'quarter' &&
-                              _currentDashboardFilter.year === selectedYear &&
-                              _currentDashboardFilter.quarter === q.quarter);
-      const amountFmt = q.totalAmount >= 1e9
-        ? (q.totalAmount / 1e9).toFixed(2) + ' tỷ'
-        : q.totalAmount >= 1e6
-          ? (q.totalAmount / 1e6).toFixed(1) + ' tr'
-          : q.totalAmount.toLocaleString('vi-VN') + '₫';
+  // =========================================================================
+  // TAB 1: DOANH THU ĐƠN HÀNG (REVENUE TAB)
+  // =========================================================================
+  if (_quarterSectionTab === 'revenue') {
+    if (titleEl) titleEl.textContent = 'Thống kê Doanh thu Đơn hàng theo Quý';
+    if (subtitleEl) subtitleEl.textContent = `Theo dõi doanh thu bán hàng, số lượng đơn và mức tăng trưởng qua 4 quý năm ${selectedYear}`;
+    if (chartTitleEl) chartTitleEl.textContent = `Biểu đồ so sánh Doanh thu & Đơn hàng 4 Quý năm ${selectedYear}`;
 
-      return `
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border ${isFilterActive ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' : 'border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700/60'} transition-all shadow-xs flex flex-col justify-between group">
-          <div>
-            <div class="flex items-center justify-between gap-2 mb-2">
-              <div class="flex items-center gap-1.5 min-w-0">
-                <span class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-black shrink-0">
-                  Q${q.quarter}
+    // Render 4 Quarter Cards cho Doanh thu
+    if (cardsGrid) {
+      cardsGrid.innerHTML = quarterData.map(q => {
+        const isFilterActive = (_currentDashboardFilter.mode === 'quarter' &&
+                                _currentDashboardFilter.year === selectedYear &&
+                                _currentDashboardFilter.quarter === q.quarter);
+
+        return `
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border ${isFilterActive ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-slate-200/80 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700/60'} transition-all shadow-xs flex flex-col justify-between group">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black shrink-0">
+                    Q${q.quarter}
+                  </span>
+                  <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Quý ${q.quarter}</span>
+                  <span class="text-[10px] text-slate-400 font-medium truncate">(${q.monthsShort})</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${q.statusClass} shrink-0">
+                  ${q.statusText}
                 </span>
-                <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Quý ${q.quarter}</span>
-                <span class="text-[10px] text-slate-400 font-medium truncate">(${q.monthsShort})</span>
               </div>
-              <span class="text-[10px] px-2 py-0.5 rounded-full ${q.statusClass} shrink-0">
-                ${q.statusText}
+
+              <div class="mt-2.5">
+                <div class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Doanh thu bán</div>
+                <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">${fmtMoney(q.orderRevenue)}</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  ${q.orderCount > 0 ? `${q.orderCount.toLocaleString('vi-VN')} đơn · ${q.orderItems.toLocaleString('vi-VN')} sản phẩm` : 'Chưa có đơn đặt hàng'}
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-semibold mb-1">
+                  <span>Tỷ trọng năm</span>
+                  <span class="font-bold text-slate-700 dark:text-slate-300">${q.percentage}%</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width:${q.percentage}%"></div>
+                </div>
+              </div>
+
+              <div class="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold ${q.growthColor}">
+                <i class="fa-solid ${q.growthIcon} text-[10px]"></i>
+                <span class="truncate">${q.growthText}</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              <button type="button" onclick="filterDashboardByQuarter(${selectedYear}, ${q.quarter})"
+                class="w-full py-2 px-3 rounded-xl border ${isFilterActive ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-400'} font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                <i class="fa-solid ${isFilterActive ? 'fa-check' : 'fa-filter'} text-[11px]"></i>
+                <span>${isFilterActive ? 'Đang lọc Quý này' : `Xem Dashboard Quý ${q.quarter}`}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Chart Subtext
+    if (chartSubtext) {
+      if (yearTotalOrders === 0) {
+        chartSubtext.innerHTML = `<span class="text-amber-500 dark:text-amber-400 font-bold"><i class="fa-solid fa-circle-exclamation text-[10px]"></i> Năm ${selectedYear}: Chưa có đơn hàng</span>`;
+      } else {
+        chartSubtext.textContent = `Tổng năm ${selectedYear}: ${fmtMoney(yearTotalRevenue)} (${yearTotalOrders} đơn hàng)`;
+      }
+    }
+
+    // Chart Canvas
+    if (chartCanvas && typeof Chart !== 'undefined') {
+      if (_dashQuarterChart) { _dashQuarterChart.destroy(); _dashQuarterChart = null; }
+
+      if (yearTotalOrders === 0) {
+        if (chartEmptyEl) {
+          if (chartEmptyText) chartEmptyText.textContent = `Năm ${selectedYear} chưa có dữ liệu đơn hàng`;
+          chartEmptyEl.classList.remove('hidden');
+        }
+      } else {
+        if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
+        try {
+          _dashQuarterChart = new Chart(chartCanvas, {
+            data: {
+              labels: ['Quý 1 (T1-T3)', 'Quý 2 (T4-T6)', 'Quý 3 (T7-T9)', 'Quý 4 (T10-T12)'],
+              datasets: [
+                {
+                  type: 'bar',
+                  label: 'Doanh thu (₫)',
+                  data: quarterData.map(q => q.orderRevenue),
+                  backgroundColor: [
+                    'rgba(16, 185, 129, 0.85)',
+                    'rgba(14, 165, 233, 0.85)',
+                    'rgba(99, 102, 241, 0.85)',
+                    'rgba(245, 158, 11, 0.85)'
+                  ],
+                  borderRadius: 8,
+                  borderSkipped: false,
+                  yAxisID: 'y',
+                  order: 2
+                },
+                {
+                  type: 'line',
+                  label: 'Số đơn hàng',
+                  data: quarterData.map(q => q.orderCount),
+                  borderColor: '#f59e0b',
+                  backgroundColor: '#f59e0b',
+                  borderWidth: 2.5,
+                  pointBackgroundColor: '#f59e0b',
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  tension: 0.25,
+                  yAxisID: 'y1',
+                  order: 1
+                }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: {
+                  display: true, position: 'top',
+                  labels: { boxWidth: 12, font: { size: 11, weight: 'bold' }, color: textColor }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => {
+                      if (ctx.dataset.yAxisID === 'y') {
+                        return ` Doanh thu: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`;
+                      }
+                      return ` Số đơn hàng: ${ctx.raw} đơn`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '600' } } },
+                y: {
+                  position: 'left', grid: { color: gridColor },
+                  ticks: {
+                    color: textColor, font: { size: 10 },
+                    callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+                  }
+                },
+                y1: {
+                  position: 'right', grid: { display: false },
+                  ticks: { color: '#f59e0b', font: { size: 10 }, stepSize: 1, callback: v => v + ' đơn' }
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.warn('Lỗi vẽ biểu đồ quý doanh thu:', err);
+        }
+      }
+    }
+
+    // Insights cho Doanh thu
+    if (insightsContainer) {
+      if (yearTotalOrders === 0) {
+        insightsContainer.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 my-auto">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 text-xl mb-3 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
+              <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Năm ${selectedYear} chưa có đơn hàng</p>
+            <p class="text-[11px] text-slate-400 max-w-[220px] leading-relaxed">Không tìm thấy giao dịch đơn hàng hợp lệ nào phát sinh trong năm ${selectedYear}.</p>
+          </div>
+        `;
+      } else {
+        const sortedByRev = [...quarterData].sort((a, b) => b.orderRevenue - a.orderRevenue);
+        const peakQuarter = sortedByRev[0];
+        const avgPerQuarter = yearTotalRevenue / 4;
+
+        // Tìm khách hàng mua nhiều nhất năm
+        const custMap = {};
+        (orders || []).forEach(o => {
+          if (!o || o.status === 'Đã huỷ') return false;
+          const d = _parseOrderDate(o);
+          if (d && d.getFullYear() === selectedYear) {
+            const name = (o.customer || 'Khách vãng lai').trim();
+            custMap[name] = (custMap[name] || 0) + (Number(o.total) || 0);
+          }
+        });
+        const topCust = Object.entries(custMap).sort((a, b) => b[1] - a[1])[0] || null;
+
+        insightsContainer.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i> Đánh giá kinh doanh năm ${selectedYear}
               </span>
             </div>
 
-            <div class="mt-2.5">
-              <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">${amountFmt}</div>
-              <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                ${q.receiptCount > 0 ? `${q.receiptCount.toLocaleString('vi-VN')} phiếu · ${q.totalQuantity.toLocaleString('vi-VN')} sản phẩm` : 'Chưa có phát sinh nhập kho'}
+            <div class="space-y-3 text-xs">
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-crown text-amber-500 text-[10px]"></i> Quý doanh thu cao nhất
+                  </span>
+                  <span class="font-extrabold text-emerald-600 dark:text-emerald-400">Quý ${peakQuarter.quarter}</span>
+                </div>
+                <div class="text-sm font-black text-slate-900 dark:text-white">${fmtMoney(peakQuarter.orderRevenue)}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">${peakQuarter.orderCount} đơn hàng (${peakQuarter.percentage}% cả năm)</div>
               </div>
-            </div>
 
-            <div class="mt-3">
-              <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-semibold mb-1">
-                <span>Tỷ trọng năm</span>
-                <span class="font-bold text-slate-700 dark:text-slate-300">${q.percentage}%</span>
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-calculator text-blue-500 text-[10px]"></i> Trung bình mỗi quý
+                  </span>
+                </div>
+                <div class="text-sm font-black text-slate-900 dark:text-white">${fmtMoney(avgPerQuarter)}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Trung bình ${Math.round(yearTotalOrders / 4)} đơn / quý</div>
               </div>
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-500" style="width:${q.percentage}%"></div>
-              </div>
-            </div>
 
-            <div class="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold ${q.growthColor}">
-              <i class="fa-solid ${q.growthIcon} text-[10px]"></i>
-              <span class="truncate">${q.growthText}</span>
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <div class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mb-1">
+                  <i class="fa-solid fa-user-check text-emerald-500 text-[10px]"></i> Khách hàng lớn nhất năm
+                </div>
+                <div class="font-extrabold text-slate-900 dark:text-white truncate" title="${topCust ? topCust[0] : 'Chưa có'}">
+                  ${topCust ? topCust[0] : 'Chưa có dữ liệu'}
+                </div>
+                <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
+                  ${topCust ? fmtMoney(topCust[1]) : ''}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-            <button type="button" onclick="filterDashboardByQuarter(${selectedYear}, ${q.quarter})"
-              class="w-full py-2 px-3 rounded-xl border ${isFilterActive ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400'} font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
-              <i class="fa-solid ${isFilterActive ? 'fa-check' : 'fa-filter'} text-[11px]"></i>
-              <span>${isFilterActive ? 'Đang lọc Quý này' : `Xem Dashboard Quý ${q.quarter}`}</span>
+          <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
+            <button type="button" onclick="adminTab('orders', null)"
+              class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+              <i class="fa-solid fa-clipboard-list text-xs"></i> Xem danh sách đơn hàng
             </button>
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }
+    }
+    return;
   }
 
-  // 4. Render Chart
-  const chartSubtext = document.getElementById('quarterChartSubtext');
-  if (chartSubtext) {
-    if (yearTotalReceipts === 0) {
-      chartSubtext.innerHTML = `<span class="text-amber-500 dark:text-amber-400 font-bold"><i class="fa-solid fa-circle-exclamation text-[10px]"></i> Năm ${selectedYear}: Chưa có dữ liệu phát sinh</span>`;
-    } else {
-      const yearFmt = yearTotalAmount >= 1e9
-        ? (yearTotalAmount / 1e9).toFixed(2) + ' tỷ'
-        : (yearTotalAmount / 1e6).toFixed(1) + ' tr';
-      chartSubtext.textContent = `Tổng năm ${selectedYear}: ${yearFmt} (${yearTotalReceipts} phiếu)`;
+  // =========================================================================
+  // TAB 2: CHI PHÍ NHẬP KHO (INVENTORY TAB)
+  // =========================================================================
+  if (_quarterSectionTab === 'inventory') {
+    if (titleEl) titleEl.textContent = 'Thống kê hoạt động Nhập kho theo Quý';
+    if (subtitleEl) subtitleEl.textContent = `So sánh quy mô nhập kho, chi phí và mức tăng trưởng qua 4 quý trong năm ${selectedYear}`;
+    if (chartTitleEl) chartTitleEl.textContent = `Biểu đồ so sánh giá trị & số phiếu 4 Quý năm ${selectedYear}`;
+
+    if (cardsGrid) {
+      cardsGrid.innerHTML = quarterData.map(q => {
+        const isFilterActive = (_currentDashboardFilter.mode === 'quarter' &&
+                                _currentDashboardFilter.year === selectedYear &&
+                                _currentDashboardFilter.quarter === q.quarter);
+
+        return `
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border ${isFilterActive ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' : 'border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700/60'} transition-all shadow-xs flex flex-col justify-between group">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-black shrink-0">
+                    Q${q.quarter}
+                  </span>
+                  <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Quý ${q.quarter}</span>
+                  <span class="text-[10px] text-slate-400 font-medium truncate">(${q.monthsShort})</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${q.statusClass} shrink-0">
+                  ${q.statusText}
+                </span>
+              </div>
+
+              <div class="mt-2.5">
+                <div class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Tiền nhập kho</div>
+                <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">${fmtMoney(q.receiptCost)}</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  ${q.receiptCount > 0 ? `${q.receiptCount.toLocaleString('vi-VN')} phiếu · ${q.receiptQty.toLocaleString('vi-VN')} sản phẩm` : 'Chưa có phát sinh nhập kho'}
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-semibold mb-1">
+                  <span>Tỷ trọng năm</span>
+                  <span class="font-bold text-slate-700 dark:text-slate-300">${q.percentage}%</span>
+                </div>
+                <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-500" style="width:${q.percentage}%"></div>
+                </div>
+              </div>
+
+              <div class="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold ${q.growthColor}">
+                <i class="fa-solid ${q.growthIcon} text-[10px]"></i>
+                <span class="truncate">${q.growthText}</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              <button type="button" onclick="filterDashboardByQuarter(${selectedYear}, ${q.quarter})"
+                class="w-full py-2 px-3 rounded-xl border ${isFilterActive ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400'} font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                <i class="fa-solid ${isFilterActive ? 'fa-check' : 'fa-filter'} text-[11px]"></i>
+                <span>${isFilterActive ? 'Đang lọc Quý này' : `Xem Dashboard Quý ${q.quarter}`}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
+
+    if (chartSubtext) {
+      if (yearTotalReceipts === 0) {
+        chartSubtext.innerHTML = `<span class="text-amber-500 dark:text-amber-400 font-bold"><i class="fa-solid fa-circle-exclamation text-[10px]"></i> Năm ${selectedYear}: Chưa có dữ liệu phát sinh</span>`;
+      } else {
+        chartSubtext.textContent = `Tổng năm ${selectedYear}: ${fmtMoney(yearTotalCost)} (${yearTotalReceipts} phiếu)`;
+      }
+    }
+
+    if (chartCanvas && typeof Chart !== 'undefined') {
+      if (_dashQuarterChart) { _dashQuarterChart.destroy(); _dashQuarterChart = null; }
+
+      if (yearTotalReceipts === 0) {
+        if (chartEmptyEl) {
+          if (chartEmptyText) chartEmptyText.textContent = `Năm ${selectedYear} chưa có dữ liệu giao dịch nhập kho`;
+          chartEmptyEl.classList.remove('hidden');
+        }
+      } else {
+        if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
+        try {
+          _dashQuarterChart = new Chart(chartCanvas, {
+            data: {
+              labels: ['Quý 1 (T1-T3)', 'Quý 2 (T4-T6)', 'Quý 3 (T7-T9)', 'Quý 4 (T10-T12)'],
+              datasets: [
+                {
+                  type: 'bar',
+                  label: 'Giá trị nhập (₫)',
+                  data: quarterData.map(q => q.receiptCost),
+                  backgroundColor: [
+                    'rgba(79, 70, 229, 0.85)',
+                    'rgba(14, 165, 233, 0.85)',
+                    'rgba(16, 185, 129, 0.85)',
+                    'rgba(245, 158, 11, 0.85)'
+                  ],
+                  borderRadius: 8,
+                  yAxisID: 'y',
+                  order: 2
+                },
+                {
+                  type: 'line',
+                  label: 'Số phiếu nhập',
+                  data: quarterData.map(q => q.receiptCount),
+                  borderColor: '#ea580c',
+                  backgroundColor: '#ea580c',
+                  borderWidth: 2.5,
+                  pointRadius: 4,
+                  tension: 0.25,
+                  yAxisID: 'y1',
+                  order: 1
+                }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: {
+                  display: true, position: 'top',
+                  labels: { boxWidth: 12, font: { size: 11, weight: 'bold' }, color: textColor }
+                },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => {
+                      if (ctx.dataset.yAxisID === 'y') return ` Giá trị nhập: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`;
+                      return ` Số phiếu nhập: ${ctx.raw} phiếu`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '600' } } },
+                y: {
+                  position: 'left', grid: { color: gridColor },
+                  ticks: {
+                    color: textColor, font: { size: 10 },
+                    callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
+                  }
+                },
+                y1: {
+                  position: 'right', grid: { display: false },
+                  ticks: { color: '#ea580c', font: { size: 10 }, stepSize: 1, callback: v => v + ' phiếu' }
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.warn('Lỗi vẽ biểu đồ so sánh quý:', err);
+        }
+      }
+    }
+
+    if (insightsContainer) {
+      if (yearTotalReceipts === 0) {
+        insightsContainer.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 my-auto">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 text-xl mb-3 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
+              <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Năm ${selectedYear} chưa có dữ liệu</p>
+            <p class="text-[11px] text-slate-400 max-w-[220px] leading-relaxed">Không tìm thấy chứng từ hoặc phiếu nhập kho nào trong năm ${selectedYear}.</p>
+          </div>
+        `;
+      } else {
+        const sortedByAmount = [...quarterData].sort((a, b) => b.receiptCost - a.receiptCost);
+        const peakQuarter = sortedByAmount[0];
+        const avgPerQuarter = yearTotalCost / 4;
+
+        const yearSuppMap = {};
+        (allInventoryReceipts || []).forEach(r => {
+          const d = _parseReceiptDate(r);
+          if (d && d.getFullYear() === selectedYear) {
+            const name = (r.supplier_name || 'Khác').trim();
+            yearSuppMap[name] = (yearSuppMap[name] || 0) + (Number(r.total_amount) || Number(r.total_cost) || 0);
+          }
+        });
+        const topYearSupp = Object.entries(yearSuppMap).sort((a, b) => b[1] - a[1])[0] || null;
+
+        insightsContainer.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-lightbulb text-amber-500"></i> Đánh giá hoạt động năm ${selectedYear}
+              </span>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-crown text-amber-500 text-[10px]"></i> Quý cao điểm nhất
+                  </span>
+                  <span class="font-extrabold text-indigo-600 dark:text-indigo-400">Quý ${peakQuarter.quarter}</span>
+                </div>
+                <div class="text-sm font-black text-slate-900 dark:text-white">${fmtMoney(peakQuarter.receiptCost)}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">${peakQuarter.receiptCount} phiếu nhập (${peakQuarter.percentage}% tổng cả năm)</div>
+              </div>
+
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-calculator text-blue-500 text-[10px]"></i> Trung bình mỗi quý
+                  </span>
+                </div>
+                <div class="text-sm font-black text-slate-900 dark:text-white">${fmtMoney(avgPerQuarter)}</div>
+                <div class="text-[10px] text-slate-400 mt-0.5">Trung bình ${Math.round(yearTotalReceipts / 4)} phiếu / quý</div>
+              </div>
+
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                <div class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mb-1">
+                  <i class="fa-solid fa-truck-ramp-box text-emerald-500 text-[10px]"></i> NCC lớn nhất năm
+                </div>
+                <div class="font-extrabold text-slate-900 dark:text-white truncate" title="${topYearSupp ? topYearSupp[0] : 'Chưa có'}">
+                  ${topYearSupp ? topYearSupp[0] : 'Chưa có dữ liệu'}
+                </div>
+                <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
+                  ${topYearSupp ? fmtMoney(topYearSupp[1]) : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
+            <button type="button" onclick="adminTab('inventory', null)"
+              class="w-full py-2 px-3 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+              <i class="fa-solid fa-file-lines text-xs"></i> Xem tất cả phiếu nhập kho
+            </button>
+          </div>
+        `;
+      }
+    }
+    return;
   }
 
-  const chartEmptyEl = document.getElementById('quarterChartEmptyState');
-  const chartEmptyText = document.getElementById('quarterChartEmptyText');
-  if (yearTotalReceipts === 0) {
-    if (chartEmptyEl) {
-      if (chartEmptyText) chartEmptyText.textContent = `Năm ${selectedYear} chưa có dữ liệu giao dịch nhập kho`;
-      chartEmptyEl.classList.remove('hidden');
-    }
-  } else {
-    if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
-  }
+  // =========================================================================
+  // TAB 3: SO SÁNH THU - CHI (COMPARISON TAB)
+  // =========================================================================
+  if (_quarterSectionTab === 'comparison') {
+    if (titleEl) titleEl.textContent = 'So sánh Doanh thu & Chi phí Nhập kho theo Quý';
+    if (subtitleEl) subtitleEl.textContent = `Đối chiếu dòng tiền vào từ đơn hàng và dòng tiền ra nhập kho qua 4 quý năm ${selectedYear}`;
+    if (chartTitleEl) chartTitleEl.textContent = `Biểu đồ Thu - Chi & Lợi nhuận gộp 4 Quý năm ${selectedYear}`;
 
-  const chartCanvas = document.getElementById('quarterComparisonChart');
-  if (chartCanvas) {
-    if (_dashQuarterChart) {
-      _dashQuarterChart.destroy();
-      _dashQuarterChart = null;
+    if (cardsGrid) {
+      cardsGrid.innerHTML = quarterData.map(q => {
+        const isFilterActive = (_currentDashboardFilter.mode === 'quarter' &&
+                                _currentDashboardFilter.year === selectedYear &&
+                                _currentDashboardFilter.quarter === q.quarter);
+        const marginPct = q.orderRevenue > 0 ? ((q.grossProfit / q.orderRevenue) * 100).toFixed(1) + '%' : '0%';
+
+        return `
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border ${isFilterActive ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md' : 'border-slate-200/80 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700/60'} transition-all shadow-xs flex flex-col justify-between group">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-black shrink-0">
+                    Q${q.quarter}
+                  </span>
+                  <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">Quý ${q.quarter}</span>
+                  <span class="text-[10px] text-slate-400 font-medium truncate">(${q.monthsShort})</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${q.statusClass} shrink-0">
+                  ${q.statusText}
+                </span>
+              </div>
+
+              <div class="mt-2.5 space-y-1.5 text-xs">
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-400 font-medium">Doanh thu bán:</span>
+                  <span class="font-extrabold text-emerald-600 dark:text-emerald-400">${fmtMoney(q.orderRevenue)}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-slate-400 font-medium">Chi phí nhập:</span>
+                  <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${fmtMoney(q.receiptCost)}</span>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                  <span class="font-bold text-slate-600 dark:text-slate-300">Chênh lệch Thu-Chi:</span>
+                  <span class="font-black ${q.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${q.grossProfit >= 0 ? '+' : ''}${fmtMoney(q.grossProfit)}</span>
+                </div>
+              </div>
+
+              <div class="mt-3 bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                <span class="text-slate-500 dark:text-slate-400 font-medium">Tỷ suất LN/Doanh thu:</span>
+                <span class="font-black ${q.grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${marginPct}</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+              <button type="button" onclick="filterDashboardByQuarter(${selectedYear}, ${q.quarter})"
+                class="w-full py-2 px-3 rounded-xl border ${isFilterActive ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-300 dark:hover:bg-amber-950/50 dark:hover:text-amber-400'} font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                <i class="fa-solid ${isFilterActive ? 'fa-check' : 'fa-filter'} text-[11px]"></i>
+                <span>${isFilterActive ? 'Đang lọc Quý này' : `Xem Dashboard Quý ${q.quarter}`}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    if (typeof Chart !== 'undefined') {
+    if (chartSubtext) {
+      const yearProfit = yearTotalRevenue - yearTotalCost;
+      chartSubtext.textContent = `Doanh thu: ${fmtMoney(yearTotalRevenue)} · Chi phí: ${fmtMoney(yearTotalCost)} · Chênh lệch: ${yearProfit >= 0 ? '+' : ''}${fmtMoney(yearProfit)}`;
+    }
+
+    if (chartCanvas && typeof Chart !== 'undefined') {
+      if (_dashQuarterChart) { _dashQuarterChart.destroy(); _dashQuarterChart = null; }
+      if (chartEmptyEl) chartEmptyEl.classList.add('hidden');
+
       try {
-        const isDark = document.documentElement.classList.contains('dark');
-        const gridColor = isDark ? 'rgba(255, 255, 255, 0.07)' : '#f1f5f9';
-        const textColor = isDark ? '#94a3b8' : '#64748b';
-
         _dashQuarterChart = new Chart(chartCanvas, {
           data: {
             labels: ['Quý 1 (T1-T3)', 'Quý 2 (T4-T6)', 'Quý 3 (T7-T9)', 'Quý 4 (T10-T12)'],
             datasets: [
               {
                 type: 'bar',
-                label: 'Giá trị nhập (₫)',
-                data: quarterData.map(q => q.totalAmount),
-                backgroundColor: [
-                  'rgba(79, 70, 229, 0.85)',
-                  'rgba(14, 165, 233, 0.85)',
-                  'rgba(16, 185, 129, 0.85)',
-                  'rgba(245, 158, 11, 0.85)'
-                ],
+                label: 'Doanh thu bán (₫)',
+                data: quarterData.map(q => q.orderRevenue),
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
                 borderRadius: 8,
-                borderSkipped: false,
+                yAxisID: 'y',
+                order: 2
+              },
+              {
+                type: 'bar',
+                label: 'Chi phí nhập (₫)',
+                data: quarterData.map(q => q.receiptCost),
+                backgroundColor: 'rgba(79, 70, 229, 0.75)',
+                borderRadius: 8,
                 yAxisID: 'y',
                 order: 2
               },
               {
                 type: 'line',
-                label: 'Số phiếu nhập',
-                data: quarterData.map(q => q.receiptCount),
-                borderColor: '#ea580c',
-                backgroundColor: '#ea580c',
+                label: 'Chênh lệch Thu - Chi (₫)',
+                data: quarterData.map(q => q.grossProfit),
+                borderColor: '#eab308',
+                backgroundColor: '#eab308',
                 borderWidth: 2.5,
-                pointBackgroundColor: '#ea580c',
                 pointRadius: 4,
-                pointHoverRadius: 6,
                 tension: 0.25,
-                yAxisID: 'y1',
+                yAxisID: 'y',
                 order: 1
               }
             ]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
               legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                  boxWidth: 12,
-                  font: { size: 11, weight: 'bold', family: '"Plus Jakarta Sans", sans-serif' },
-                  color: textColor
-                }
+                display: true, position: 'top',
+                labels: { boxWidth: 12, font: { size: 10, weight: 'bold' }, color: textColor }
               },
               tooltip: {
                 callbacks: {
-                  label: ctx => {
-                    if (ctx.dataset.yAxisID === 'y') {
-                      return ` Giá trị nhập: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`;
-                    } else {
-                      return ` Số phiếu nhập: ${ctx.raw} phiếu`;
-                    }
-                  }
+                  label: ctx => ` ${ctx.dataset.label}: ${Number(ctx.raw).toLocaleString('vi-VN')}₫`
                 }
               }
             },
             scales: {
-              x: {
-                grid: { display: false },
-                ticks: { color: textColor, font: { size: 10, weight: '600' } }
-              },
+              x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10, weight: '600' } } },
               y: {
-                position: 'left',
-                grid: { color: gridColor },
+                position: 'left', grid: { color: gridColor },
                 ticks: {
-                  color: textColor,
-                  font: { size: 10 },
+                  color: textColor, font: { size: 10 },
                   callback: v => v >= 1e9 ? (v/1e9).toFixed(1)+' tỷ' : v >= 1e6 ? (v/1e6).toFixed(0)+' tr' : v
-                }
-              },
-              y1: {
-                position: 'right',
-                grid: { display: false },
-                ticks: {
-                  color: '#ea580c',
-                  font: { size: 10 },
-                  stepSize: 1,
-                  callback: v => v + ' phiếu'
                 }
               }
             }
           }
         });
       } catch (err) {
-        console.warn('Lỗi vẽ biểu đồ so sánh quý:', err);
+        console.warn('Lỗi vẽ biểu đồ so sánh thu chi:', err);
       }
     }
-  }
 
-  // 5. Render Insights
-  const insightsContainer = document.getElementById('quarterInsightsContainer');
-  if (insightsContainer) {
-    if (yearTotalReceipts === 0) {
-      insightsContainer.innerHTML = `
-        <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 my-auto">
-          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-400 text-xl mb-3 border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
-            <i class="fa-solid fa-folder-open"></i>
-          </div>
-          <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Năm ${selectedYear} chưa có dữ liệu</p>
-          <p class="text-[11px] text-slate-400 max-w-[220px] leading-relaxed">Không tìm thấy chứng từ hoặc phiếu nhập kho nào trong năm ${selectedYear}.</p>
-        </div>
-      `;
-    } else {
-      const sortedByAmount = [...quarterData].sort((a, b) => b.totalAmount - a.totalAmount);
-      const peakQuarter = sortedByAmount[0];
-      const avgPerQuarter = yearTotalAmount / 4;
-
-      const avgFmt = avgPerQuarter >= 1e9
-        ? (avgPerQuarter / 1e9).toFixed(2) + ' tỷ'
-        : avgPerQuarter >= 1e6
-          ? (avgPerQuarter / 1e6).toFixed(1) + ' tr'
-          : avgPerQuarter.toLocaleString('vi-VN') + '₫';
-
-      const peakFmt = peakQuarter.totalAmount >= 1e9
-        ? (peakQuarter.totalAmount / 1e9).toFixed(2) + ' tỷ'
-        : peakQuarter.totalAmount >= 1e6
-          ? (peakQuarter.totalAmount / 1e6).toFixed(1) + ' tr'
-          : peakQuarter.totalAmount.toLocaleString('vi-VN') + '₫';
-
-      const yearSuppMap = {};
-      (allInventoryReceipts || []).forEach(r => {
-        const d = _parseReceiptDate(r);
-        if (d && d.getFullYear() === selectedYear) {
-          const name = (r.supplier_name || 'Khác').trim();
-          yearSuppMap[name] = (yearSuppMap[name] || 0) + (Number(r.total_amount) || Number(r.total_cost) || 0);
-        }
-      });
-      const topYearSupp = Object.entries(yearSuppMap).sort((a, b) => b[1] - a[1])[0] || null;
+    if (insightsContainer) {
+      const yearProfit = yearTotalRevenue - yearTotalCost;
+      const profitMarginPct = yearTotalRevenue > 0 ? ((yearProfit / yearTotalRevenue) * 100).toFixed(1) + '%' : '0%';
 
       insightsContainer.innerHTML = `
         <div>
           <div class="flex items-center justify-between gap-2 mb-3">
             <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <i class="fa-solid fa-lightbulb text-amber-500"></i> Đánh giá hoạt động năm ${selectedYear}
+              <i class="fa-solid fa-scale-balanced text-amber-500"></i> Cân đối Thu - Chi năm ${selectedYear}
             </span>
           </div>
 
@@ -1622,42 +2612,39 @@ function renderQuarterSection(isLoading = false) {
             <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <div class="flex items-center justify-between mb-1">
                 <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
-                  <i class="fa-solid fa-crown text-amber-500 text-[10px]"></i> Quý cao điểm nhất
+                  <i class="fa-solid fa-wallet text-emerald-500 text-[10px]"></i> Doanh thu cả năm
                 </span>
-                <span class="font-extrabold text-indigo-600 dark:text-indigo-400">Quý ${peakQuarter.quarter}</span>
               </div>
-              <div class="text-sm font-black text-slate-900 dark:text-white">${peakFmt}</div>
-              <div class="text-[10px] text-slate-400 mt-0.5">${peakQuarter.receiptCount} phiếu nhập (${peakQuarter.percentage}% tổng cả năm)</div>
+              <div class="text-sm font-black text-emerald-600 dark:text-emerald-400">${fmtMoney(yearTotalRevenue)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${yearTotalOrders} đơn đặt hàng đã xác nhận</div>
             </div>
 
             <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
               <div class="flex items-center justify-between mb-1">
                 <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
-                  <i class="fa-solid fa-calculator text-blue-500 text-[10px]"></i> Trung bình mỗi quý
+                  <i class="fa-solid fa-cart-shopping text-indigo-500 text-[10px]"></i> Chi phí nhập hàng cả năm
                 </span>
               </div>
-              <div class="text-sm font-black text-slate-900 dark:text-white">${avgFmt}</div>
-              <div class="text-[10px] text-slate-400 mt-0.5">Trung bình ${Math.round(yearTotalReceipts / 4)} phiếu / quý</div>
+              <div class="text-sm font-black text-indigo-600 dark:text-indigo-400">${fmtMoney(yearTotalCost)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${yearTotalReceipts} phiếu nhập kho</div>
             </div>
 
             <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-              <div class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 mb-1">
-                <i class="fa-solid fa-truck-ramp-box text-emerald-500 text-[10px]"></i> NCC lớn nhất năm
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-chart-line text-amber-500 text-[10px]"></i> Chênh lệch (Lợi nhuận gộp)
+                </span>
               </div>
-              <div class="font-extrabold text-slate-900 dark:text-white truncate" title="${topYearSupp ? topYearSupp[0] : 'Chưa có'}">
-                ${topYearSupp ? topYearSupp[0] : 'Chưa có dữ liệu'}
-              </div>
-              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
-                ${topYearSupp ? (topYearSupp[1] >= 1e6 ? (topYearSupp[1]/1e6).toFixed(1)+' tr' : topYearSupp[1].toLocaleString('vi-VN')+'₫') : ''}
-              </div>
+              <div class="text-sm font-black ${yearProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${yearProfit >= 0 ? '+' : ''}${fmtMoney(yearProfit)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Tỷ suất ước tính: <strong class="${yearProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${profitMarginPct}</strong></div>
             </div>
           </div>
         </div>
 
         <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60">
-          <button type="button" onclick="adminTab('inventory', null)"
-            class="w-full py-2 px-3 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
-            <i class="fa-solid fa-file-lines text-xs"></i> Xem tất cả phiếu nhập kho
+          <button type="button" onclick="setQuarterSectionTab('revenue'); renderQuarterSection();"
+            class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs">
+            <i class="fa-solid fa-hand-holding-dollar text-xs"></i> Xem chi tiết Doanh thu Đơn hàng
           </button>
         </div>
       `;
@@ -4182,6 +5169,128 @@ async function processInvoices(mode = 'ai') {
   }
 }
 
+function generateSku(str) {
+  if (!str) return 'SPMOI';
+  let sku = str.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (sku.length > 20) sku = sku.substring(0, 20);
+  return sku || 'SPMOI';
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function handleNewProductFieldChange(invIndex, prodIndex, field, value) {
+  const inv = parsedInvoicesList && parsedInvoicesList[invIndex];
+  if (!inv || !inv.products || !inv.products[prodIndex]) return;
+
+  const prod = inv.products[prodIndex];
+  if (field === 'price') {
+    let raw = String(value || '').replace(/[^\d.,-]/g, '');
+    const lastComma = raw.lastIndexOf(',');
+    const lastDot = raw.lastIndexOf('.');
+    if (lastComma > lastDot) { raw = raw.replace(/\./g, '').replace(/,/g, '.'); }
+    else if (lastDot > lastComma && lastComma !== -1) { raw = raw.replace(/,/g, ''); }
+    else if (lastDot !== -1 && raw.split('.').length > 2) { raw = raw.replace(/\./g, ''); }
+    const num = parseFloat(raw);
+    prod.price = isNaN(num) ? 0 : num;
+    prod.amount = Math.round((prod.quantity || 1) * prod.price);
+  } else if (field === 'code') {
+    prod.code = value ? value.trim() : '';
+  } else if (field === 'name') {
+    prod.name = value;
+  } else if (field === 'unit') {
+    prod.unit = value;
+  }
+
+  // Đồng bộ dòng tương ứng ở bảng hóa đơn chính phía trên nếu có
+  const invoiceTable = document.getElementById(`invoice-table-${invIndex}`);
+  if (invoiceTable) {
+    const mainRow = invoiceTable.querySelector(`tbody tr[data-pindex="${prodIndex}"]`);
+    if (mainRow && mainRow.cells.length >= 6) {
+      if (field === 'name') mainRow.cells[0].textContent = prod.name;
+      if (field === 'unit') mainRow.cells[1].textContent = prod.unit;
+      if (field === 'price') {
+        mainRow.cells[3].textContent = prod.price.toLocaleString('vi-VN');
+        mainRow.cells[4].textContent = prod.amount.toLocaleString('vi-VN');
+        recalculateInvoiceTotals(invIndex);
+      }
+    }
+  }
+}
+
+function recalculateInvoiceTotals(invIndex) {
+  const inv = parsedInvoicesList && parsedInvoicesList[invIndex];
+  if (!inv || !inv.products) return;
+
+  let totalAmount = 0;
+  let totalAmountWithTax = 0;
+  inv.products.forEach(p => {
+    const amount = Number(p.amount || 0);
+    const taxRate = p.taxPercent !== undefined ? Number(p.taxPercent) : 0;
+    const taxAmount = amount * taxRate / 100;
+    totalAmount += amount;
+    totalAmountWithTax += (amount + taxAmount);
+  });
+
+  const contentDiv = document.getElementById(`invoice-content-${invIndex}`);
+  if (contentDiv) {
+    const totalEl = contentDiv.querySelector('.inv-total-amount');
+    const totalTaxEl = contentDiv.querySelector('.inv-total-tax');
+    if (totalEl) totalEl.textContent = totalAmount.toLocaleString('vi-VN') + '₫';
+    if (totalTaxEl) totalTaxEl.textContent = Math.round(totalAmountWithTax).toLocaleString('vi-VN') + '₫';
+  }
+}
+
+function syncNewProductsFromDOM(invIndex) {
+  const inv = parsedInvoicesList && parsedInvoicesList[invIndex];
+  if (!inv || !inv.products) return [];
+
+  const table = document.getElementById(`new-products-table-${invIndex}`);
+  const newProducts = [];
+  if (table) {
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      const pIdx = parseInt(row.getAttribute('data-pindex'), 10);
+      const nameInput = row.querySelector('.new-prod-name');
+      const codeInput = row.querySelector('.new-prod-code');
+      const unitInput = row.querySelector('.new-prod-unit');
+      const priceInput = row.querySelector('.new-prod-price');
+
+      const name = nameInput ? nameInput.value.trim() : '';
+      const code = codeInput ? codeInput.value.trim() : '';
+      const unit = unitInput ? unitInput.value.trim() : '';
+      const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+
+      if (!isNaN(pIdx) && inv.products[pIdx]) {
+        inv.products[pIdx].name = name;
+        inv.products[pIdx].code = code;
+        inv.products[pIdx].unit = unit;
+        inv.products[pIdx].price = price;
+        inv.products[pIdx].amount = Math.round((inv.products[pIdx].quantity || 1) * price);
+        newProducts.push(inv.products[pIdx]);
+      } else {
+        newProducts.push({ name, code, unit, price, isNewSystemProduct: true });
+      }
+    });
+  } else {
+    inv.products.forEach(p => {
+      if (p.isNewSystemProduct) newProducts.push(p);
+    });
+  }
+  return newProducts;
+}
+
 function renderInvoiceResults(results) {
   const container = document.getElementById('invoiceResultsContainer');
   container.innerHTML = '';
@@ -4193,14 +5302,16 @@ function renderInvoiceResults(results) {
 
   parsedInvoicesList = results.map(r => r.ok ? r.data : null);
 
-  // Thu thập danh sách sản phẩm mới từ tất cả các hóa đơn (loại trùng theo tên + đơn vị)
+  // Thu thập danh sách sản phẩm mới từ tất cả các hóa đơn (loại trùng theo mã + tên + đơn vị)
   const allNewProducts = [];
   const seenKeys = new Set();
   results.forEach(res => {
     if (!res.ok || !res.data || !res.data.products) return;
     res.data.products.forEach(p => {
       if (p.isNewSystemProduct) {
-        const key = (p.name || '').trim().toLowerCase() + '___' + (p.unit || '').trim().toLowerCase();
+        if (!p.code) p.code = generateSku(p.name);
+        if (p.price === undefined || p.price === null) p.price = 0;
+        const key = (p.code || generateSku(p.name)).toLowerCase() + '___' + (p.name || '').trim().toLowerCase() + '___' + (p.unit || '').trim().toLowerCase();
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
           allNewProducts.push(p);
@@ -4301,7 +5412,7 @@ function renderInvoiceResults(results) {
     const products = inv.products || [];
     let totalAmount = 0;
     let totalAmountWithTax = 0;
-    products.forEach(p => {
+    products.forEach((p, pIdx) => {
       const amount = Number(p.amount || 0);
       const taxRate = p.taxPercent !== undefined ? Number(p.taxPercent) : 0;
       const taxAmount = amount * taxRate / 100;
@@ -4309,9 +5420,9 @@ function renderInvoiceResults(results) {
       totalAmountWithTax += (amount + taxAmount);
 
       tableRows += `
-        <tr>
-          <td>${p.name || ''}</td>
-          <td>${p.unit || ''}</td>
+        <tr data-pindex="${pIdx}">
+          <td>${escapeHtml(p.name || '')}</td>
+          <td>${escapeHtml(p.unit || '')}</td>
           <td style="text-align: right;">${p.quantity || 0}</td>
           <td style="text-align: right;">${(p.price || 0).toLocaleString('vi-VN')}</td>
           <td style="text-align: right; font-weight: 600;">${(p.amount || 0).toLocaleString('vi-VN')}</td>
@@ -4328,29 +5439,69 @@ function renderInvoiceResults(results) {
           <strong style="color: #991b1b; font-size: 0.9rem; display: block; margin-bottom: 4px;">
             <i class="fa-solid fa-building-circle-exclamation"></i> Cảnh báo: Nhà cung cấp chưa có trên hệ thống
           </strong>
-          <span style="font-size: 0.85rem; color: #7f1d1d;">${inv.sellerName || 'Không xác định'}</span>
+          <span style="font-size: 0.85rem; color: #7f1d1d;">${escapeHtml(inv.sellerName || 'Không xác định')}</span>
         </div>
       `;
     }
 
     // Lọc các sản phẩm chưa có trên hệ thống
-    const newProducts = products.filter(p => p.isNewSystemProduct);
+    const newProductsWithIdx = [];
+    products.forEach((p, pIdx) => {
+      if (p.isNewSystemProduct) {
+        if (!p.code) p.code = generateSku(p.name);
+        if (p.price === undefined || p.price === null) p.price = 0;
+        newProductsWithIdx.push({ product: p, pIdx });
+      }
+    });
+
     let alertHTML = '';
-    if (newProducts.length > 0) {
-      const tableRowsHTML = newProducts.map(p => `
-        <tr>
-          <td style="padding: 6px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #78350f;">${p.name}</td>
-          <td style="padding: 6px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #78350f; font-weight: 500; width: 80px;">${p.unit || 'N/A'}</td>
+    if (newProductsWithIdx.length > 0) {
+      const tableRowsHTML = newProductsWithIdx.map(({ product: p, pIdx }) => `
+        <tr data-pindex="${pIdx}" style="border-bottom: 1px solid rgba(245, 158, 11, 0.2);">
+          <td style="padding: 6px 8px; vertical-align: middle;">
+            <input type="text" class="form-control new-prod-name"
+              value="${escapeHtml(p.name || '')}"
+              oninput="handleNewProductFieldChange(${index}, ${pIdx}, 'name', this.value)"
+              placeholder="Tên sản phẩm..."
+              style="padding: 6px 10px; font-size: 0.85rem; width: 100%; min-width: 200px; border-radius: 6px;" />
+          </td>
+          <td style="padding: 6px 8px; vertical-align: middle;">
+            <input type="text" class="form-control new-prod-code font-mono font-bold"
+              value="${escapeHtml(p.code || '')}"
+              oninput="handleNewProductFieldChange(${index}, ${pIdx}, 'code', this.value)"
+              placeholder="Mã SP..."
+              style="padding: 6px 10px; font-size: 0.85rem; width: 100%; min-width: 130px; border-radius: 6px; color: #d97706;" />
+          </td>
+          <td style="padding: 6px 8px; vertical-align: middle;">
+            <input type="text" class="form-control new-prod-unit"
+              value="${escapeHtml(p.unit || '')}"
+              oninput="handleNewProductFieldChange(${index}, ${pIdx}, 'unit', this.value)"
+              placeholder="ĐVT..."
+              style="padding: 6px 10px; font-size: 0.85rem; width: 100%; min-width: 70px; max-width: 110px; border-radius: 6px;" />
+          </td>
+          <td style="padding: 6px 8px; vertical-align: middle;">
+            <input type="number" class="form-control new-prod-price font-bold"
+              value="${Number(p.price || 0)}"
+              min="0" step="any"
+              oninput="handleNewProductFieldChange(${index}, ${pIdx}, 'price', this.value)"
+              placeholder="0"
+              style="padding: 6px 10px; font-size: 0.85rem; width: 100%; min-width: 110px; max-width: 150px; border-radius: 6px; text-align: right; color: #10b981;" />
+          </td>
         </tr>
       `).join('');
 
       alertHTML = `
-        <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 6px; margin-top: 16px;">
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
-            <strong style="color: #b45309; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-               <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
-               <span style="background: #fef3c7; color: #92400e; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid #fde68a; margin-left: 4px;">${newProducts.length} sản phẩm</span>
-            </strong>
+            <div>
+              <strong style="color: #b45309; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                 <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
+                 <span style="background: #fef3c7; color: #92400e; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid #fde68a; margin-left: 4px;">${newProductsWithIdx.length} sản phẩm</span>
+              </strong>
+              <div style="font-size: 0.8rem; color: #92400e; margin-top: 3px;">
+                <i class="fa-solid fa-pencil"></i> Có thể trực tiếp chỉnh sửa Tên, Mã, ĐVT, Giá bên dưới trước khi Xuất file hoặc Lưu.
+              </div>
+            </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               <button class="btn btn-warning btn-sm btn-copy-new-products" onclick="copyNewProductsToClipboard(this, ${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
                 <i class="fa-solid fa-copy"></i> Copy danh sách
@@ -4358,14 +5509,19 @@ function renderInvoiceResults(results) {
               <button class="btn btn-warning btn-sm btn-export-misa" onclick="exportNewProductsExcel(${index})" style="background: #d97706; color: white; border: none; font-weight: 600;">
                 <i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (MISA)
               </button>
+              <button class="btn btn-sm btn-save-new-products" id="btnSaveNewProducts-${index}" onclick="saveNewProductsToSystem(this, ${index})" style="background: #10b981; color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu vào hệ thống
+              </button>
             </div>
           </div>
-          <div style="max-height: 200px; overflow-y: auto; background: white; border: 1px solid #fef3c7; border-radius: 4px;">
+          <div style="max-height: 280px; overflow-y: auto; background: var(--card, white); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
             <table id="new-products-table-${index}" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
               <thead>
-                <tr style="background: #fffbeb;">
-                  <th style="padding: 8px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #b45309; font-weight: 600;">Tên sản phẩm</th>
-                  <th style="padding: 8px 10px; border-bottom: 1px solid #fef3c7; text-align: left; color: #b45309; font-weight: 600;">ĐVT</th>
+                <tr style="background: rgba(245, 158, 11, 0.15); color: #d97706; position: sticky; top: 0; z-index: 2;">
+                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 42%;">Tên sản phẩm</th>
+                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 26%;">Mã sản phẩm</th>
+                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 14%;">ĐVT</th>
+                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: right; font-weight: 700; width: 18%;">Giá (₫)</th>
                 </tr>
               </thead>
               <tbody>
@@ -4429,8 +5585,8 @@ function renderInvoiceResults(results) {
       </div>
 
       <div style="margin-top: 14px; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 24px; font-size: 0.95rem; line-height: 1.6; color: var(--text); border-top: 1px dashed var(--border); padding-top: 12px;">
-        <div><strong>Tổng thành tiền (chưa thuế):</strong> <span style="font-weight: 600; color: #b45309; margin-left: 4px;">${totalAmount.toLocaleString('vi-VN')}₫</span></div>
-        <div><strong>Tổng thành tiền sau thuế:</strong> <span style="font-weight: 700; color: #16a34a; font-size: 1.05rem; margin-left: 4px;">${Math.round(totalAmountWithTax).toLocaleString('vi-VN')}₫</span></div>
+        <div><strong>Tổng thành tiền (chưa thuế):</strong> <span class="inv-total-amount" style="font-weight: 600; color: #b45309; margin-left: 4px;">${totalAmount.toLocaleString('vi-VN')}₫</span></div>
+        <div><strong>Tổng thành tiền sau thuế:</strong> <span class="inv-total-tax" style="font-weight: 700; color: #16a34a; font-size: 1.05rem; margin-left: 4px;">${Math.round(totalAmountWithTax).toLocaleString('vi-VN')}₫</span></div>
       </div>
 
       ${supplierAlertHTML}
@@ -4518,15 +5674,20 @@ function copyNewProductsToClipboard(btn, index) {
   if (!table) return;
 
   const rows = table.querySelectorAll('tbody tr');
-  let tsvContent = "Tên sản phẩm\tĐVT\n";
+  let tsvContent = "Tên sản phẩm\tMã sản phẩm\tĐVT\tGiá\n";
 
   rows.forEach(row => {
-    const cols = row.querySelectorAll('td');
-    if (cols.length >= 2) {
-      const name = cols[0].innerText.trim();
-      const unit = cols[1].innerText.trim();
-      tsvContent += `${name}\t${unit}\n`;
-    }
+    const nameInput = row.querySelector('.new-prod-name');
+    const codeInput = row.querySelector('.new-prod-code');
+    const unitInput = row.querySelector('.new-prod-unit');
+    const priceInput = row.querySelector('.new-prod-price');
+
+    const name = nameInput ? nameInput.value.trim() : (row.cells[0]?.innerText.trim() || '');
+    const code = codeInput ? codeInput.value.trim() : '';
+    const unit = unitInput ? unitInput.value.trim() : (row.cells[2]?.innerText.trim() || '');
+    const price = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+
+    tsvContent += `${name}\t${code}\t${unit}\t${price}\n`;
   });
 
   navigator.clipboard.writeText(tsvContent).then(() => {
@@ -4631,6 +5792,7 @@ async function exportSingleInvoiceExcel(index) {
     showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
     return;
   }
+  syncNewProductsFromDOM(index);
 
   // Tìm nút xuất để tạo hiệu ứng spinner
   const btn = document.querySelector(`#invoice-content-${index} .btn-export-invoice-excel`);
@@ -4689,6 +5851,7 @@ async function saveInvoiceToInventory(btn, index) {
     showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
     return;
   }
+  syncNewProductsFromDOM(index);
 
   const originalHTML = btn.innerHTML;
   btn.setAttribute('disabled', 'true');
@@ -4727,6 +5890,83 @@ async function saveInvoiceToInventory(btn, index) {
     btn.style.color = '#ffffff';
   } catch (err) {
     console.error(err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+    btn.removeAttribute('disabled');
+    btn.innerHTML = originalHTML;
+  }
+}
+
+async function saveNewProductsToSystem(btn, index) {
+  const inv = parsedInvoicesList[index];
+  if (!inv) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
+    return;
+  }
+
+  // Đồng bộ dữ liệu từ DOM (để lấy các giá trị đã chỉnh sửa)
+  syncNewProductsFromDOM(index);
+
+  const newProds = (inv.products || []).filter(p => p.isNewSystemProduct);
+  if (newProds.length === 0) {
+    showToast('<i class="fa-solid fa-info-circle"></i> Không có sản phẩm mới nào để lưu.', 'info');
+    return;
+  }
+
+  const originalHTML = btn.innerHTML;
+  btn.setAttribute('disabled', 'true');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+  const payload = newProds.map(p => ({
+    ma: p.code || generateSku(p.name),
+    ten: p.name || '',
+    gia: parseInt(p.price, 10) || 0,
+    donvi: p.unit || '',
+    loai: 'Hàng hóa thường',
+    trangthai: 'Đang theo dõi'
+  }));
+
+  try {
+    const res = await adminFetch('/api/admin/products/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || 'Lỗi khi lưu sản phẩm vào hệ thống.');
+    }
+
+    const addedCount = data.added || 0;
+    const updatedCount = data.updated || 0;
+    const errCount = data.errors || 0;
+
+    let msg = `<i class="fa-solid fa-circle-check"></i> Đã lưu thành công! `;
+    if (addedCount > 0) msg += `<strong>${addedCount} sản phẩm mới</strong> được thêm vào hệ thống. `;
+    if (updatedCount > 0) msg += `<strong>${updatedCount}</strong> sản phẩm đã cập nhật. `;
+    if (errCount > 0) msg += `<span style="color:#fca5a5">(${errCount} lỗi bỏ qua)</span>`;
+
+    showToast(msg, 'success', 6000);
+
+    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã lưu';
+    btn.style.background = '#059669';
+    btn.setAttribute('disabled', 'true');
+
+    // Reload lại danh sách sản phẩm để bảng admin cập nhật ngay
+    await loadProducts();
+    // Reset các filter về mặc định để sản phẩm mới hiển thị rõ
+    const bestSellerEl = document.getElementById('adminBestSellerFilter');
+    if (bestSellerEl && bestSellerEl.value !== '') {
+      bestSellerEl.value = '';
+    }
+    const searchEl = document.getElementById('adminSearch');
+    if (searchEl) {
+      // Đặt search bằng mã sản phẩm đầu tiên để tìm nhanh
+      if (payload.length === 1) searchEl.value = payload[0].ma;
+    }
+    renderAdminTable();
+  } catch (err) {
+    console.error('saveNewProductsToSystem error:', err);
     showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
     btn.removeAttribute('disabled');
     btn.innerHTML = originalHTML;
@@ -4853,15 +6093,18 @@ async function exportAllNewProductsExcel(btn) {
     return;
   }
 
-  // Thu thập và loại trùng các sản phẩm mới từ tất cả hóa đơn
+  // Thu thập và loại trùng các sản phẩm mới từ tất cả hóa đơn (đồng bộ trước từ DOM table)
   const allNewProducts = [];
   const seenKeys = new Set();
 
-  parsedInvoicesList.forEach(inv => {
+  parsedInvoicesList.forEach((inv, invIndex) => {
     if (!inv || !inv.products) return;
+    syncNewProductsFromDOM(invIndex);
+
     inv.products.forEach(p => {
       if (p.isNewSystemProduct) {
-        const key = (p.name || '').trim().toLowerCase() + '___' + (p.unit || '').trim().toLowerCase();
+        const pCode = (p.code && p.code.trim()) ? p.code.trim() : generateSku(p.name);
+        const key = pCode.toLowerCase() + '___' + (p.name || '').trim().toLowerCase() + '___' + (p.unit || '').trim().toLowerCase();
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
           allNewProducts.push(p);
@@ -4925,7 +6168,7 @@ async function exportNewProductsExcel(index) {
     return;
   }
 
-  const newProducts = inv.products.filter(p => p.isNewSystemProduct);
+  const newProducts = syncNewProductsFromDOM(index);
   if (newProducts.length === 0) {
     showToast('<i class="fa-solid fa-xmark"></i> Không có sản phẩm mới nào để xuất.', 'error');
     return;
@@ -4957,7 +6200,10 @@ async function exportNewProductsExcel(index) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'Danh_sach_hang_hoa_moi.xlsx';
+    const invoiceNumStripped = inv.invoiceNumber ? String(inv.invoiceNumber).replace(/^0+/, '') : '';
+    const serialStr = inv.serial || '';
+    const docSuffix = invoiceNumStripped ? (invoiceNumStripped + (serialStr ? '_' + serialStr : '')) : (serialStr || (index + 1));
+    a.download = `Danh_sach_hang_hoa_moi_${docSuffix}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();

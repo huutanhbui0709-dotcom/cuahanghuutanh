@@ -1260,7 +1260,7 @@ app.post('/api/tools/export-inventory', requireAdmin, async (req, res) => {
           return false;
         });
 
-        let pCode = 'SP_MOI';
+        let pCode = (p.code && String(p.code).trim()) ? String(p.code).trim() : 'SP_MOI';
         let pName = p.name || '';
         let pUnit = p.unit || '';
         if (systemMatch) { pCode = systemMatch.ma; pName = systemMatch.ten; pUnit = systemMatch.donvi || pUnit; }
@@ -1373,12 +1373,16 @@ app.post('/api/tools/export-new-products', requireAdmin, async (req, res) => {
         if (isNaN(priceVal)) priceVal = 0;
       }
 
+      const pCode = (p.code && String(p.code).trim()) ? String(p.code).trim() : (p.sku ? String(p.sku).trim() : generateSku(p.name));
+      const pName = p.name !== undefined && p.name !== null ? String(p.name).trim() : '';
+      const pUnit = p.unit !== undefined && p.unit !== null ? String(p.unit).trim() : '';
+
       row.getCell(3).value = 'Hàng hóa không có thuộc tính';
-      row.getCell(4).value = generateSku(p.name);
+      row.getCell(4).value = pCode;
       row.getCell(5).value = null;
-      row.getCell(7).value = p.name || '';
+      row.getCell(7).value = pName;
       row.getCell(8).value = Math.round(priceVal);
-      row.getCell(9).value = p.unit || '';
+      row.getCell(9).value = pUnit;
       row.commit();
       currentLine++;
     }

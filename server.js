@@ -2921,7 +2921,7 @@ app.post('/api/admin/inventory/save-from-invoice', requireAdmin, async (req, res
         return false;
       });
 
-      let pCode = 'SP_MOI';
+      let pCode = (p.code && String(p.code).trim()) ? String(p.code).trim() : 'SP_MOI';
       let pName = p.name || '';
       let pUnit = p.unit || 'Cái';
       if (systemMatch) {

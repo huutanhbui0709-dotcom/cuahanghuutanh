@@ -360,34 +360,32 @@
             </div>
           </div>
 
-          <!-- ================= THỐNG KÊ HOẠT ĐỘNG THEO QUÝ (QUARTERLY PERFORMANCE) ================= -->
+          <!-- ================= THỐNG KÊ HOẠT ĐỘNG & DOANH THU THEO QUÝ / NĂM ================= -->
           <div
             class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs mb-6"
             id="dashboardQuarterSection">
-            <!-- Header -->
+            <!-- Header: Title + Year Selector -->
             <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
               <div class="flex items-center gap-3">
-                <div
-                  class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0">
-                  <i class="fa-solid fa-chart-column text-lg"></i>
+                <div id="quarterSectionIconBox"
+                  class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-base font-bold shadow-xs shrink-0 transition-colors">
+                  <i id="quarterSectionIcon" class="fa-solid fa-hand-holding-dollar text-lg"></i>
                 </div>
                 <div>
                   <div class="flex items-center gap-2 flex-wrap">
-                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Thống
-                      kê hoạt động theo Quý</h3>
+                    <h3 id="quarterSectionTitle" class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">Thống kê Doanh thu Đơn hàng theo Quý</h3>
                     <span id="quarterYearBadge"
-                      class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                      class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 transition-colors">
                       Năm 2026
                     </span>
                   </div>
-                  <p class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">So sánh quy mô nhập kho, chi
-                    phí và mức tăng trưởng qua 4 quý trong năm</p>
+                  <p id="quarterSectionSubtitle" class="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">Theo dõi doanh thu bán hàng, số lượng đơn và mức tăng trưởng qua 4 quý trong năm</p>
                 </div>
               </div>
 
               <!-- Year selector with stepper -->
-              <div class="flex items-center gap-2 self-start sm:self-auto">
+              <div class="flex items-center gap-2 self-start sm:self-auto" id="quarterYearControls">
                 <label for="quarterYearSelect"
                   class="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">Năm thống kê:</label>
                 <div
@@ -398,7 +396,7 @@
                   </button>
                   <div class="relative">
                     <select id="quarterYearSelect" onchange="onQuarterYearSelectChange()"
-                      class="bg-white dark:bg-slate-900 border-0 text-slate-800 dark:text-slate-100 rounded-lg py-1 pl-2.5 pr-6 text-xs font-bold cursor-pointer focus:ring-1 focus:ring-indigo-500 appearance-none shadow-2xs min-w-[100px]">
+                      class="bg-white dark:bg-slate-900 border-0 text-slate-800 dark:text-slate-100 rounded-lg py-1 pl-2.5 pr-6 text-xs font-bold cursor-pointer focus:ring-1 focus:ring-emerald-500 appearance-none shadow-2xs min-w-[100px]">
                       <option value="2026" selected>Năm 2026</option>
                       <option value="2025">Năm 2025</option>
                       <option value="2024">Năm 2024</option>
@@ -414,69 +412,52 @@
               </div>
             </div>
 
-            <!-- 4 Quarters Cards Grid -->
+            <!-- Segmented Control Row: Tab Switcher (Doanh thu / Nhập kho / Thu-Chi) + View Mode (4 Quý / Theo Năm) -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-5">
+              <!-- Nhóm Tabs: Doanh thu / Nhập kho / Thu-Chi -->
+              <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60 gap-1 overflow-x-auto" id="quarterSegmentedTabs">
+                <button type="button" onclick="setQuarterSectionTab('revenue')" id="quarterTabBtn-revenue"
+                  class="px-3 py-1.5 rounded-lg text-xs font-black bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-2xs flex items-center gap-1.5 transition cursor-pointer shrink-0">
+                  <i class="fa-solid fa-hand-holding-dollar text-emerald-500"></i> <span>Doanh thu Đơn hàng</span>
+                </button>
+                <button type="button" onclick="setQuarterSectionTab('inventory')" id="quarterTabBtn-inventory"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer shrink-0">
+                  <i class="fa-solid fa-boxes-packing text-indigo-500"></i> <span>Chi phí Nhập kho</span>
+                </button>
+                <button type="button" onclick="setQuarterSectionTab('comparison')" id="quarterTabBtn-comparison"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer shrink-0">
+                  <i class="fa-solid fa-scale-balanced text-amber-500"></i> <span>So sánh Thu - Chi</span>
+                </button>
+              </div>
+
+              <!-- View Mode Toggle: 4 Quý trong năm / So sánh theo các năm -->
+              <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/60 gap-1 self-start sm:self-auto" id="quarterViewModeToggle">
+                <button type="button" onclick="setQuarterViewMode('quarter')" id="quarterModeBtn-quarter"
+                  class="px-2.5 py-1 rounded-lg text-xs font-black bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
+                  <i class="fa-solid fa-calendar-week text-slate-500"></i> <span>4 Quý</span>
+                </button>
+                <button type="button" onclick="setQuarterViewMode('year')" id="quarterModeBtn-year"
+                  class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer">
+                  <i class="fa-solid fa-calendar-days text-slate-500"></i> <span>Theo các năm</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Cards Grid: 4 Quarters Cards or Years Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="quarterCardsGrid">
-              <!-- Dynamically populated Q1, Q2, Q3, Q4 cards / Initial Shimmer Skeletons -->
-              <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[180px]">
-                <div>
-                  <div class="flex items-center justify-between gap-2 mb-3">
-                    <div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                    <div class="h-4 w-14 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                  </div>
-                  <div class="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg mb-2"></div>
-                  <div class="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
-                  <div class="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                </div>
-                <div class="h-8 w-full bg-slate-200 dark:bg-slate-800 rounded-xl mt-3"></div>
-              </div>
-              <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[180px]">
-                <div>
-                  <div class="flex items-center justify-between gap-2 mb-3">
-                    <div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                    <div class="h-4 w-14 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                  </div>
-                  <div class="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg mb-2"></div>
-                  <div class="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
-                  <div class="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                </div>
-                <div class="h-8 w-full bg-slate-200 dark:bg-slate-800 rounded-xl mt-3"></div>
-              </div>
-              <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[180px]">
-                <div>
-                  <div class="flex items-center justify-between gap-2 mb-3">
-                    <div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                    <div class="h-4 w-14 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                  </div>
-                  <div class="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg mb-2"></div>
-                  <div class="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
-                  <div class="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                </div>
-                <div class="h-8 w-full bg-slate-200 dark:bg-slate-800 rounded-xl mt-3"></div>
-              </div>
-              <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 animate-pulse flex flex-col justify-between h-[180px]">
-                <div>
-                  <div class="flex items-center justify-between gap-2 mb-3">
-                    <div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                    <div class="h-4 w-14 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                  </div>
-                  <div class="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg mb-2"></div>
-                  <div class="h-3 w-36 bg-slate-200 dark:bg-slate-800 rounded mb-3"></div>
-                  <div class="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                </div>
-                <div class="h-8 w-full bg-slate-200 dark:bg-slate-800 rounded-xl mt-3"></div>
-              </div>
+              <!-- Dynamically populated cards -->
             </div>
 
             <!-- Chart & Summary Row -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <!-- Bar Chart Comparison (2 cols) -->
+              <!-- Dual-Axis Bar & Line Chart (2 cols) -->
               <div
                 class="lg:col-span-2 bg-slate-50/60 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/60 dark:border-slate-700/60 flex flex-col justify-between">
                 <div class="flex items-center justify-between gap-2 mb-3">
                   <span
                     class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-chart-simple text-indigo-600 dark:text-indigo-400"></i> Biểu đồ so sánh giá
-                    trị & số phiếu 4 Quý
+                    <i id="quarterChartIcon" class="fa-solid fa-chart-simple text-emerald-600 dark:text-emerald-400"></i>
+                    <span id="quarterChartTitle">Biểu đồ so sánh Doanh thu & Đơn hàng 4 Quý</span>
                   </span>
                   <span id="quarterChartSubtext" class="text-xs font-bold text-slate-500 dark:text-slate-400"></span>
                 </div>
@@ -485,8 +466,7 @@
                   <div id="quarterChartEmptyState"
                     class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-50/90 dark:bg-slate-800/90 backdrop-blur-xs rounded-xl hidden">
                     <i class="fa-solid fa-chart-column text-3xl mb-2 opacity-30"></i>
-                    <span class="text-xs font-bold" id="quarterChartEmptyText">Năm này chưa có dữ liệu giao dịch nhập
-                      kho</span>
+                    <span class="text-xs font-bold" id="quarterChartEmptyText">Chưa có dữ liệu phát sinh</span>
                   </div>
                 </div>
               </div>
@@ -506,75 +486,31 @@
           </div>
 
           <!-- 6-Card KPI Grid -->
-          <div id="dashboardKpiGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-6">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
-              <div class="flex justify-between items-center mb-3">
-                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-              </div>
-              <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
-              <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            </div>
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
-              <div class="flex justify-between items-center mb-3">
-                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-              </div>
-              <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
-              <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            </div>
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
-              <div class="flex justify-between items-center mb-3">
-                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-              </div>
-              <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
-              <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            </div>
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
-              <div class="flex justify-between items-center mb-3">
-                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-              </div>
-              <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
-              <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            </div>
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
-              <div class="flex justify-between items-center mb-3">
-                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-              </div>
-              <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
-              <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            </div>
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 animate-pulse">
-              <div class="flex justify-between items-center mb-3">
-                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                <div class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-              </div>
-              <div class="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded mb-1.5"></div>
-              <div class="h-3 w-14 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            </div>
-          </div>
+          <div id="dashboardKpiGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-6"></div>
 
           <!-- Charts Row -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6" id="dashboardChartsRow">
             <!-- Line Chart -->
             <div
               class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
-              <div class="flex justify-between items-center mb-4">
+              <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
                 <span class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                   <i class="fa-solid fa-chart-line text-blue-600 dark:text-blue-400"></i> <span
-                    id="dashLineChartTitle">Giá trị nhập kho theo ngày</span>
+                    id="dashLineChartTitle">Xu hướng theo thời gian</span>
                 </span>
+                <!-- Toggle Doanh thu / Nhập kho / Cả hai -->
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 text-[11px]" id="dashLineMetricGroup">
+                  <button type="button" onclick="setDashboardLineMetric('revenue')" id="dashLineBtn-revenue" class="px-2.5 py-0.5 rounded-md font-black bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-2xs transition cursor-pointer">Doanh thu</button>
+                  <button type="button" onclick="setDashboardLineMetric('inventory')" id="dashLineBtn-inventory" class="px-2.5 py-0.5 rounded-md font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Nhập kho</button>
+                  <button type="button" onclick="setDashboardLineMetric('both')" id="dashLineBtn-both" class="px-2.5 py-0.5 rounded-md font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">Cả hai</button>
+                </div>
               </div>
               <div class="relative h-[220px]">
                 <canvas id="dashboardLineChart"></canvas>
                 <div id="dashboardLineEmptyState"
                   class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs rounded-xl hidden">
                   <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-30"></i>
-                  <span class="text-xs font-bold" id="dashboardLineEmptyText">Không có dữ liệu nhập kho trong khoảng
-                    thời gian này</span>
+                  <span class="text-xs font-bold" id="dashboardLineEmptyText">Không có dữ liệu trong khoảng thời gian này</span>
                 </div>
               </div>
             </div>
