@@ -3401,6 +3401,30 @@ app.post('/api/admin/suppliers', requireAdmin, async (req, res) => {
   }
 
   try {
+    const trimmedName = name.trim();
+    const cleanTax = (tax_code || '').replace(/\D/g, '');
+    const cleanName = trimmedName.toLowerCase();
+
+    // Đồng bộ danh sách mới nhất nếu trên Vercel
+    if (IS_VERCEL && sql) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+        if (rows.length > 0) suppliers = JSON.parse(rows[0].value);
+      } catch (e) { /* ignore */ }
+    }
+
+    // Kiểm tra xem đã tồn tại nhà cung cấp trùng mã thuế hoặc trùng tên chưa
+    const existing = (suppliers || []).find(s => {
+      const sTax = (s.tax_code || '').replace(/\D/g, '');
+      if (cleanTax && sTax && cleanTax === sTax) return true;
+      const sName = (s.name || '').trim().toLowerCase();
+      return sName === cleanName;
+    });
+
+    if (existing) {
+      return res.json({ ok: true, supplier: existing, alreadyExisted: true });
+    }
+
     // Tự động sinh mã nhà cung cấp NCC001, NCC002...
     let maxNum = 0;
     (suppliers || []).forEach(s => {
@@ -3415,7 +3439,7 @@ app.post('/api/admin/suppliers', requireAdmin, async (req, res) => {
 
     const newSupplier = {
       code,
-      name: name.trim(),
+      name: trimmedName,
       phone: (phone || '').trim(),
       email: (email || '').trim(),
       address: (address || '').trim(),
@@ -3428,6 +3452,7 @@ app.post('/api/admin/suppliers', requireAdmin, async (req, res) => {
 
     suppliers.push(newSupplier);
     await saveSuppliers(suppliers);
+    await broadcastUpdate('suppliers_updated');
     res.json({ ok: true, supplier: newSupplier });
   } catch (err) {
     console.error('Lỗi thêm nhà cung cấp:', err);
@@ -3444,6 +3469,13 @@ app.put('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
   }
 
   try {
+    if (IS_VERCEL && sql) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+        if (rows.length > 0) suppliers = JSON.parse(rows[0].value);
+      } catch (e) { /* ignore */ }
+    }
+
     const s = (suppliers || []).find(x => x.code === code);
     if (!s) {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy nhà cung cấp.' });
@@ -3460,6 +3492,7 @@ app.put('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
     s.status = status || 'Đang theo dõi';
 
     await saveSuppliers(suppliers);
+    await broadcastUpdate('suppliers_updated');
     res.json({ ok: true, supplier: s });
   } catch (err) {
     console.error('Lỗi cập nhật nhà cung cấp:', err);
@@ -3472,6 +3505,13 @@ app.delete('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
   const code = req.params.code;
 
   try {
+    if (IS_VERCEL && sql) {
+      try {
+        const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+        if (rows.length > 0) suppliers = JSON.parse(rows[0].value);
+      } catch (e) { /* ignore */ }
+    }
+
     const idx = (suppliers || []).findIndex(x => x.code === code);
     if (idx === -1) {
       return res.status(404).json({ ok: false, message: 'Không tìm thấy nhà cung cấp.' });
@@ -3479,6 +3519,7 @@ app.delete('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
 
     suppliers.splice(idx, 1);
     await saveSuppliers(suppliers);
+    await broadcastUpdate('suppliers_updated');
     res.json({ ok: true });
   } catch (err) {
     console.error('Lỗi xoá nhà cung cấp:', err);
@@ -3486,9 +3527,25 @@ app.delete('/api/admin/suppliers/:code', requireAdmin, async (req, res) => {
   }
 });
 
-// API lấy danh sách nhà cung cấp
-app.get('/api/suppliers', requireAdmin, (req, res) => {
-  res.json(suppliers);
+// API lấy danh sách nhà cung cấp (đọc fresh DB trên Vercel, tuyệt đối không cache)
+app.get(['/api/suppliers', '/api/admin/suppliers'], requireAdmin, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  let suppliersList = suppliers;
+  if (IS_VERCEL && sql) {
+    try {
+      const { rows } = await sql`SELECT value FROM app_settings WHERE key = 'suppliers'`;
+      if (rows.length > 0) {
+        suppliersList = JSON.parse(rows[0].value);
+        suppliers = suppliersList;
+      }
+    } catch (err) {
+      console.error('Lỗi đọc suppliers từ DB trong GET /api/suppliers:', err);
+    }
+  }
+  res.json(suppliersList);
 });
 
 // =====================================================================

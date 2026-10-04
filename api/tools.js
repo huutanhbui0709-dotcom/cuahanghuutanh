@@ -188,6 +188,34 @@ async function ensureInitialized() {
   await initPromise;
 }
 
+async function getFreshProductsAndSuppliers() {
+  await ensureInitialized();
+  if (IS_VERCEL && sql) {
+    try {
+      const [prodRes, supRes] = await Promise.all([
+        sql`SELECT value FROM app_settings WHERE key = 'products'`,
+        sql`SELECT value FROM app_settings WHERE key = 'suppliers'`,
+      ]);
+      const prodRows = prodRes.rows ?? prodRes;
+      const supRows = supRes.rows ?? supRes;
+      if (prodRows.length > 0) products = JSON.parse(prodRows[0].value);
+      if (supRows.length > 0) suppliers = JSON.parse(supRows[0].value);
+    } catch (e) {
+      console.warn('[tools] Lỗi đọc fresh products/suppliers từ DB:', e.message);
+    }
+  } else {
+    const prodPath = path.join(__dirname, '..', 'data', 'products.json');
+    const supPath = path.join(__dirname, '..', 'data', 'suppliers.json');
+    try {
+      if (fs.existsSync(prodPath)) products = JSON.parse(fs.readFileSync(prodPath, 'utf8'));
+      if (fs.existsSync(supPath)) suppliers = JSON.parse(fs.readFileSync(supPath, 'utf8'));
+    } catch (e) {
+      console.warn('[tools] Lỗi đọc fresh products/suppliers từ file cục bộ:', e.message);
+    }
+  }
+  return { products, suppliers };
+}
+
 // ── Multer configs ────────────────────────────────────────────────────
 const uploadInvoice = multer({
   storage: multer.memoryStorage(),
@@ -243,6 +271,20 @@ function compactName(str) {
   if (!str) return '';
   return str.toLowerCase()
     .replace(/[\s\-×x\/\.]/g, '') // bỏ space, gạch ngang, dấu x/×, dấu chấm, dấu slash
+    .trim();
+}
+
+function cleanTaxCode(tax) {
+  if (!tax) return '';
+  return String(tax).replace(/\D/g, '');
+}
+
+function cleanCompanyName(name) {
+  if (!name) return '';
+  return String(name).toLowerCase()
+    .replace(/\b(công ty|cty|tnhh|cổ phần|cp|mtv|một thành viên|1tv|2tv|hai thành viên|trách nhiệm hữu hạn|doanh nghiệp tư nhân|dntn|hộ kinh doanh|hkd|tmdv|tm & dv|thương mại|dịch vụ|sản xuất|sx|xnk|xuất nhập khẩu)\b/gi, '')
+    .replace(/[.,\-_/\\()&]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -829,15 +871,45 @@ function matchInvoiceProductsAndSuppliers(inv, systemProducts, systemSuppliers) 
     }
   }
 
-  if (inv.sellerName && systemSuppliers && systemSuppliers.length > 0) {
-    const sellerLower = inv.sellerName.toLowerCase().trim();
-    const supplierMatch = systemSuppliers.some(sup => {
+  if (systemSuppliers && systemSuppliers.length > 0) {
+    const sellerLower = (inv.sellerName || '').toLowerCase().trim();
+    const invTax = cleanTaxCode(inv.taxCode);
+    const sellerClean = cleanCompanyName(sellerLower);
+
+    const matchedSup = systemSuppliers.find(sup => {
+      // 1. So khớp chính xác theo Mã số thuế (MST) - tiêu chí tuyệt đối
+      const supTax = cleanTaxCode(sup.tax_code);
+      if (invTax && supTax && invTax === supTax) return true;
+
+      if (!sellerLower) return false;
       const supName = (sup.name || '').toLowerCase().trim();
       if (!supName) return false;
+
+      // 2. Tên chính xác hoặc chứa nhau
+      if (sellerLower === supName) return true;
+      if (sellerLower.length >= 6 && (sellerLower.includes(supName) || supName.includes(sellerLower))) return true;
+
+      // 3. Tên sau khi loại bỏ tiền tố/hậu tố công ty (CTY, TNHH, CP...)
+      const supClean = cleanCompanyName(supName);
+      if (sellerClean && supClean) {
+        if (sellerClean === supClean) return true;
+        if (sellerClean.length >= 4 && (sellerClean.includes(supClean) || supClean.includes(sellerClean))) return true;
+        if (calculateSimilarity(sellerClean, supClean) >= 0.75) return true;
+      }
+
+      // 4. Độ tương đồng Levenshtein trên tên gốc
       const sim = calculateSimilarity(sellerLower, supName);
-      return sim >= 0.8 || sellerLower.includes(supName) || supName.includes(sellerLower);
+      return sim >= 0.75;
     });
-    if (!supplierMatch) inv.isNewSupplier = true;
+
+    if (matchedSup) {
+      inv.isNewSupplier = false;
+      inv.matchedSupplier = { code: matchedSup.code, name: matchedSup.name, tax_code: matchedSup.tax_code };
+    } else {
+      inv.isNewSupplier = true;
+    }
+  } else {
+    if (inv.sellerName) inv.isNewSupplier = true;
   }
 }
 
@@ -851,8 +923,7 @@ app.post('/api/tools/parse-invoice', requireAdmin, uploadInvoice.array('files', 
     }
 
     const mode = (req.body && req.body.mode) || req.query.mode || 'ai';
-    const systemProducts = products;
-    const systemSuppliers = suppliers;
+    const { products: systemProducts, suppliers: systemSuppliers } = await getFreshProductsAndSuppliers();
     const results = [];
 
     // ── CHẾ ĐỘ 1: PHÂN TÍCH TRỰC TIẾP KHÔNG DÙNG AI (NHANH, MIỄN PHÍ) ───

@@ -4930,6 +4930,15 @@ async function handleTopicUpdate(topic) {
   } else if (topic === 'settings') {
     console.log('⚡ Nhận cập nhật cấu hình...');
     await loadSettingsForm();
+  } else if (topic === 'suppliers') {
+    console.log('⚡ Nhận cập nhật nhà cung cấp...');
+    await loadSuppliers();
+    if (typeof loadSuppliersList === 'function') {
+      const supTab = document.getElementById('tab-suppliers');
+      if (supTab && supTab.classList.contains('active')) {
+        loadSuppliersList();
+      }
+    }
   }
 }
 
@@ -5291,6 +5300,75 @@ function syncNewProductsFromDOM(invIndex) {
   return newProducts;
 }
 
+function cleanTaxCodeClient(tax) {
+  if (!tax) return '';
+  return String(tax).replace(/\D/g, '');
+}
+
+function cleanCompanyNameClient(name) {
+  if (!name) return '';
+  return String(name).toLowerCase()
+    .replace(/\b(công ty|cty|tnhh|cổ phần|cp|mtv|một thành viên|1tv|2tv|hai thành viên|trách nhiệm hữu hạn|doanh nghiệp tư nhân|dntn|hộ kinh doanh|hkd|tmdv|tm & dv|thương mại|dịch vụ|sản xuất|sx|xnk|xuất nhập khẩu)\b/gi, '')
+    .replace(/[.,\-_/\\()&]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function checkIfSupplierExistsClient(sellerName, taxCode) {
+  if (!Array.isArray(suppliers) || suppliers.length === 0) return null;
+  const invTax = cleanTaxCodeClient(taxCode);
+  const sellerLower = (sellerName || '').trim().toLowerCase();
+  const sellerClean = cleanCompanyNameClient(sellerLower);
+
+  return suppliers.find(sup => {
+    // 1. Khớp chính xác theo MST
+    const supTax = cleanTaxCodeClient(sup.tax_code);
+    if (invTax && supTax && invTax === supTax) return true;
+
+    if (!sellerLower) return false;
+    const supName = (sup.name || '').trim().toLowerCase();
+    if (!supName) return false;
+
+    // 2. Khớp theo tên chính xác hoặc chứa nhau
+    if (sellerLower === supName) return true;
+    if (sellerLower.length >= 6 && (sellerLower.includes(supName) || supName.includes(sellerLower))) return true;
+
+    // 3. Khớp theo tên sau khi chuẩn hóa (loại bỏ Cty, TNHH, CP...)
+    const supClean = cleanCompanyNameClient(supName);
+    if (sellerClean && supClean) {
+      if (sellerClean === supClean) return true;
+      if (sellerClean.length >= 4 && (sellerClean.includes(supClean) || supClean.includes(sellerClean))) return true;
+      if (typeof calculateSimilarity === 'function' && calculateSimilarity(sellerClean, supClean) >= 0.75) return true;
+    }
+
+    // 4. Độ tương đồng Levenshtein trên tên gốc
+    if (typeof calculateSimilarity === 'function') {
+      return calculateSimilarity(sellerLower, supName) >= 0.75;
+    }
+    return false;
+  }) || null;
+}
+
+function checkIfProductExistsClient(prodName, prodCode) {
+  if (!Array.isArray(products) || products.length === 0) return null;
+  const code = (prodCode || '').trim().toLowerCase();
+  const name = (prodName || '').trim().toLowerCase();
+  const compactN = typeof compactName === 'function' ? compactName(name) : name.replace(/[\s\-_]/g, '');
+
+  return products.find(p => {
+    const pCode = (p.ma || '').trim().toLowerCase();
+    if (code && pCode && code === pCode) return true;
+    const pName = (p.ten || '').trim().toLowerCase();
+    if (pName && name) {
+      if (pName === name) return true;
+      const pCompact = typeof compactName === 'function' ? compactName(pName) : pName.replace(/[\s\-_]/g, '');
+      if (pCompact && compactN && pCompact === compactN) return true;
+      if (typeof calculateSimilarity === 'function' && calculateSimilarity(pName, name) >= 0.85) return true;
+    }
+    return false;
+  }) || null;
+}
+
 function renderInvoiceResults(results) {
   const container = document.getElementById('invoiceResultsContainer');
   container.innerHTML = '';
@@ -5301,6 +5379,25 @@ function renderInvoiceResults(results) {
   }
 
   parsedInvoicesList = results.map(r => r.ok ? r.data : null);
+
+  // Đối chiếu chéo ngay lập tức với danh sách Nhà Cung Cấp & Sản Phẩm hiện có trên client
+  parsedInvoicesList.forEach(inv => {
+    if (!inv) return;
+    const existingSup = checkIfSupplierExistsClient(inv.sellerName, inv.taxCode);
+    if (existingSup) {
+      inv.isNewSupplier = false;
+      inv.matchedSupplier = existingSup;
+    }
+    (inv.products || []).forEach(p => {
+      if (p.isNewSystemProduct) {
+        const existingProd = checkIfProductExistsClient(p.name, p.code);
+        if (existingProd) {
+          p.isNewSystemProduct = false;
+          p.matchedSystemCode = existingProd.ma;
+        }
+      }
+    });
+  });
 
   // Thu thập danh sách sản phẩm mới từ tất cả các hóa đơn (loại trùng theo mã + tên + đơn vị)
   const allNewProducts = [];
@@ -5435,19 +5532,34 @@ function renderInvoiceResults(results) {
     let supplierAlertHTML = '';
     if (inv.isNewSupplier) {
       supplierAlertHTML = `
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <strong style="color: #991b1b; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-              <i class="fa-solid fa-building-circle-exclamation"></i> Cảnh báo: Nhà cung cấp chưa có trên hệ thống
-            </strong>
-            <span style="font-size: 0.85rem; color: #7f1d1d; display: block;">${escapeHtml(inv.sellerName || 'Không xác định')}</span>
-            ${inv.taxCode ? `<span style="font-size: 0.8rem; color: #991b1b; opacity: 0.8;"><i class="fa-solid fa-id-card"></i> Mã thuế: ${escapeHtml(inv.taxCode)}</span>` : ''}
+        <div id="supplierAlertContainer-${index}">
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <strong style="color: #991b1b; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <i class="fa-solid fa-building-circle-exclamation"></i> Cảnh báo: Nhà cung cấp chưa có trên hệ thống
+              </strong>
+              <span style="font-size: 0.85rem; color: #7f1d1d; display: block;">${escapeHtml(inv.sellerName || 'Không xác định')}</span>
+              ${inv.taxCode ? `<span style="font-size: 0.8rem; color: #991b1b; opacity: 0.8;"><i class="fa-solid fa-id-card"></i> Mã thuế: ${escapeHtml(inv.taxCode)}</span>` : ''}
+            </div>
+            <button id="btnSaveSupplier-${index}" onclick="saveNewSupplierToSystem(this, ${index})" style="background: #ef4444; color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0;">
+              <i class="fa-solid fa-floppy-disk"></i> Lưu nhà cung cấp
+            </button>
           </div>
-          <button id="btnSaveSupplier-${index}" onclick="saveNewSupplierToSystem(this, ${index})" style="background: #ef4444; color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0;">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu nhà cung cấp
-          </button>
         </div>
       `;
+    } else if (inv.sellerName) {
+      const supDisplay = inv.matchedSupplier ? inv.matchedSupplier.name : inv.sellerName;
+      const supCode = inv.matchedSupplier && inv.matchedSupplier.code ? inv.matchedSupplier.code : '';
+      supplierAlertHTML = `
+        <div id="supplierAlertContainer-${index}">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 10px 14px; border-radius: 6px; margin-top: 16px; display: flex; align-items: center; gap: 8px; color: #166534; font-size: 0.85rem;">
+            <i class="fa-solid fa-circle-check" style="color: #16a34a; font-size: 1rem;"></i>
+            <span>Nhà cung cấp đã có trên hệ thống: <strong>${escapeHtml(supDisplay)}</strong> ${supCode ? `(Mã: <code>${escapeHtml(supCode)}</code>)` : ''}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      supplierAlertHTML = `<div id="supplierAlertContainer-${index}"></div>`;
     }
 
     // Lọc các sản phẩm chưa có trên hệ thống
@@ -5497,46 +5609,50 @@ function renderInvoiceResults(results) {
       `).join('');
 
       alertHTML = `
-        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
-            <div>
-              <strong style="color: #b45309; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                 <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
-                 <span style="background: #fef3c7; color: #92400e; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid #fde68a; margin-left: 4px;">${newProductsWithIdx.length} sản phẩm</span>
-              </strong>
-              <div style="font-size: 0.8rem; color: #92400e; margin-top: 3px;">
-                <i class="fa-solid fa-pencil"></i> Có thể trực tiếp chỉnh sửa Tên, Mã, ĐVT, Giá bên dưới trước khi Xuất file hoặc Lưu.
+        <div id="newProdAlertContainer-${index}">
+          <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <strong style="color: #b45309; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                   <i class="fa-solid fa-circle-exclamation"></i> Cảnh báo: Sản phẩm gợi ý chưa có trên hệ thống
+                   <span style="background: #fef3c7; color: #92400e; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; border: 1px solid #fde68a; margin-left: 4px;">${newProductsWithIdx.length} sản phẩm</span>
+                </strong>
+                <div style="font-size: 0.8rem; color: #92400e; margin-top: 3px;">
+                  <i class="fa-solid fa-pencil"></i> Có thể trực tiếp chỉnh sửa Tên, Mã, ĐVT, Giá bên dưới trước khi Xuất file hoặc Lưu.
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-warning btn-sm btn-copy-new-products" onclick="copyNewProductsToClipboard(this, ${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
+                  <i class="fa-solid fa-copy"></i> Copy danh sách
+                </button>
+                <button class="btn btn-warning btn-sm btn-export-misa" onclick="exportNewProductsExcel(${index})" style="background: #d97706; color: white; border: none; font-weight: 600;">
+                  <i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (MISA)
+                </button>
+                <button class="btn btn-sm btn-save-new-products" id="btnSaveNewProducts-${index}" onclick="saveNewProductsToSystem(this, ${index})" style="background: #10b981; color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
+                  <i class="fa-solid fa-floppy-disk"></i> Lưu vào hệ thống
+                </button>
               </div>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button class="btn btn-warning btn-sm btn-copy-new-products" onclick="copyNewProductsToClipboard(this, ${index})" style="background: #f59e0b; color: white; border: none; font-weight: 600;">
-                <i class="fa-solid fa-copy"></i> Copy danh sách
-              </button>
-              <button class="btn btn-warning btn-sm btn-export-misa" onclick="exportNewProductsExcel(${index})" style="background: #d97706; color: white; border: none; font-weight: 600;">
-                <i class="fa-solid fa-file-excel"></i> Xuất file tạo mới Hàng Hóa (MISA)
-              </button>
-              <button class="btn btn-sm btn-save-new-products" id="btnSaveNewProducts-${index}" onclick="saveNewProductsToSystem(this, ${index})" style="background: #10b981; color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; cursor: pointer;">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu vào hệ thống
-              </button>
+            <div style="max-height: 280px; overflow-y: auto; background: var(--card, white); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <table id="new-products-table-${index}" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: rgba(245, 158, 11, 0.15); color: #d97706; position: sticky; top: 0; z-index: 2;">
+                    <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 42%;">Tên sản phẩm</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 26%;">Mã sản phẩm</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 14%;">ĐVT</th>
+                    <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: right; font-weight: 700; width: 18%;">Giá (₫)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tableRowsHTML}
+                </tbody>
+              </table>
             </div>
-          </div>
-          <div style="max-height: 280px; overflow-y: auto; background: var(--card, white); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <table id="new-products-table-${index}" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-              <thead>
-                <tr style="background: rgba(245, 158, 11, 0.15); color: #d97706; position: sticky; top: 0; z-index: 2;">
-                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 42%;">Tên sản phẩm</th>
-                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 26%;">Mã sản phẩm</th>
-                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: left; font-weight: 700; width: 14%;">ĐVT</th>
-                  <th style="padding: 8px 10px; border-bottom: 2px solid rgba(245, 158, 11, 0.3); text-align: right; font-weight: 700; width: 18%;">Giá (₫)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tableRowsHTML}
-              </tbody>
-            </table>
           </div>
         </div>
       `;
+    } else {
+      alertHTML = `<div id="newProdAlertContainer-${index}"></div>`;
     }
 
     card.innerHTML = `
@@ -5958,18 +6074,33 @@ async function saveNewProductsToSystem(btn, index) {
     btn.style.background = '#059669';
     btn.setAttribute('disabled', 'true');
 
+    // Đánh dấu tất cả sản phẩm mới trong hóa đơn này là đã có trên hệ thống
+    (inv.products || []).forEach(p => {
+      p.isNewSystemProduct = false;
+    });
+
+    const prodAlert = document.getElementById(`newProdAlertContainer-${index}`);
+    if (prodAlert) {
+      prodAlert.innerHTML = `
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 10px 14px; border-radius: 6px; margin-top: 16px; display: flex; align-items: center; gap: 8px; color: #166534; font-size: 0.85rem;">
+          <i class="fa-solid fa-circle-check" style="color: #16a34a; font-size: 1rem;"></i>
+          <span>Đã lưu thành công <strong>${addedCount} sản phẩm mới</strong> vào hệ thống!</span>
+        </div>
+      `;
+    }
+
     // Reload lại danh sách sản phẩm để bảng admin cập nhật ngay
     await loadProducts();
     // Reset các filter về mặc định để sản phẩm mới hiển thị rõ
-    const bestSellerEl = document.getElementById('adminBestSellerFilter');
-    if (bestSellerEl && bestSellerEl.value !== '') {
-      bestSellerEl.value = '';
-    }
+    ['adminBestSellerFilter', 'adminTypeFilter', 'adminStatusFilter', 'adminImageFilter', 'adminUpsellFilter'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
     const searchEl = document.getElementById('adminSearch');
     if (searchEl) {
-      // Đặt search bằng mã sản phẩm đầu tiên để tìm nhanh
       if (payload.length === 1) searchEl.value = payload[0].ma;
     }
+    adminPage = 1;
     renderAdminTable();
   } catch (err) {
     console.error('saveNewProductsToSystem error:', err);
@@ -6013,11 +6144,39 @@ async function saveNewSupplierToSystem(btn, index) {
     }
 
     const sup = data.supplier || {};
-    showToast(`<i class="fa-solid fa-circle-check"></i> Đã thêm nhà cung cấp <strong>${escapeHtml(name)}</strong> vào hệ thống! Mã: <code>${sup.code || ''}</code>`, 'success', 6000);
+    const successMsg = data.alreadyExisted
+      ? `<i class="fa-solid fa-circle-check"></i> Nhà cung cấp <strong>${escapeHtml(name)}</strong> đã có trong hệ thống (Mã: <code>${sup.code || ''}</code>).`
+      : `<i class="fa-solid fa-circle-check"></i> Đã thêm nhà cung cấp <strong>${escapeHtml(name)}</strong> vào hệ thống! Mã: <code>${sup.code || ''}</code>`;
 
-    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã lưu';
-    btn.style.background = '#059669';
-    btn.setAttribute('disabled', 'true');
+    showToast(successMsg, 'success', 6000);
+
+    // Cập nhật trạng thái nhà cung cấp trong tất cả hóa đơn hiện tại
+    inv.isNewSupplier = false;
+    inv.matchedSupplier = sup;
+
+    parsedInvoicesList.forEach((otherInv, oIdx) => {
+      if (!otherInv) return;
+      const isMatch = (inv.taxCode && otherInv.taxCode && cleanTaxCodeClient(inv.taxCode) === cleanTaxCodeClient(otherInv.taxCode)) ||
+        (otherInv.sellerName && otherInv.sellerName.trim().toLowerCase() === name.toLowerCase());
+      if (isMatch) {
+        otherInv.isNewSupplier = false;
+        otherInv.matchedSupplier = sup;
+        const otherAlert = document.getElementById(`supplierAlertContainer-${oIdx}`);
+        if (otherAlert) {
+          otherAlert.innerHTML = `
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #16a34a; padding: 10px 14px; border-radius: 6px; margin-top: 16px; display: flex; align-items: center; gap: 8px; color: #166534; font-size: 0.85rem;">
+              <i class="fa-solid fa-circle-check" style="color: #16a34a; font-size: 1rem;"></i>
+              <span>Nhà cung cấp đã có trên hệ thống: <strong>${escapeHtml(name)}</strong> ${sup.code ? `(Mã: <code>${escapeHtml(sup.code)}</code>)` : ''}</span>
+            </div>
+          `;
+        }
+      }
+    });
+
+    // Thêm trực tiếp vào danh sách suppliers trên client nếu chưa có
+    if (sup.code && Array.isArray(suppliers) && !suppliers.some(s => s.code === sup.code)) {
+      suppliers.push(sup);
+    }
 
     // Cập nhật lại danh sách nhà cung cấp trên client
     if (typeof loadSuppliers === 'function') await loadSuppliers();
