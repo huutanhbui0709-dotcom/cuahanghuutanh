@@ -5435,11 +5435,17 @@ function renderInvoiceResults(results) {
     let supplierAlertHTML = '';
     if (inv.isNewSupplier) {
       supplierAlertHTML = `
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 12px; border-radius: 6px; margin-top: 16px;">
-          <strong style="color: #991b1b; font-size: 0.9rem; display: block; margin-bottom: 4px;">
-            <i class="fa-solid fa-building-circle-exclamation"></i> Cảnh báo: Nhà cung cấp chưa có trên hệ thống
-          </strong>
-          <span style="font-size: 0.85rem; color: #7f1d1d;">${escapeHtml(inv.sellerName || 'Không xác định')}</span>
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <strong style="color: #991b1b; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <i class="fa-solid fa-building-circle-exclamation"></i> Cảnh báo: Nhà cung cấp chưa có trên hệ thống
+            </strong>
+            <span style="font-size: 0.85rem; color: #7f1d1d; display: block;">${escapeHtml(inv.sellerName || 'Không xác định')}</span>
+            ${inv.taxCode ? `<span style="font-size: 0.8rem; color: #991b1b; opacity: 0.8;"><i class="fa-solid fa-id-card"></i> Mã thuế: ${escapeHtml(inv.taxCode)}</span>` : ''}
+          </div>
+          <button id="btnSaveSupplier-${index}" onclick="saveNewSupplierToSystem(this, ${index})" style="background: #ef4444; color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0;">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu nhà cung cấp
+          </button>
         </div>
       `;
     }
@@ -5967,6 +5973,56 @@ async function saveNewProductsToSystem(btn, index) {
     renderAdminTable();
   } catch (err) {
     console.error('saveNewProductsToSystem error:', err);
+    showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
+    btn.removeAttribute('disabled');
+    btn.innerHTML = originalHTML;
+  }
+}
+
+async function saveNewSupplierToSystem(btn, index) {
+  const inv = parsedInvoicesList[index];
+  if (!inv) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không tìm thấy dữ liệu hóa đơn.', 'error');
+    return;
+  }
+
+  const name = (inv.sellerName || '').trim();
+  if (!name) {
+    showToast('<i class="fa-solid fa-xmark"></i> Không có tên nhà cung cấp để lưu.', 'error');
+    return;
+  }
+
+  const originalHTML = btn.innerHTML;
+  btn.setAttribute('disabled', 'true');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+  try {
+    const res = await adminFetch('/api/admin/suppliers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        tax_code: (inv.taxCode || '').trim(),
+        status: 'Đang theo dõi'
+      })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || 'Lỗi khi lưu nhà cung cấp vào hệ thống.');
+    }
+
+    const sup = data.supplier || {};
+    showToast(`<i class="fa-solid fa-circle-check"></i> Đã thêm nhà cung cấp <strong>${escapeHtml(name)}</strong> vào hệ thống! Mã: <code>${sup.code || ''}</code>`, 'success', 6000);
+
+    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã lưu';
+    btn.style.background = '#059669';
+    btn.setAttribute('disabled', 'true');
+
+    // Cập nhật lại danh sách nhà cung cấp trên client
+    if (typeof loadSuppliers === 'function') await loadSuppliers();
+  } catch (err) {
+    console.error('saveNewSupplierToSystem error:', err);
     showToast(`<i class="fa-solid fa-xmark"></i> Lỗi: ${err.message}`, 'error');
     btn.removeAttribute('disabled');
     btn.innerHTML = originalHTML;
